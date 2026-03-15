@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <mutex>
 #include <vector>
 
@@ -7,25 +8,36 @@ class InputHandler {
 public:
 	class IInputHandlerCallback {
 	public:
-		virtual void onEvent() = 0;
+		typedef enum {
+			Down,
+			Pressed,
+			Release,
+			Unknown
+		} Action;
+
+		virtual void onEvent(Action action,unsigned short pushed) = 0;
 
 	protected:
 		IInputHandlerCallback()          = default;
 		virtual ~IInputHandlerCallback() = default;
 	};
 
-	static InputHandler* getInstance();
+	//////////////////////////////////////////////////////////
+	// APIs
+	//////////////////////////////////////////////////////////
+	static void createInstance();
 	static void destroyInstance();
+	static InputHandler& getInstance();
 
 	int  update();
 	int  setConf();
 	void registerCallback(IInputHandlerCallback* cb);
 
+	virtual ~InputHandler() = default;
 private:
-	static InputHandler* sInstance;
+	static std::unique_ptr<InputHandler> mInstance;
 
 	InputHandler();
-	virtual ~InputHandler() = default;
 
 	void handleXInput();
 
@@ -34,4 +46,6 @@ private:
 	std::vector<IInputHandlerCallback*>
 		mInputHandlerCallbacks;
 
+	unsigned int	mXInputPrevPktNum;
+	unsigned short	mXInputPrevButtonState;
 };

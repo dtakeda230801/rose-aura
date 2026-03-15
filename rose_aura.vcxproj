@@ -21,15 +21,19 @@
   <ItemGroup>
     <ClCompile Include="src\fw\CentralLooper.cpp" />
     <ClCompile Include="src\fw\InputHandler.cpp" />
+    <ClCompile Include="src\fw\ObjectRepository.cpp" />
     <ClCompile Include="src\fw\Utility.cpp" />
     <ClCompile Include="src\fw\GraphicsManager.cpp" />
+    <ClCompile Include="src\fw\WorldNavigator.cpp" />
     <ClCompile Include="src\Main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\fw\CentralLooper.h" />
     <ClInclude Include="src\fw\InputHandler.h" />
+    <ClInclude Include="src\fw\ObjectRepository.h" />
     <ClInclude Include="src\fw\Utility.h" />
     <ClInclude Include="src\fw\GraphicsManager.h" />
+    <ClInclude Include="src\fw\WorldNavigator.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

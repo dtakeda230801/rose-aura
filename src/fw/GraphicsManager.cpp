@@ -1,47 +1,83 @@
 #include "GraphicsManager.h"
+#include "Utility.h"
 
 #include "raylib.h"
-
-
+ 
 ////////////////////////////////////
 // APIs
 ////////////////////////////////////
-GraphicsManager* GraphicsManager::getInstance() {
-	if (!sInstance) {
-		sInstance = new GraphicsManager();
+void GraphicsManager::createInstance() {
+	if (!mInstance) {
+		mInstance = std::unique_ptr<GraphicsManager>(new GraphicsManager());
 	}
-	return sInstance;
+
 }
 
 void GraphicsManager::destroyInstance() {
-	if (sInstance) {
-		delete sInstance;
-		sInstance = nullptr;
+	if (mInstance) {
+		mInstance.reset();
 	}
 }
 
-void GraphicsManager::run()
+GraphicsManager& GraphicsManager::getInstance()
+{
+	return *mInstance;
+}
+
+
+void GraphicsManager::runUntilClosed()
 {
 	while (!WindowShouldClose())
 	{
+
+		Utility::printLog("runUntilClosed lock in");
+
 		BeginDrawing();
 
-		ClearBackground(RAYWHITE);
+		mMutex.lock();
+		std::vector<IObjectRenderer*> renderers = mRenderers;
+		mMutex.unlock();
 
-		DrawText("Hello, raylib!", 190, 200, 30, DARKGRAY);
-
-		DrawCircle(420, 215, 10, SKYBLUE);
+		for (IObjectRenderer* renderer : renderers)
+		{
+			renderer->render();
+		}
 
 		EndDrawing();
+
+		Utility::printLog("runUntilClosed lock out");
 	}
 
 	CloseWindow();
 }
 
+void GraphicsManager::setRenderer(IObjectRenderer* renderer)
+{
+	Utility::printLog("setRenderer in");
+	mMutex.lock();
+	mRenderers.push_back(renderer);
+	mMutex.unlock();
+	Utility::printLog("setRenderer in");
+}
+
+void GraphicsManager::removeRenderer(IObjectRenderer* renderer)
+{
+	Utility::printLog("removeRenderer in");
+	mMutex.lock();
+	auto target = std::find(mRenderers.begin(), mRenderers.end(), renderer);
+	if (target != mRenderers.end())
+	{
+		mRenderers.erase(target);
+	}
+	mMutex.unlock();
+	Utility::printLog("removeRenderer out");
+}
+
+
 ////////////////////////////////////
 // Private
 ////////////////////////////////////
-GraphicsManager* GraphicsManager::sInstance = nullptr;
+std::unique_ptr<GraphicsManager> GraphicsManager::mInstance = nullptr;
 
 GraphicsManager::GraphicsManager()
 {

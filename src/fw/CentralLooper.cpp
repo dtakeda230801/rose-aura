@@ -1,21 +1,25 @@
 #include "CentralLooper.h"
 #include <cstddef>
+#include <memory>
 
 ////////////////////////////////////
 // APIs
 ////////////////////////////////////
-CentralLooper* CentralLooper::getInstance() {
-	if (!sInstance) {
-		sInstance = new CentralLooper();
+void CentralLooper::createInstance()
+{
+	if (!mInstance) {
+		mInstance = std::unique_ptr<CentralLooper>(new CentralLooper());
 	}
-	return sInstance;
 }
 
 void CentralLooper::destroyInstance() {
-	if (sInstance) {
-		delete sInstance;
-		sInstance = nullptr;
+	if (mInstance) {
+		mInstance.reset();
 	}
+}
+
+CentralLooper& CentralLooper::getInstance() {
+	return *mInstance;
 }
 
 int CentralLooper::start(int timeOfFrame) {
@@ -64,7 +68,7 @@ int CentralLooper::registerFrameSyncCallback(IFrameSyncCallback* cb) {
 ////////////////////////////////////
 // Private
 ////////////////////////////////////
-CentralLooper* CentralLooper::sInstance = nullptr;
+std::unique_ptr<CentralLooper> CentralLooper::mInstance = nullptr;
 
 CentralLooper::CentralLooper() :
 	mStarted(false),mTimeOfFrame(0)
@@ -86,7 +90,7 @@ void CentralLooper::run() {
 			}
 		}
 
-		for (CentralLooper::IFrameSyncCallback* frameSyncCallback : mFrameSyncCallbacks) {
+		for (IFrameSyncCallback* frameSyncCallback : mFrameSyncCallbacks) {
 			frameSyncCallback->sync();
 		}
 

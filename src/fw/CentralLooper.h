@@ -3,6 +3,7 @@
 #include <queue>
 #include <mutex>
 #include <string>
+#include <memory>
 
 class CentralLooper {
 public:
@@ -15,7 +16,6 @@ public:
 		virtual ~ITask() = default;
 	protected:
 		ITask() = default;
-
 	};
 
 	class IFrameSyncCallback {
@@ -27,19 +27,24 @@ public:
 		IFrameSyncCallback() = default;
 	};
 
-	static CentralLooper* getInstance();
-	static void destroyInstance();
+	//////////////////////////////////////////////////////////
+	// APIs
+	//////////////////////////////////////////////////////////
+	static void				createInstance();
+	static void				destroyInstance();
+	static CentralLooper&	getInstance();
 
 	int start(int timeOfFrame);
 	int stop();
 	int setTask(ITask* task);
 	int registerFrameSyncCallback(IFrameSyncCallback* cb);
 
-private:
-	CentralLooper();
 	virtual ~CentralLooper() = default;
 
-	static CentralLooper* sInstance;
+private:
+	CentralLooper();
+
+	static std::unique_ptr<CentralLooper> mInstance;
 
 	void  run();
 	ITask* dequeue();

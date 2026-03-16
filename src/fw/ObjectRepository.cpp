@@ -19,4 +19,19 @@ ObjectRepository& ObjectRepository::getInstance()
 	return *mInstance;
 }
 
+void	ObjectRepository::registerObject(Object* obj)
+{
+}
+
+void    ObjectRepository::removeObject(Object* obj)
+{
+}
+
+ObjectRepository::Object* ObjectRepository::getObject(unsigned int id)
+{
+	return nullptr;
+}
+
+
+
 std::unique_ptr<ObjectRepository> ObjectRepository::mInstance = nullptr;

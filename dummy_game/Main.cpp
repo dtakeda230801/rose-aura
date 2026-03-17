@@ -1,18 +1,18 @@
 #include <memory>
+#include <mutex>
 
-#include "GraphicsManager.h"
-#include "CentralLooper.h"
-#include "InputHandler.h"
+#include "RoseAura.h"
+
 #include "Utility.h"
 
 #include "raylib.h"
 
-class LocalInputTask : public CentralLooper::ITask {
+class LocalInputTask : public ICentralLooper::ITask {
 public:
 	int doTask()
 	{
 		Utility::printLog("do Task");
-		InputHandler::getInstance().update();
+		mInputHandler.update();
 		return 0;
 	};
 	int finish()
@@ -25,31 +25,39 @@ public:
 		return "Test Task";
 	}
 	
-	LocalInputTask()  = default;
+	LocalInputTask(IInputHandler& inputHandler) :
+		mInputHandler(inputHandler){
+	}
+
 	~LocalInputTask() = default;
+
+private:
+	IInputHandler& mInputHandler;
 };
 
-class FrameSync : public CentralLooper::IFrameSyncCallback {
+class FrameSync : public ICentralLooper::IFrameSyncCallback {
 public:
-	FrameSync(CentralLooper::ITask* task) : mLocalTask(task), mCount(0) {
+	FrameSync(ICentralLooper& centralLooper,ICentralLooper::ITask* task) : 
+		mCentralLooper(centralLooper),mLocalTask(task), mCount(0) {
 	}
 
 	int sync()
 	{
 		mCount++;
 		Utility::printLog("frame sync(%d)", mCount);
-		CentralLooper::getInstance().setTask(mLocalTask);
+		mCentralLooper.setTask(mLocalTask);
 		return 0;
 	}
 
 	~FrameSync() = default;
 
 private:
-	CentralLooper::ITask*	mLocalTask;
+	ICentralLooper&			mCentralLooper;
+	ICentralLooper::ITask*	mLocalTask;
 	int						mCount;
 };
 
-class InputEventCb : public InputHandler::IInputHandlerCallback {
+class InputEventCb : public IInputHandler::IInputHandlerCallback {
 public:
 	void onEvent(Action action, unsigned short pushed)
 	{
@@ -59,7 +67,7 @@ public:
 	~InputEventCb() = default;
 };
 
-class BGRenderer : public GraphicsManager::IObjectRenderer
+class BGRenderer : public IGraphicsManager::IObjectRenderer
 {
 public:
 	void render()
@@ -71,7 +79,7 @@ public:
 	BGRenderer() = default;
 };
 
-class TxTRenderer : public GraphicsManager::IObjectRenderer
+class TxTRenderer : public IGraphicsManager::IObjectRenderer
 {
 public:
 	void render()
@@ -83,7 +91,7 @@ public:
 	TxTRenderer() = default;
 };
 
-class DotTRenderer : public GraphicsManager::IObjectRenderer
+class DotTRenderer : public IGraphicsManager::IObjectRenderer
 {
 public:
 	void render()
@@ -95,7 +103,7 @@ public:
 	DotTRenderer()  = default;
 };
 
-class MyDot : public GraphicsManager::IObjectRenderer, public InputHandler::IInputHandlerCallback
+class MyDot : public IGraphicsManager::IObjectRenderer, public IInputHandler::IInputHandlerCallback
 {
 public:
 
@@ -127,24 +135,25 @@ public:
 		if (action == Down && pushed == 0x1000) {
 			if (mTextOn) {
 				mTextOn = false;
-				GraphicsManager::getInstance().removeRenderer(mTxtRenderer);
+				mGraphicsManager.removeRenderer(mTxtRenderer);
 			}
 			else {
 				mTextOn = true;
-				GraphicsManager::getInstance().setRenderer(mTxtRenderer);
+				mGraphicsManager.setRenderer(mTxtRenderer);
 			}
 		}
 	}
 
 
-	MyDot(IObjectRenderer* txtRenderer):
-		mTxtRenderer(txtRenderer)
+	MyDot(IGraphicsManager& graphicsManager, IObjectRenderer* txtRenderer):
+		mGraphicsManager(graphicsManager),mTxtRenderer(txtRenderer)
 	{
 	};
 
 	~MyDot() = default;
 
 private:
+	IGraphicsManager& mGraphicsManager;
 
 	std::mutex		   mMutex;
 
@@ -158,56 +167,56 @@ private:
 
 
 int main() {
-	Utility::printLog("TEST");
+	{
+		Utility::printLog("TEST");
 
-	////////////////////////////////////////////
-	CentralLooper::createInstance();
-	GraphicsManager::createInstance();
-	InputHandler::createInstance();
-
-	LocalInputTask*	 localInputTask = new LocalInputTask();
-	FrameSync*		 fsync			= new FrameSync(localInputTask);
-	InputEventCb*    inEvCb			= new InputEventCb();
-
-	BGRenderer*		bgRenderer  = new BGRenderer();
-	TxTRenderer*	txtRenderer = new TxTRenderer();
-	DotTRenderer*	dotRenderer = new DotTRenderer();
-
-	MyDot* myDot = new MyDot(txtRenderer);
+		////////////////////////////////////////////
+		std::unique_ptr<RoseAura> rose_aura = RoseAura::create();
+		ICentralLooper& centralLooper = rose_aura->getCentralLooper();
+		IInputHandler& inputHandler = rose_aura->getInputHandler();
+		IGraphicsManager& graphicsManager = rose_aura->getGraphicsManager();
 
 
-	////////////////////////////////////////////
-	CentralLooper::getInstance().setTask(localInputTask);
-	CentralLooper::getInstance().registerFrameSyncCallback(fsync);
-//	InputHandler::getInstance().registerCallback(inEvCb);
-	InputHandler::getInstance().registerCallback(myDot);
+		LocalInputTask* localInputTask = new LocalInputTask(inputHandler);
+		FrameSync* fsync = new FrameSync(centralLooper, localInputTask);
+		InputEventCb* inEvCb = new InputEventCb();
 
-	GraphicsManager::getInstance().setRenderer(bgRenderer);
-	GraphicsManager::getInstance().setRenderer(txtRenderer);
-//	GraphicsManager::getInstance().setRenderer(dotRenderer);
-	GraphicsManager::getInstance().setRenderer(myDot);
+		BGRenderer* bgRenderer = new BGRenderer();
+		TxTRenderer* txtRenderer = new TxTRenderer();
+		DotTRenderer* dotRenderer = new DotTRenderer();
 
-	CentralLooper::getInstance().start(60);
+		MyDot* myDot = new MyDot(graphicsManager, txtRenderer);
 
-	GraphicsManager::getInstance().runUntilClosed();
 
-	CentralLooper::getInstance().stop();
+		////////////////////////////////////////////
+		centralLooper.setTask(localInputTask);
+		centralLooper.registerFrameSyncCallback(fsync);
+		//	inputHandler.registerCallback(inEvCb);
+		inputHandler.registerCallback(myDot);
 
-	////////////////////////////////////////////
-	InputHandler::destroyInstance();
-	GraphicsManager::destroyInstance();
-	CentralLooper::destroyInstance();
+		graphicsManager.setRenderer(bgRenderer);
+		graphicsManager.setRenderer(txtRenderer);
+		//	graphicsManager.setRenderer(dotRenderer);
+		graphicsManager.setRenderer(myDot);
 
-	delete myDot;
+		centralLooper.start(60);
 
-	delete dotRenderer;
-	delete txtRenderer;
-	delete bgRenderer;
+		graphicsManager.runUntilClosed();
 
-	delete localInputTask;
-	delete fsync;
-	delete inEvCb;
+		centralLooper.stop();
 
+		////////////////////////////////////////////
+
+		delete myDot;
+
+		delete dotRenderer;
+		delete txtRenderer;
+		delete bgRenderer;
+
+		delete localInputTask;
+		delete fsync;
+		delete inEvCb;
+	}
 	_CrtDumpMemoryLeaks();
 
 	return 0;

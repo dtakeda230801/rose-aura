@@ -5,23 +5,6 @@
 ////////////////////////////////////
 // APIs
 ////////////////////////////////////
-void CentralLooper::createInstance()
-{
-	if (!mInstance) {
-		mInstance = std::unique_ptr<CentralLooper>(new CentralLooper());
-	}
-}
-
-void CentralLooper::destroyInstance() {
-	if (mInstance) {
-		mInstance.reset();
-	}
-}
-
-CentralLooper& CentralLooper::getInstance() {
-	return *mInstance;
-}
-
 int CentralLooper::start(int timeOfFrame) {
 	if (mStarted) {
 		return -1;
@@ -64,17 +47,14 @@ int CentralLooper::registerFrameSyncCallback(IFrameSyncCallback* cb) {
 	return 0;
 }
 
+CentralLooper::CentralLooper() :
+	mStarted(false), mTimeOfFrame(0)
+{
+}
 
 ////////////////////////////////////
 // Private
 ////////////////////////////////////
-std::unique_ptr<CentralLooper> CentralLooper::mInstance = nullptr;
-
-CentralLooper::CentralLooper() :
-	mStarted(false),mTimeOfFrame(0)
-{
-}
-
 void CentralLooper::run() {
 	while (mStarted) {
 		auto frameStart = std::chrono::steady_clock::now();

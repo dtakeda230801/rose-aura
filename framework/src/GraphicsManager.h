@@ -1,37 +1,22 @@
 #pragma once
 
-#include <memory>
 #include <mutex>
 #include <vector>
 
+#include "IGraphicsManager.h"
 
-class GraphicsManager
+class GraphicsManager : public IGraphicsManager
 {
 public:
-	class IObjectRenderer {
-	public:
-		virtual void render() = 0;
-
-		virtual ~IObjectRenderer() = default;
-	protected:
-		IObjectRenderer() = default;
-	};
-
-	static void createInstance();
-	static void destroyInstance();
-	static GraphicsManager& getInstance();
-
 	void runUntilClosed();
 
 	void setRenderer(IObjectRenderer* renderer);
 	void removeRenderer(IObjectRenderer* renderer);
 
-	virtual ~GraphicsManager() = default;
-private:
 	GraphicsManager();
+	virtual ~GraphicsManager() = default;
 
-	static std::unique_ptr<GraphicsManager> mInstance;
-
+private:
 	std::mutex		   mMutex;
 
 	std::vector<IObjectRenderer*>

@@ -6,25 +6,6 @@
 ////////////////////////////////////
 // APIs
 ////////////////////////////////////
-void GraphicsManager::createInstance() {
-	if (!mInstance) {
-		mInstance = std::unique_ptr<GraphicsManager>(new GraphicsManager());
-	}
-
-}
-
-void GraphicsManager::destroyInstance() {
-	if (mInstance) {
-		mInstance.reset();
-	}
-}
-
-GraphicsManager& GraphicsManager::getInstance()
-{
-	return *mInstance;
-}
-
-
 void GraphicsManager::runUntilClosed()
 {
 	while (!WindowShouldClose())
@@ -73,15 +54,13 @@ void GraphicsManager::removeRenderer(IObjectRenderer* renderer)
 	Utility::printLog("removeRenderer out");
 }
 
-
-////////////////////////////////////
-// Private
-////////////////////////////////////
-std::unique_ptr<GraphicsManager> GraphicsManager::mInstance = nullptr;
-
 GraphicsManager::GraphicsManager()
 {
 	InitWindow(800, 450, "Rose Aura");
 	SetTargetFPS(60);
 }
+
+////////////////////////////////////
+// Private
+////////////////////////////////////
 

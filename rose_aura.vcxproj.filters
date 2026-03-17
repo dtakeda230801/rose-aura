@@ -42,15 +42,15 @@
     <ClCompile Include="dummy_game\Main.cpp">
       <Filter>DummyGame</Filter>
     </ClCompile>
+    <ClCompile Include="framework\src\RoseAura.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework\src\CentralLooper.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="framework\src\GraphicsManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="framework\src\InputHandler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="framework\src\ObjectRepository.h">
@@ -64,6 +64,27 @@
     </ClInclude>
     <ClInclude Include="framework\include\RoseAura.h">
       <Filter>RoseAura Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\include\ICentralLooper.h">
+      <Filter>RoseAura Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\include\IGraphicsManager.h">
+      <Filter>RoseAura Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\include\IInputHandler.h">
+      <Filter>RoseAura Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\include\IObjectRepository.h">
+      <Filter>RoseAura Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\include\IWorldNavigator.h">
+      <Filter>RoseAura Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\src\RoseAuraImpl.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\src\InputHandler.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

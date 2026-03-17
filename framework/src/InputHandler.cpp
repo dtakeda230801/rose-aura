@@ -9,24 +9,6 @@
 ////////////////////////////////////
 // APIs
 ////////////////////////////////////
-
-void InputHandler::createInstance() 
-{
-	if (!mInstance) {
-		mInstance = std::unique_ptr<InputHandler>(new InputHandler());
-	}
-}
-
-void InputHandler::destroyInstance() {
-	if (mInstance) {
-		mInstance.reset();
-	}
-}
-
-InputHandler& InputHandler::getInstance() {
-	return *mInstance;
-}
-
 int InputHandler::update()
 {
 	Utility::printLog("InputHandler#update");
@@ -44,16 +26,14 @@ void InputHandler::registerCallback(IInputHandlerCallback* cb)
 	mInputHandlerCallbacks.push_back(cb);
 }
 
-////////////////////////////////////
-// Private
-////////////////////////////////////
-std::unique_ptr<InputHandler> InputHandler::mInstance = nullptr;
-
 InputHandler::InputHandler() :
 	mXInputPrevPktNum(0), mXInputPrevButtonState(0)
 {
 }
 
+////////////////////////////////////
+// Private
+////////////////////////////////////
 void InputHandler::handleXInput()
 {
 	XINPUT_STATE mXInputCurrState{};

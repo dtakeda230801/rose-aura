@@ -11,7 +11,7 @@ public:
 	// APIs
 	//////////////////////////////////////////////////////////
 	int  update();
-	int  setConf();
+	int  setConf(std::string conf);
 	void registerCallback(IInputHandlerCallback* cb);
 
 	InputHandler();

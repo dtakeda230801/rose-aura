@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 class IInputHandler {
 public:
 	class IInputHandlerCallback {
@@ -22,6 +24,6 @@ public:
 	// APIs
 	//////////////////////////////////////////////////////////
 	virtual int  update()	= 0;
-	virtual int  setConf()	= 0;
+	virtual int  setConf(std::string conf)	= 0;
 	virtual void registerCallback(IInputHandlerCallback* cb) = 0;
 };

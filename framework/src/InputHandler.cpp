@@ -3,6 +3,10 @@
 #include "InputHandler.h"
 #include "Utility.h"
 
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
 #pragma comment(lib, "xinput.lib")
 
 
@@ -11,13 +15,14 @@
 ////////////////////////////////////
 int InputHandler::update()
 {
-	Utility::printLog("InputHandler#update");
 	handleXInput();
 	return 0;
 }
 
-int InputHandler::setConf()
+int InputHandler::setConf(std::string conf)
 {
+	json j = json::parse(conf);
+
 	return 0;
 }
 

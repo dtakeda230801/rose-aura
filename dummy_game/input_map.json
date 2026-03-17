@@ -1,0 +1,30 @@
+{
+  "0x0001": {
+    "comment": "up",
+    "gamepad": "0x0001",
+    "keyboard": "w"
+  },
+
+  "0x0002": {
+    "comment": "down",
+    "gamepad": "0x0002",
+    "keyboard": "s"
+  },
+
+  "0x0003": {
+    "comment": "left",
+    "gamepad": "0x0004",
+    "keyboard": "a"
+  },
+
+  "0x0004": {
+    "comment": "right",
+    "gamepad": "0x0008",
+    "keyboard": "d"
+  },
+  "0x0005": {
+    "comment": "action",
+    "gamepad": "0x1000",
+    "keyboard": "f"
+  }
+}

@@ -87,4 +87,8 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="dummy_game\input_map.json" />
+    <None Include="vcpkg.json" />
+  </ItemGroup>
 </Project>

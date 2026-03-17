@@ -5,6 +5,7 @@
 /Release/
 **/x64/
 **/vcpkg_installed/
+**/ho/
 
 # Visual Studio 固有のファイル
 *.suo

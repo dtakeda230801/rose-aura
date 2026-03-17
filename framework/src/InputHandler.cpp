@@ -30,7 +30,32 @@ InputHandler& InputHandler::getInstance() {
 int InputHandler::update()
 {
 	Utility::printLog("InputHandler#update");
+	handleXInput();
+	return 0;
+}
 
+int InputHandler::setConf()
+{
+	return 0;
+}
+
+void InputHandler::registerCallback(IInputHandlerCallback* cb)
+{
+	mInputHandlerCallbacks.push_back(cb);
+}
+
+////////////////////////////////////
+// Private
+////////////////////////////////////
+std::unique_ptr<InputHandler> InputHandler::mInstance = nullptr;
+
+InputHandler::InputHandler() :
+	mXInputPrevPktNum(0), mXInputPrevButtonState(0)
+{
+}
+
+void InputHandler::handleXInput()
+{
 	XINPUT_STATE mXInputCurrState{};
 
 	if (XInputGetState(0, &mXInputCurrState) != ERROR_SUCCESS)
@@ -67,33 +92,11 @@ int InputHandler::update()
 		}
 	}
 
-	mXInputPrevPktNum      = mXInputCurrState.dwPacketNumber;
+	mXInputPrevPktNum = mXInputCurrState.dwPacketNumber;
 	mXInputPrevButtonState = mXInputCurrState.Gamepad.wButtons;
-	return 0;
 }
 
-int InputHandler::setConf()
-{
-	return 0;
-}
-
-void InputHandler::registerCallback(IInputHandlerCallback* cb)
-{
-	mInputHandlerCallbacks.push_back(cb);
-}
-
-////////////////////////////////////
-// Private
-////////////////////////////////////
-std::unique_ptr<InputHandler> InputHandler::mInstance = nullptr;
-
-InputHandler::InputHandler() :
-	mXInputPrevPktNum(0), mXInputPrevButtonState(0)
-{
-}
-
-void InputHandler::handleXInput()
+void InputHandler::handleKeyboard()
 {
 
 }
-

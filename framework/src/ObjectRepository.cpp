@@ -32,6 +32,4 @@ ObjectRepository::Object* ObjectRepository::getObject(unsigned int id)
 	return nullptr;
 }
 
-
-
 std::unique_ptr<ObjectRepository> ObjectRepository::mInstance = nullptr;

@@ -13,48 +13,57 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="DummyGame">
+      <UniqueIdentifier>{419078e0-2179-47cd-a58e-3e0261270e65}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RoseAura Interface">
+      <UniqueIdentifier>{162150b2-d62e-4c31-897a-22208cdc693f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Main.cpp">
+    <ClCompile Include="framework\src\CentralLooper.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\fw\CentralLooper.cpp">
+    <ClCompile Include="framework\src\GraphicsManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\fw\GraphicsManager.cpp">
+    <ClCompile Include="framework\src\InputHandler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\fw\Utility.cpp">
+    <ClCompile Include="framework\src\ObjectRepository.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\fw\InputHandler.cpp">
+    <ClCompile Include="framework\src\Utility.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\fw\ObjectRepository.cpp">
+    <ClCompile Include="framework\src\WorldNavigator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\fw\WorldNavigator.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="dummy_game\Main.cpp">
+      <Filter>DummyGame</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\fw\CentralLooper.h">
+    <ClInclude Include="framework\src\CentralLooper.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="src\fw\GraphicsManager.h">
+    <ClInclude Include="framework\src\GraphicsManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="src\fw\Utility.h">
+    <ClInclude Include="framework\src\InputHandler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="src\fw\InputHandler.h">
+    <ClInclude Include="framework\src\ObjectRepository.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="src\fw\ObjectRepository.h">
+    <ClInclude Include="framework\src\Utility.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="src\fw\WorldNavigator.h">
+    <ClInclude Include="framework\src\WorldNavigator.h">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\include\RoseAura.h">
+      <Filter>RoseAura Interface</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

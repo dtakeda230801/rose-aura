@@ -19,4 +19,21 @@ WorldNavigator& WorldNavigator::getInstance()
 	return *mInstance;
 }
 
+unsigned int WorldNavigator::createWorld(SpaceConfig& space)
+{
+	return 0;
+}
+
+unsigned int WorldNavigator::getCurrentWorld()
+{
+	return 0;
+}
+
+int WorldNavigator::changeWorld(unsigned int id)
+{
+	return 0;
+}
+
+
+
 std::unique_ptr<WorldNavigator> WorldNavigator::mInstance = nullptr;

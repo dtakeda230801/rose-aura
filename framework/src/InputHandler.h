@@ -40,6 +40,7 @@ private:
 	InputHandler();
 
 	void handleXInput();
+	void handleKeyboard();
 
 	std::mutex		   mMutex;
 

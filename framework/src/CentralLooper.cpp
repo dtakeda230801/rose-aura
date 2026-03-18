@@ -1,4 +1,5 @@
 #include "CentralLooper.h"
+#include "Utility.h"
 #include <cstddef>
 #include <memory>
 
@@ -74,7 +75,11 @@ void CentralLooper::run() {
 			frameSyncCallback->sync();
 		}
 
-		auto TimeTaken = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - frameStart);
+		auto takenTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - frameStart);
+		int takenTimeInt = takenTime.count() / 1000;
+		if (takenTimeInt > mTimeOfFrame) {
+			Utility::printLog("The frame time is over specified time.(%d)", takenTime);
+		}
 	}
 }
 

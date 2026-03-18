@@ -10,9 +10,6 @@ void GraphicsManager::runUntilClosed()
 {
 	while (!WindowShouldClose())
 	{
-
-		Utility::printLog("runUntilClosed lock in");
-
 		BeginDrawing();
 
 		mMutex.lock();
@@ -25,8 +22,6 @@ void GraphicsManager::runUntilClosed()
 		}
 
 		EndDrawing();
-
-		Utility::printLog("runUntilClosed lock out");
 	}
 
 	CloseWindow();
@@ -34,16 +29,13 @@ void GraphicsManager::runUntilClosed()
 
 void GraphicsManager::setRenderer(IObjectRenderer* renderer)
 {
-	Utility::printLog("setRenderer in");
 	mMutex.lock();
 	mRenderers.push_back(renderer);
 	mMutex.unlock();
-	Utility::printLog("setRenderer in");
 }
 
 void GraphicsManager::removeRenderer(IObjectRenderer* renderer)
 {
-	Utility::printLog("removeRenderer in");
 	mMutex.lock();
 	auto target = std::find(mRenderers.begin(), mRenderers.end(), renderer);
 	if (target != mRenderers.end())
@@ -51,7 +43,6 @@ void GraphicsManager::removeRenderer(IObjectRenderer* renderer)
 		mRenderers.erase(target);
 	}
 	mMutex.unlock();
-	Utility::printLog("removeRenderer out");
 }
 
 GraphicsManager::GraphicsManager()

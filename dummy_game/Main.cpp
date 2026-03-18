@@ -11,13 +11,13 @@ class LocalInputTask : public ICentralLooper::ITask {
 public:
 	int doTask()
 	{
-		Utility::printLog("do Task");
+		//Utility::printLog("do Task");
 		mInputHandler.update();
 		return 0;
 	};
 	int finish()
 	{
-		Utility::printLog("finish");
+		//Utility::printLog("finish");
 		return 0;
 	};
 	std::string getTaskId()
@@ -26,11 +26,11 @@ public:
 	}
 	
 	LocalInputTask(IInputHandler& inputHandler) :
-		mInputHandler(inputHandler){
+		mInputHandler(inputHandler)
+	{
 	}
 
 	~LocalInputTask() = default;
-
 private:
 	IInputHandler& mInputHandler;
 };
@@ -44,7 +44,7 @@ public:
 	int sync()
 	{
 		mCount++;
-		Utility::printLog("frame sync(%d)", mCount);
+		//Utility::printLog("frame sync(%d)", mCount);
 		mCentralLooper.setTask(mLocalTask);
 		return 0;
 	}
@@ -118,7 +118,7 @@ public:
 		std::lock_guard<std::mutex> lock(mMutex);
 
 		for (auto event : events) {
-			Utility::printLog("MyDot Input(%d / %d)", event.first, event.second);
+			//Utility::printLog("MyDot Input(%d / %d)", event.first, event.second);
 			InputState state = event.first;
 			InputType  type  = event.second;
 
@@ -178,21 +178,20 @@ int main() {
 
 		////////////////////////////////////////////
 		std::unique_ptr<RoseAura> rose_aura = RoseAura::create();
-		ICentralLooper& centralLooper = rose_aura->getCentralLooper();
-		IInputHandler& inputHandler = rose_aura->getInputHandler();
-		IGraphicsManager& graphicsManager = rose_aura->getGraphicsManager();
 
+		ICentralLooper&		centralLooper	= rose_aura->getCentralLooper();
+		IInputHandler&		inputHandler	= rose_aura->getInputHandler();
+		IGraphicsManager&	graphicsManager = rose_aura->getGraphicsManager();
 
 		LocalInputTask* localInputTask = new LocalInputTask(inputHandler);
-		FrameSync* fsync = new FrameSync(centralLooper, localInputTask);
-		InputEventCb* inEvCb = new InputEventCb();
+		FrameSync*		fsync		   = new FrameSync(centralLooper, localInputTask);
+		InputEventCb*	inEvCb		   = new InputEventCb();
 
-		BGRenderer* bgRenderer = new BGRenderer();
-		TxTRenderer* txtRenderer = new TxTRenderer();
-		DotTRenderer* dotRenderer = new DotTRenderer();
+		BGRenderer*		bgRenderer	   = new BGRenderer();
+		TxTRenderer*	txtRenderer	   = new TxTRenderer();
+		DotTRenderer*	dotRenderer    = new DotTRenderer();
 
 		MyDot* myDot = new MyDot(graphicsManager, txtRenderer);
-
 
 		////////////////////////////////////////////
 		centralLooper.setTask(localInputTask);

@@ -25,7 +25,7 @@ public:
 			ACTION4 = 0x08
 		} InputType;
 
-		virtual void onEvent(InputState state, std::vector<InputType>& type) = 0;
+		virtual void onEvent(std::vector<std::pair<InputState,InputType>>& events) = 0;
 
 	protected:
 		IInputHandlerCallback() = default;

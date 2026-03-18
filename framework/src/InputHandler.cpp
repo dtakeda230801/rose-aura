@@ -16,6 +16,7 @@ using json = nlohmann::json;
 int InputHandler::update()
 {
 	handleXInput();
+	handleKeyboard();
 	return 0;
 }
 
@@ -34,6 +35,18 @@ void InputHandler::registerCallback(IInputHandlerCallback* cb)
 InputHandler::InputHandler() :
 	mXInputPrevPktNum(0), mXInputPrevButtonState(0)
 {
+	mXInputMap.emplace_back(XINPUT_GAMEPAD_DPAD_UP		, IInputHandlerCallback::UP);
+	mXInputMap.emplace_back(XINPUT_GAMEPAD_DPAD_DOWN	, IInputHandlerCallback::DOWN);
+	mXInputMap.emplace_back(XINPUT_GAMEPAD_DPAD_LEFT	, IInputHandlerCallback::LEFT);
+	mXInputMap.emplace_back(XINPUT_GAMEPAD_DPAD_RIGHT	, IInputHandlerCallback::RIGHT);
+	mXInputMap.emplace_back(XINPUT_GAMEPAD_A			, IInputHandlerCallback::ACTION1);
+
+	mKeyboardMap.emplace_back('W', IInputHandlerCallback::UP);
+	mKeyboardMap.emplace_back('S', IInputHandlerCallback::DOWN);
+	mKeyboardMap.emplace_back('A', IInputHandlerCallback::LEFT);
+	mKeyboardMap.emplace_back('D', IInputHandlerCallback::RIGHT);
+	mKeyboardMap.emplace_back('E', IInputHandlerCallback::ACTION1);
+
 }
 
 ////////////////////////////////////
@@ -41,20 +54,22 @@ InputHandler::InputHandler() :
 ////////////////////////////////////
 void InputHandler::handleXInput()
 {
-	XINPUT_STATE mXInputCurrState{};
+	XINPUT_STATE xInputCurrState{};
 
-	if (XInputGetState(0, &mXInputCurrState) != ERROR_SUCCESS)
+	std::vector<std::pair<IInputHandlerCallback::InputState, IInputHandlerCallback::InputType>> events;
+
+	if (XInputGetState(0, &xInputCurrState) != ERROR_SUCCESS)
 	{
-		ZeroMemory(&mXInputCurrState, sizeof(XINPUT_STATE));
+		ZeroMemory(&xInputCurrState, sizeof(XINPUT_STATE));
 	}
 
-	if (mXInputCurrState.dwPacketNumber != mXInputPrevPktNum || 0 != mXInputPrevButtonState)
+	if (xInputCurrState.dwPacketNumber != mXInputPrevPktNum || 0 != mXInputPrevButtonState)
 	{
-		for (unsigned int btnBit = 0x0001; btnBit > 0; btnBit = (btnBit << 1)) {
+		for (unsigned short btnBit = 0x0001; btnBit > 0; btnBit = (btnBit << 1)) {
 			IInputHandlerCallback::InputState state = IInputHandlerCallback::InputState::UNKNOWN;
 
-			unsigned int curr = mXInputCurrState.Gamepad.wButtons & btnBit;
-			unsigned int prev = mXInputPrevButtonState & btnBit;
+			unsigned short curr = xInputCurrState.Gamepad.wButtons & btnBit;
+			unsigned short prev = mXInputPrevButtonState & btnBit;
 
 			if (0 == prev && 0 != curr) {
 				state = IInputHandlerCallback::InputState::PUSHED;
@@ -69,60 +84,65 @@ void InputHandler::handleXInput()
 			}
 
 			if (state != IInputHandlerCallback::InputState::UNKNOWN) {
-				std::vector<IInputHandlerCallback::InputType> types;
-
-				convXInputType(btnBit, types);
-
-				for (IInputHandlerCallback* frameSyncCallback : mInputHandlerCallbacks) {
-					frameSyncCallback->onEvent(state, types);
+				for (const auto& mapElm : mXInputMap) {
+					if (mapElm.first == btnBit) {
+						events.push_back(std::pair<IInputHandlerCallback::InputState, IInputHandlerCallback::InputType>(state, mapElm.second));
+					}
 				}
-			}
 
+			}
 		}
 	}
 
-	mXInputPrevPktNum = mXInputCurrState.dwPacketNumber;
-	mXInputPrevButtonState = mXInputCurrState.Gamepad.wButtons;
+	if (!events.empty()) {
+		doCallback(events);
+	}
+
+	mXInputPrevPktNum      = xInputCurrState.dwPacketNumber;
+	mXInputPrevButtonState = xInputCurrState.Gamepad.wButtons;
 }
 
 void InputHandler::handleKeyboard()
 {
+	std::vector<std::pair<IInputHandlerCallback::InputState, IInputHandlerCallback::InputType>> events;
 
+	std::vector<char> currState;
+
+	for (auto mapElm : mKeyboardMap) {
+		if (GetAsyncKeyState(mapElm.first) & 0x8000) {
+			if (std::find(mKeyboardPrevState.begin(), mKeyboardPrevState.end(), mapElm.first) == mKeyboardPrevState.end()) {
+				events.push_back(std::pair<IInputHandlerCallback::InputState, IInputHandlerCallback::InputType>(IInputHandlerCallback::PUSHED, mapElm.second));
+			}
+			else {
+				events.push_back(std::pair<IInputHandlerCallback::InputState, IInputHandlerCallback::InputType>(IInputHandlerCallback::PRESSED, mapElm.second));
+			}
+			currState.push_back(mapElm.first);
+		}
+	}
+
+	for (auto prevState : mKeyboardPrevState) {
+		if (std::find(currState.begin(), currState.end(), prevState) == currState.end()) {
+			for (const auto& mapElm : mKeyboardMap) {
+				if (mapElm.first == prevState) {
+					events.push_back(std::pair<IInputHandlerCallback::InputState, IInputHandlerCallback::InputType>(IInputHandlerCallback::RELEASED, mapElm.second));
+				}
+			}
+		}
+	}
+
+	if (!events.empty()) {
+		doCallback(events);
+	}
+
+	mKeyboardPrevState = currState;
 }
 
-void InputHandler::convXInputType(unsigned short in, std::vector<IInputHandlerCallback::InputType>& out)
+void InputHandler::doCallback(std::vector<std::pair<IInputHandlerCallback::InputState, IInputHandlerCallback::InputType>>& events)
 {
-	out.clear();
-
-	if (in & XINPUT_GAMEPAD_DPAD_UP) {
-		out.push_back(IInputHandlerCallback::UP);
-	}
-
-	if (in & XINPUT_GAMEPAD_DPAD_DOWN) {
-		out.push_back(IInputHandlerCallback::DOWN);
-	}
-
-	if (in & XINPUT_GAMEPAD_DPAD_LEFT) {
-		out.push_back(IInputHandlerCallback::LEFT);
-	}
-
-	if (in & XINPUT_GAMEPAD_DPAD_RIGHT) {
-		out.push_back(IInputHandlerCallback::RIGHT);
-	}
-
-	if (in & XINPUT_GAMEPAD_A) {
-		out.push_back(IInputHandlerCallback::ACTION1);
-	}
-
-	if (in & XINPUT_GAMEPAD_B) {
-		out.push_back(IInputHandlerCallback::ACTION2);
-	}
-
-	if (in & XINPUT_GAMEPAD_X) {
-		out.push_back(IInputHandlerCallback::ACTION3);
-	}
-
-	if (in & XINPUT_GAMEPAD_Y) {
-		out.push_back(IInputHandlerCallback::ACTION4);
+	for (IInputHandlerCallback* frameSyncCallback : mInputHandlerCallbacks) {
+		frameSyncCallback->onEvent(events);
 	}
 }
+
+
+

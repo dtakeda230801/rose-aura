@@ -19,14 +19,19 @@ public:
 private:
 	void handleXInput();
 	void handleKeyboard();
-
-	void convXInputType(unsigned short in, std::vector<IInputHandlerCallback::InputType>& out);
+	void doCallback(std::vector<std::pair<IInputHandlerCallback::InputState,IInputHandlerCallback::InputType>>& events);
 
 	std::mutex		   mMutex;
 
 	std::vector<IInputHandlerCallback*>
 		mInputHandlerCallbacks;
 
+	std::vector<std::pair<unsigned short, IInputHandlerCallback::InputType>> mXInputMap;
+
 	unsigned int	mXInputPrevPktNum;
 	unsigned short	mXInputPrevButtonState;
+
+	std::vector<std::pair<char, IInputHandlerCallback::InputType>>			 mKeyboardMap;
+
+	std::vector<char> mKeyboardPrevState;
 };

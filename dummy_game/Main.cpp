@@ -59,7 +59,7 @@ private:
 
 class InputEventCb : public IInputHandler::IInputHandlerCallback {
 public:
-	void onEvent(InputState state, std::vector<InputType>& type)
+	void onEvent(std::vector<std::pair<InputState, InputType>>& events)
 	{
 		//Utility::printLog("input(%d / %d)", ev, pushed);
 	}
@@ -113,13 +113,15 @@ public:
 		DrawCircle(mX, mY, 10, SKYBLUE);
 	};
 
-	void onEvent(InputState state, std::vector<InputType>& types)
+	void onEvent(std::vector<std::pair<InputState, InputType>>& events)
 	{
 		std::lock_guard<std::mutex> lock(mMutex);
 
+		for (auto event : events) {
+			Utility::printLog("MyDot Input(%d / %d)", event.first, event.second);
+			InputState state = event.first;
+			InputType  type  = event.second;
 
-		for (InputType type : types) {
-			Utility::printLog("MyDot Input(%d / %d)", state, type);
 			if (state == PUSHED || state == PRESSED) {
 				if (type == UP) {
 					mY -= 5;

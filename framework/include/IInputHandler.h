@@ -1,19 +1,31 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 class IInputHandler {
 public:
 	class IInputHandlerCallback {
 	public:
 		typedef enum {
-			Down,
-			Pressed,
-			Release,
-			Unknown
-		} Action;
+			PUSHED,
+			PRESSED,
+			RELEASED,
+			UNKNOWN
+		} InputState;
 
-		virtual void onEvent(Action action, unsigned short pushed) = 0;
+		typedef enum {
+			UP      = 0x01,
+			DOWN	= 0x02, 
+			LEFT	= 0x03, 
+			RIGHT	= 0x04, 
+			ACTION1 = 0x05,
+			ACTION2 = 0x06,
+			ACTION3 = 0x07,
+			ACTION4 = 0x08
+		} InputType;
+
+		virtual void onEvent(InputState state, std::vector<InputType>& type) = 0;
 
 	protected:
 		IInputHandlerCallback() = default;

@@ -51,26 +51,30 @@ void InputHandler::handleXInput()
 	if (mXInputCurrState.dwPacketNumber != mXInputPrevPktNum || 0 != mXInputPrevButtonState)
 	{
 		for (unsigned int btnBit = 0x0001; btnBit > 0; btnBit = (btnBit << 1)) {
-			IInputHandlerCallback::Action action = IInputHandlerCallback::Action::Unknown;
+			IInputHandlerCallback::InputState state = IInputHandlerCallback::InputState::UNKNOWN;
 
 			unsigned int curr = mXInputCurrState.Gamepad.wButtons & btnBit;
 			unsigned int prev = mXInputPrevButtonState & btnBit;
 
 			if (0 == prev && 0 != curr) {
-				action = IInputHandlerCallback::Action::Down;
+				state = IInputHandlerCallback::InputState::PUSHED;
 			}
 
 			if (0 != prev && 0 != curr) {
-				action = IInputHandlerCallback::Action::Pressed;
+				state = IInputHandlerCallback::InputState::PRESSED;
 			}
 
 			if (0 != prev && 0 == curr) {
-				action = IInputHandlerCallback::Action::Release;
+				state = IInputHandlerCallback::InputState::RELEASED;
 			}
 
-			if (action != IInputHandlerCallback::Action::Unknown) {
+			if (state != IInputHandlerCallback::InputState::UNKNOWN) {
+				std::vector<IInputHandlerCallback::InputType> types;
+
+				convXInputType(btnBit, types);
+
 				for (IInputHandlerCallback* frameSyncCallback : mInputHandlerCallbacks) {
-					frameSyncCallback->onEvent(action, btnBit);
+					frameSyncCallback->onEvent(state, types);
 				}
 			}
 
@@ -84,4 +88,41 @@ void InputHandler::handleXInput()
 void InputHandler::handleKeyboard()
 {
 
+}
+
+void InputHandler::convXInputType(unsigned short in, std::vector<IInputHandlerCallback::InputType>& out)
+{
+	out.clear();
+
+	if (in & XINPUT_GAMEPAD_DPAD_UP) {
+		out.push_back(IInputHandlerCallback::UP);
+	}
+
+	if (in & XINPUT_GAMEPAD_DPAD_DOWN) {
+		out.push_back(IInputHandlerCallback::DOWN);
+	}
+
+	if (in & XINPUT_GAMEPAD_DPAD_LEFT) {
+		out.push_back(IInputHandlerCallback::LEFT);
+	}
+
+	if (in & XINPUT_GAMEPAD_DPAD_RIGHT) {
+		out.push_back(IInputHandlerCallback::RIGHT);
+	}
+
+	if (in & XINPUT_GAMEPAD_A) {
+		out.push_back(IInputHandlerCallback::ACTION1);
+	}
+
+	if (in & XINPUT_GAMEPAD_B) {
+		out.push_back(IInputHandlerCallback::ACTION2);
+	}
+
+	if (in & XINPUT_GAMEPAD_X) {
+		out.push_back(IInputHandlerCallback::ACTION3);
+	}
+
+	if (in & XINPUT_GAMEPAD_Y) {
+		out.push_back(IInputHandlerCallback::ACTION4);
+	}
 }

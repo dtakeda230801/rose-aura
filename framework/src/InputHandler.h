@@ -20,6 +20,8 @@ private:
 	void handleXInput();
 	void handleKeyboard();
 
+	void convXInputType(unsigned short in, std::vector<IInputHandlerCallback::InputType>& out);
+
 	std::mutex		   mMutex;
 
 	std::vector<IInputHandlerCallback*>

@@ -59,9 +59,9 @@ private:
 
 class InputEventCb : public IInputHandler::IInputHandlerCallback {
 public:
-	void onEvent(Action action, unsigned short pushed)
+	void onEvent(InputState state, std::vector<InputType>& type)
 	{
-		Utility::printLog("input(%d / %d)", action, pushed);
+		//Utility::printLog("input(%d / %d)", ev, pushed);
 	}
 	InputEventCb()  = default;
 	~InputEventCb() = default;
@@ -113,33 +113,37 @@ public:
 		DrawCircle(mX, mY, 10, SKYBLUE);
 	};
 
-	void onEvent(Action action, unsigned short pushed)
+	void onEvent(InputState state, std::vector<InputType>& types)
 	{
 		std::lock_guard<std::mutex> lock(mMutex);
-		Utility::printLog("MyDot Input(%d / %d)", action, pushed);
 
-		if (action == Down || action == Pressed) {
-			if (pushed == 0x0001) {
-				mY -= 5;
+
+		for (InputType type : types) {
+			Utility::printLog("MyDot Input(%d / %d)", state, type);
+			if (state == PUSHED || state == PRESSED) {
+				if (type == UP) {
+					mY -= 5;
+				}
+				else if (type == DOWN) {
+					mY += 5;
+				}
+				else if (type == LEFT) {
+					mX -= 5;
+				}
+				else if (type == RIGHT) {
+					mX += 5;
+				}
 			}
-			else if (pushed == 0x0002) {
-				mY += 5;
-			}
-			else if (pushed == 0x0004) {
-				mX -= 5;
-			}
-			else if (pushed == 0x0008) {
-				mX += 5;
-			}
-		}
-		if (action == Down && pushed == 0x1000) {
-			if (mTextOn) {
-				mTextOn = false;
-				mGraphicsManager.removeRenderer(mTxtRenderer);
-			}
-			else {
-				mTextOn = true;
-				mGraphicsManager.setRenderer(mTxtRenderer);
+
+			if (state == PUSHED && type == ACTION1) {
+				if (mTextOn) {
+					mTextOn = false;
+					mGraphicsManager.removeRenderer(mTxtRenderer);
+				}
+				else {
+					mTextOn = true;
+					mGraphicsManager.setRenderer(mTxtRenderer);
+				}
 			}
 		}
 	}

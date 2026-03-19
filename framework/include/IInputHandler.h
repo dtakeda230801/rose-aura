@@ -11,18 +11,19 @@ public:
 			PUSHED,
 			PRESSED,
 			RELEASED,
-			UNKNOWN
+			UNKNOWN_STATE
 		} InputState;
 
 		typedef enum {
-			UP      = 0x01,
-			DOWN	= 0x02, 
-			LEFT	= 0x03, 
-			RIGHT	= 0x04, 
-			ACTION1 = 0x05,
-			ACTION2 = 0x06,
-			ACTION3 = 0x07,
-			ACTION4 = 0x08
+			UP			 = 0x01,
+			DOWN		 = 0x02, 
+			LEFT		 = 0x03, 
+			RIGHT		 = 0x04, 
+			ACTION1		 = 0x05,
+			ACTION2		 = 0x06,
+			ACTION3		 = 0x07,
+			ACTION4		 = 0x08,
+			UNKNOWN_TYPE = 0xFF
 		} InputType;
 
 		virtual void onEvent(std::vector<std::pair<InputState,InputType>>& events) = 0;

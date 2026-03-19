@@ -24,6 +24,8 @@ int InputHandler::update()
 
 int InputHandler::setConf(std::string conf)
 {
+	Utility::printLog("InputHandler::setConf");
+
 	std::lock_guard<std::mutex> lock(mMutex);
 
 	mXInputMap.clear();
@@ -82,7 +84,7 @@ void InputHandler::handleXInput()
 	if (xInputCurrState.dwPacketNumber != mXInputPrevPktNum || 0 != mXInputPrevButtonState)
 	{
 		for (unsigned short btnBit = 0x0001; btnBit > 0; btnBit = (btnBit << 1)) {
-			IInputHandlerCallback::InputState state = IInputHandlerCallback::InputState::UNKNOWN;
+			IInputHandlerCallback::InputState state = IInputHandlerCallback::InputState::UNKNOWN_STATE;
 
 			unsigned short curr = xInputCurrState.Gamepad.wButtons & btnBit;
 			unsigned short prev = mXInputPrevButtonState & btnBit;
@@ -99,7 +101,7 @@ void InputHandler::handleXInput()
 				state = IInputHandlerCallback::InputState::RELEASED;
 			}
 
-			if (state != IInputHandlerCallback::InputState::UNKNOWN) {
+			if (state != IInputHandlerCallback::InputState::UNKNOWN_STATE) {
 				for (const auto& mapElm : mXInputMap) {
 					if (mapElm.second == btnBit) {
 						events.push_back(std::pair<IInputHandlerCallback::InputState, IInputHandlerCallback::InputType>(state, mapElm.first));
@@ -194,6 +196,7 @@ InputHandler::IInputHandlerCallback::InputType InputHandler::convTypeFromJSONEnt
 		return IInputHandlerCallback::ACTION4;
 	}
 
+	return IInputHandlerCallback::UNKNOWN_TYPE;
 }
 
 

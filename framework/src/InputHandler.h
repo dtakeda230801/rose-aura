@@ -21,17 +21,20 @@ private:
 	void handleKeyboard();
 	void doCallback(std::vector<std::pair<IInputHandlerCallback::InputState,IInputHandlerCallback::InputType>>& events);
 
+	IInputHandlerCallback::InputType
+		convTypeFromJSONEntry(std::string);
+
 	std::mutex		   mMutex;
 
 	std::vector<IInputHandlerCallback*>
 		mInputHandlerCallbacks;
 
-	std::vector<std::pair<unsigned short, IInputHandlerCallback::InputType>> mXInputMap;
+	std::vector<std::pair<IInputHandlerCallback::InputType, unsigned short>> mXInputMap;
 
 	unsigned int	mXInputPrevPktNum;
 	unsigned short	mXInputPrevButtonState;
 
-	std::vector<std::pair<char, IInputHandlerCallback::InputType>>			 mKeyboardMap;
+	std::vector<std::pair<IInputHandlerCallback::InputType, char>>			 mKeyboardMap;
 
 	std::vector<char> mKeyboardPrevState;
 };

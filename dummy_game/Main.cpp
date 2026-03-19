@@ -1,5 +1,10 @@
 #include <memory>
 #include <mutex>
+#include <iostream>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <string>
 
 #include "RoseAura.h"
 
@@ -171,8 +176,24 @@ private:
 	IObjectRenderer*	mTxtRenderer;
 };
 
+std::string readInputConf()
+{
+	std::ifstream file("dummy_game\\input_map.json");
 
-int main() {
+	if (!file) {
+		Utility::printLog("can not read input_map.json");
+		return "";
+	}
+
+	std::stringstream buffer;
+	buffer << file.rdbuf();
+
+	return buffer.str();
+}
+
+
+int main()
+{
 	{
 		Utility::printLog("TEST");
 
@@ -198,6 +219,7 @@ int main() {
 		centralLooper.registerFrameSyncCallback(fsync);
 		//	inputHandler.registerCallback(inEvCb);
 		inputHandler.registerCallback(myDot);
+		inputHandler.setConf(readInputConf());
 
 		graphicsManager.setRenderer(bgRenderer);
 		graphicsManager.setRenderer(txtRenderer);

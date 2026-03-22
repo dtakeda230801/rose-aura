@@ -3,29 +3,22 @@
 class IWorldNavigator {
 public:
 	typedef struct {
-		int mXMin;
-		int mYMin;
-		int mZMin;
-		int mXMax;
-		int mYMax;
-		int mZMax;
+		int mX;
+		int mY;
+		int mZ;
+	} Vec3;
+
+	typedef struct {
+		Vec3 mMin;
+		Vec3 mMax;
+		Vec3 mNonScrollRange;
 		unsigned int mRate;
 	} SpaceConfig;
 
 	typedef struct {
-		int mXMin;
-		int mYMin;
-		int mZMin;
-		int mXMax;
-		int mYMax;
-		int mZMax;
+		Vec3 mMin;
+		Vec3 mMax;
 	} ActiveSpace;
-
-	typedef struct {
-		int mX;
-		int mY;
-		int mZ;
-	} Location;
 
 	typedef unsigned int WORLD_ID;
 

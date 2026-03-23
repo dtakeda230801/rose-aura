@@ -27,16 +27,18 @@ public:
 	public:
 		virtual bool checkApproaching(WORLD_ID worldId, EVENT_ID eventId, Vec3& position) = 0;
 
-		IApproachingCallback() = default;
 		virtual ~IApproachingCallback() = default;
+	protected:
+		IApproachingCallback() = default;
 	};
 
 	class IEventCallback {
 	public:
 		virtual void onEvent(WORLD_ID worldId, EVENT_ID eventId) = 0;
 
-		IEventCallback() = default;
 		virtual ~IEventCallback() = default;
+	protected:
+		IEventCallback() = default;
 	};
 
 

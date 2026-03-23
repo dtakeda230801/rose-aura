@@ -7,14 +7,14 @@ class IInputHandler {
 public:
 	class IInputHandlerCallback {
 	public:
-		typedef enum {
+		enum class InputState {
 			PUSHED,
 			PRESSED,
 			RELEASED,
 			UNKNOWN_STATE
-		} InputState;
+		};
 
-		typedef enum {
+		enum class InputType {
 			UP			 = 0x01,
 			DOWN		 = 0x02, 
 			LEFT		 = 0x03, 
@@ -24,7 +24,7 @@ public:
 			ACTION3		 = 0x07,
 			ACTION4		 = 0x08,
 			UNKNOWN_TYPE = 0xFF
-		} InputType;
+		};
 
 		virtual void onEvent(std::vector<std::pair<InputState,InputType>>& events) = 0;
 

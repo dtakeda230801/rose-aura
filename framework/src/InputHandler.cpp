@@ -10,7 +10,6 @@ using json = nlohmann::json;
 
 #pragma comment(lib, "xinput.lib")
 
-
 ////////////////////////////////////
 // APIs
 ////////////////////////////////////
@@ -129,10 +128,10 @@ void InputHandler::handleKeyboard()
 	for (auto mapElm : mKeyboardMap) {
 		if (GetAsyncKeyState(mapElm.second) & 0x8000) {
 			if (std::find(mKeyboardPrevState.begin(), mKeyboardPrevState.end(), mapElm.second) == mKeyboardPrevState.end()) {
-				events.push_back(std::pair<IInputHandlerCallback::InputState, IInputHandlerCallback::InputType>(IInputHandlerCallback::PUSHED, mapElm.first));
+				events.push_back(std::pair<IInputHandlerCallback::InputState, IInputHandlerCallback::InputType>(IInputHandlerCallback::InputState::PUSHED, mapElm.first));
 			}
 			else {
-				events.push_back(std::pair<IInputHandlerCallback::InputState, IInputHandlerCallback::InputType>(IInputHandlerCallback::PRESSED, mapElm.first));
+				events.push_back(std::pair<IInputHandlerCallback::InputState, IInputHandlerCallback::InputType>(IInputHandlerCallback::InputState::PRESSED, mapElm.first));
 			}
 			currState.push_back(mapElm.second);
 		}
@@ -142,7 +141,7 @@ void InputHandler::handleKeyboard()
 		if (std::find(currState.begin(), currState.end(), prevState) == currState.end()) {
 			for (const auto& mapElm : mKeyboardMap) {
 				if (mapElm.second == prevState) {
-					events.push_back(std::pair<IInputHandlerCallback::InputState, IInputHandlerCallback::InputType>(IInputHandlerCallback::RELEASED, mapElm.first));
+					events.push_back(std::pair<IInputHandlerCallback::InputState, IInputHandlerCallback::InputType>(IInputHandlerCallback::InputState::RELEASED, mapElm.first));
 				}
 			}
 		}
@@ -165,38 +164,38 @@ void InputHandler::doCallback(std::vector<std::pair<IInputHandlerCallback::Input
 InputHandler::IInputHandlerCallback::InputType InputHandler::convTypeFromJSONEntry(std::string type)
 {
 	if (type == "UP") {
-		return IInputHandlerCallback::UP;
+		return IInputHandlerCallback::InputType::UP;
 	} 
 
 	if (type == "DOWN") {
-		return IInputHandlerCallback::DOWN;
+		return IInputHandlerCallback::InputType::DOWN;
 	}
 
 	if (type == "LEFT") {
-		return IInputHandlerCallback::LEFT;
+		return IInputHandlerCallback::InputType::LEFT;
 	}
 
 	if (type == "RIGHT") {
-		return IInputHandlerCallback::RIGHT;
+		return IInputHandlerCallback::InputType::RIGHT;
 	}
 
 	if (type == "ACTION1") {
-		return IInputHandlerCallback::ACTION1;
+		return IInputHandlerCallback::InputType::ACTION1;
 	}
 
 	if (type == "ACTION2") {
-		return IInputHandlerCallback::ACTION2;
+		return IInputHandlerCallback::InputType::ACTION2;
 	}
 
 	if (type == "ACTION3") {
-		return IInputHandlerCallback::ACTION3;
+		return IInputHandlerCallback::InputType::ACTION3;
 	}
 
 	if (type == "ACTION4") {
-		return IInputHandlerCallback::ACTION4;
+		return IInputHandlerCallback::InputType::ACTION4;
 	}
 
-	return IInputHandlerCallback::UNKNOWN_TYPE;
+	return IInputHandlerCallback::InputType::UNKNOWN_TYPE;
 }
 
 

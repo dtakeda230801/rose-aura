@@ -7,7 +7,7 @@ public:
 		virtual unsigned int getObjectId() = 0;
 
 		virtual ~Object() = default;
-	private:
+	protected:
 		Object() = default;
 	};
 

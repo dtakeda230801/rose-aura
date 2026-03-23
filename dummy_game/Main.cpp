@@ -95,22 +95,22 @@ public:
 			InputState state = event.first;
 			InputType  type  = event.second;
 
-			if (state == PUSHED || state == PRESSED) {
-				if (type == UP) {
+			if (state == InputState::PUSHED || state == InputState::PRESSED) {
+				if (type == InputType::UP) {
 					mY -= 5;
 				}
-				else if (type == DOWN) {
+				else if (type == InputType::DOWN) {
 					mY += 5;
 				}
-				else if (type == LEFT) {
+				else if (type == InputType::LEFT) {
 					mX -= 5;
 				}
-				else if (type == RIGHT) {
+				else if (type == InputType::RIGHT) {
 					mX += 5;
 				}
 			}
 
-			if (state == PUSHED && type == ACTION1) {
+			if (state == InputState::PUSHED && type == InputType::ACTION1) {
 				if (mTextOn) {
 					mTextOn = false;
 					mGraphicsManager.removeRenderer(mTxtRenderer);

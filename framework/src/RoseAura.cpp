@@ -14,7 +14,7 @@ RoseAuraImpl::RoseAuraImpl()
 	mGraphicsManager	= std::make_unique<GraphicsManager>();
 	mInputHandler		= std::make_unique<InputHandler>();
 	mObjectRepository	= std::make_unique<ObjectRepository>();
-	//mWorldNavigator		= std::make_unique<WorldNavigator>();
+	mWorldNavigator		= std::make_unique<WorldNavigator>();
 }
 
 

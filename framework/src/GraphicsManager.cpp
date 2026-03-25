@@ -37,11 +37,8 @@ void GraphicsManager::setRenderer(IObjectRenderer* renderer)
 void GraphicsManager::removeRenderer(IObjectRenderer* renderer)
 {
 	mMutex.lock();
-	auto target = std::find(mRenderers.begin(), mRenderers.end(), renderer);
-	if (target != mRenderers.end())
-	{
-		mRenderers.erase(target);
-	}
+	mRenderers.erase(
+		std::remove(mRenderers.begin(), mRenderers.end(), 2), mRenderers.end());
 	mMutex.unlock();
 }
 

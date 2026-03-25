@@ -43,10 +43,17 @@ int InputHandler::setConf(std::string conf)
 	return 0;
 }
 
-void InputHandler::registerCallback(IInputHandlerCallback* cb)
+int InputHandler::registerCallback(IInputHandlerCallback* cb)
 {
 	mInputHandlerCallbacks.push_back(cb);
 }
+
+int InputHandler::unregisterCallback(IInputHandlerCallback* cb)
+{
+	mInputHandlerCallbacks.erase(
+		std::remove(mInputHandlerCallbacks.begin(), mInputHandlerCallbacks.end(), 2), mInputHandlerCallbacks.end());
+}
+
 
 InputHandler::InputHandler() :
 	mXInputPrevPktNum(0), mXInputPrevButtonState(0)

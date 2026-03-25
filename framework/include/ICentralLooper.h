@@ -32,6 +32,8 @@ public:
 	//////////////////////////////////////////////////////////
 	virtual int start(int timeOfFrame) = 0;
 	virtual int stop() = 0;
-	virtual int setTask(ITask* task) = 0;
+	virtual int enqueueTask(ITask* task) = 0;
 	virtual int registerFrameSyncCallback(IFrameSyncCallback* cb) = 0;
+	virtual int unregisterFrameSyncCallback(IFrameSyncCallback* cb) = 0;
+
 };

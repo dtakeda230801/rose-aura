@@ -33,7 +33,7 @@ int CentralLooper::stop() {
 	return 0;
 }
 
-int CentralLooper::setTask(ITask* task) {
+int CentralLooper::enqueueTask(ITask* task) {
 	if (!task) {
 		return -1;
 	}
@@ -47,6 +47,13 @@ int CentralLooper::registerFrameSyncCallback(IFrameSyncCallback* cb) {
 	mFrameSyncCallbacks.push_back(cb);
 	return 0;
 }
+
+int CentralLooper::unregisterFrameSyncCallback(IFrameSyncCallback* cb) {
+	mFrameSyncCallbacks.erase(
+		std::remove(mFrameSyncCallbacks.begin(), mFrameSyncCallbacks.end(), 2),	mFrameSyncCallbacks.end() );
+	return 0;
+}
+
 
 CentralLooper::CentralLooper() :
 	mStarted(false), mTimeOfFrame(0)

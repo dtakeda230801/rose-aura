@@ -34,7 +34,7 @@ public:
 	//IFrameSyncCallback
 	int sync()
 	{
-		mCentralLooper.setTask(this);
+		mCentralLooper.enqueueTask(this);
 		return 0;
 	}
 
@@ -179,7 +179,7 @@ int main()
 
 		////////////////////////////////////////////
 		centralLooper.registerFrameSyncCallback(inputTask);
-		centralLooper.setTask(inputTask);
+		centralLooper.enqueueTask(inputTask);
 
 		inputHandler.setConf(readInputConf());
 		inputHandler.registerCallback(dotRenderer);

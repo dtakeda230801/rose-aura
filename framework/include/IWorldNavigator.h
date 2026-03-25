@@ -61,4 +61,5 @@ public:
 
 	virtual void		 registerApproachingCallback(IApproachingCallback* approachingCallback) = 0;
 	virtual void		 registerEventCallback() = 0;
+	virtual void		 registerActiveSpaceUpdate() = 0;
 };

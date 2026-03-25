@@ -22,6 +22,8 @@ public:
 
 	void		 registerApproachingCallback(IApproachingCallback* approachingCallback);
 	void		 registerEventCallback();
+	void		 registerActiveSpaceUpdate();
+
 
 	WorldNavigator() = default;
 	virtual ~WorldNavigator() = default;

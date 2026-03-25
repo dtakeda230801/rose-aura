@@ -54,7 +54,13 @@ int WorldNavigator::removeEvent(EVENT_ID ev)
 
 void WorldNavigator::registerApproachingCallback(IApproachingCallback* approachingCallback)
 {
+
 }
 void WorldNavigator::registerEventCallback()
 {
 }
+
+void WorldNavigator::registerActiveSpaceUpdate()
+{
+}
+

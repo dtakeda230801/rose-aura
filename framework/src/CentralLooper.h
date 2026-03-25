@@ -13,8 +13,10 @@ public:
 	//////////////////////////////////////////////////////////
 	int start(int timeOfFrame);
 	int stop();
-	int setTask(ITask* task);
+	int enqueueTask(ITask* task);
 	int registerFrameSyncCallback(IFrameSyncCallback* cb);
+	int unregisterFrameSyncCallback(IFrameSyncCallback* cb);
+
 
 	CentralLooper();
 	virtual ~CentralLooper() = default;

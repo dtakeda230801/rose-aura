@@ -12,7 +12,9 @@ public:
 	//////////////////////////////////////////////////////////
 	int  update();
 	int  setConf(std::string conf);
-	void registerCallback(IInputHandlerCallback* cb);
+	int registerCallback(IInputHandlerCallback* cb);
+	int unregisterCallback(IInputHandlerCallback* cb);
+
 
 	InputHandler();
 	virtual ~InputHandler() = default;

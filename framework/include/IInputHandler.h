@@ -36,9 +36,8 @@ public:
 	//////////////////////////////////////////////////////////
 	// APIs
 	//////////////////////////////////////////////////////////
-	virtual int  update()	= 0;
-	virtual int  setConf(std::string conf)	= 0;
+	virtual int update()	= 0;
+	virtual int setConf(std::string conf)	= 0;
 	virtual int registerCallback(IInputHandlerCallback* cb) = 0;
 	virtual int unregisterCallback(IInputHandlerCallback* cb) = 0;
-
 };

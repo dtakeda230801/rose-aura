@@ -25,7 +25,11 @@ int CentralLooper::stop() {
 	if (!mStarted) {
 		return -1;
 	}
-	mStarted = false;
+
+	{
+		std::lock_guard<std::mutex> lock(mMutex);
+		mStarted = false;
+	}
 
 	if (mThread.joinable()) {
 		mThread.join();
@@ -44,13 +48,15 @@ int CentralLooper::enqueueTask(ITask* task) {
 }
 
 int CentralLooper::registerFrameSyncCallback(IFrameSyncCallback* cb) {
+	std::lock_guard<std::mutex> lock(mMutex);
 	mFrameSyncCallbacks.push_back(cb);
 	return 0;
 }
 
 int CentralLooper::unregisterFrameSyncCallback(IFrameSyncCallback* cb) {
+	std::lock_guard<std::mutex> lock(mMutex);
 	mFrameSyncCallbacks.erase(
-		std::remove(mFrameSyncCallbacks.begin(), mFrameSyncCallbacks.end(), 2),	mFrameSyncCallbacks.end() );
+		std::remove(mFrameSyncCallbacks.begin(), mFrameSyncCallbacks.end(), cb),	mFrameSyncCallbacks.end() );
 	return 0;
 }
 

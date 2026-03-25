@@ -46,12 +46,14 @@ int InputHandler::setConf(std::string conf)
 int InputHandler::registerCallback(IInputHandlerCallback* cb)
 {
 	mInputHandlerCallbacks.push_back(cb);
+	return 0;
 }
 
 int InputHandler::unregisterCallback(IInputHandlerCallback* cb)
 {
 	mInputHandlerCallbacks.erase(
-		std::remove(mInputHandlerCallbacks.begin(), mInputHandlerCallbacks.end(), 2), mInputHandlerCallbacks.end());
+		std::remove(mInputHandlerCallbacks.begin(), mInputHandlerCallbacks.end(), cb), mInputHandlerCallbacks.end());
+	return 0;
 }
 
 

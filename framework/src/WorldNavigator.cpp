@@ -1,6 +1,6 @@
 #include "WorldNavigator.h"
 
-WorldNavigator::WORLD_ID	 WorldNavigator::createWorld(SpaceConfig& space)
+WorldNavigator::WORLD_ID	 WorldNavigator::createWorld(WorldConfig& space)
 {
 	return 0;
 }
@@ -42,12 +42,12 @@ WorldNavigator::Vec3& WorldNavigator::getPosition()
 	return a;
 }
 
-int	WorldNavigator::registerEvent(EVENT_ID ev, Vec3& location, float distance)
+int	WorldNavigator::registerEvent(TRIGGER_ID trigger, Vec3& location, float distance)
 {
 	return 0;
 }
 
-int WorldNavigator::removeEvent(EVENT_ID ev)
+int WorldNavigator::removeEvent(TRIGGER_ID trigger)
 {
 	return 0;
 }
@@ -56,11 +56,28 @@ void WorldNavigator::registerApproachingCallback(IApproachingCallback* approachi
 {
 
 }
-void WorldNavigator::registerEventCallback()
+
+void WorldNavigator::unregisterApproachingCallback(IApproachingCallback* approachingCallback)
 {
+
 }
 
-void WorldNavigator::registerActiveSpaceUpdate()
+void WorldNavigator::registerTriggerCallback(ITriggerCallback* triggerCallback)
 {
+
 }
 
+void WorldNavigator::unregisterTriggerCallback(ITriggerCallback* triggerCallback)
+{
+
+}
+
+void WorldNavigator::registerActiveSpaceUpdate(IActiveSpaceCallback* activeSpaceCallback)
+{
+
+}
+
+void WorldNavigator::unregisterActiveSpaceUpdate(IActiveSpaceCallback* activeSpaceCallback)
+{
+
+}

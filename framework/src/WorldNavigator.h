@@ -15,20 +15,20 @@ public:
 	WORLD_ID	 changeWorld(WORLD_ID id);
 	ActiveSpace& getActiveSpace();
 	int 		 setActiveSpace(ActiveSpace& space);
-	int          updatePosition(Vec3& center);
+	int          updatePosition(Vec3& pos);
 	Vec3&		 getPosition();
 
-	int			 registerEvent(TRIGGER_ID trigger, Vec3& location, float distance);
-	int			 removeEvent(TRIGGER_ID trigger);
+	int			 registerTrigger(TRIGGER_ID id, Vec3& location, float distance);
+	int			 removeTrigger(TRIGGER_ID id);
 
-	void		 registerApproachingCallback(IApproachingCallback* approachingCallback);
-	void		 unregisterApproachingCallback(IApproachingCallback* approachingCallback);
-	void		 registerTriggerCallback(ITriggerCallback* triggerCallback);
-	void		 unregisterTriggerCallback(ITriggerCallback* triggerCallback);
-	void		 registerActiveSpaceUpdate(IActiveSpaceCallback* activeSpaceCallback);
-	void		 unregisterActiveSpaceUpdate(IActiveSpaceCallback* activeSpaceCallback);
+	void		 registerApproachingCallback(IApproachingCallback* cb);
+	void		 unregisterApproachingCallback(IApproachingCallback* cb);
+	void		 registerTriggerCallback(ITriggerCallback* cb);
+	void		 unregisterTriggerCallback(ITriggerCallback* cb);
+	void		 registerActiveSpaceUpdate(IActiveSpaceCallback* cb);
+	void		 unregisterActiveSpaceUpdate(IActiveSpaceCallback* cb);
 
-	WorldNavigator() = default;
+	WorldNavigator();
 	virtual ~WorldNavigator() = default;
 private:
 	struct World {
@@ -37,9 +37,16 @@ private:
 		Vec3		mPosition;
 	};
 
-	World&				mCurrentWorld;
+	struct Trigger {
+		TRIGGER_ID	mId;
+		Vec3		mLocation;
+		float		mDistance;
+	};
 
-	std::vector<World>	mWorlds;
+	World*					mCurrentWorld;
+
+	std::vector<World>		mWorlds;
+	std::vector<Trigger>	mTriggers;
 
 	std::vector<IApproachingCallback*>	mApproachingCallbacks;
 	std::vector<ITriggerCallback*>		mTriggerCallbacks;

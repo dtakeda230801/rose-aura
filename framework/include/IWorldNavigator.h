@@ -20,7 +20,7 @@ public:
 		ActiveSpace mActiveSpace;
 	} WorldConfig;
 
-	using WORLD_ID = unsigned int;
+	using WORLD_ID   = unsigned int;
 	using TRIGGER_ID = unsigned int;
 
 	class IApproachingCallback {
@@ -61,17 +61,17 @@ public:
 	virtual WORLD_ID	 changeWorld(WORLD_ID id)	        = 0;
 	virtual ActiveSpace& getActiveSpace()					= 0;
 	virtual int 		 setActiveSpace(ActiveSpace& space) = 0;
-	virtual int          updatePosition(Vec3& center)		= 0;
+	virtual int          updatePosition(Vec3& pos)		= 0;
 	virtual Vec3&		 getPosition()						= 0;
 
-	virtual int			 registerTrigger(TRIGGER_ID trigger, Vec3& location, float distance) = 0;
-	virtual int			 removeTrigger(TRIGGER_ID trigger)	= 0;
+	virtual int			 registerTrigger(TRIGGER_ID id, Vec3& location, float distance) = 0;
+	virtual int			 removeTrigger(TRIGGER_ID id)	= 0;
 
-	virtual void		 registerApproachingCallback(IApproachingCallback* approachingCallback) = 0;
-	virtual void		 unregisterApproachingCallback(IApproachingCallback* approachingCallback) = 0;
-	virtual void		 registerTriggerCallback(ITriggerCallback* triggerCallback) = 0;
-	virtual void		 unregisterTriggerCallback(ITriggerCallback* triggerCallback) = 0;
-	virtual void		 registerActiveSpaceUpdate(IActiveSpaceCallback* activeSpaceCallback) = 0;
-	virtual void		 unregisterActiveSpaceUpdate(IActiveSpaceCallback* activeSpaceCallback) = 0;
+	virtual void		 registerApproachingCallback(IApproachingCallback* cb) = 0;
+	virtual void		 unregisterApproachingCallback(IApproachingCallback* cb) = 0;
+	virtual void		 registerTriggerCallback(ITriggerCallback* cb) = 0;
+	virtual void		 unregisterTriggerCallback(ITriggerCallback* cb) = 0;
+	virtual void		 registerActiveSpaceUpdate(IActiveSpaceCallback* cb) = 0;
+	virtual void		 unregisterActiveSpaceUpdate(IActiveSpaceCallback* cb) = 0;
 };
 

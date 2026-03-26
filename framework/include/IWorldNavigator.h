@@ -56,9 +56,8 @@ public:
 	//////////////////////////////////////////////////////////
 	// APIs
 	//////////////////////////////////////////////////////////
-	virtual WORLD_ID	 createWorld(SpaceConfig& space)    = 0;
+	virtual WORLD_ID	 createWorld(WorldConfig& space)    = 0;
 	virtual WORLD_ID	 getCurrentWorld()				    = 0;
-	virtual int 		 setCurrentWorld(WORLD_ID id)       = 0;
 	virtual WORLD_ID	 changeWorld(WORLD_ID id)	        = 0;
 	virtual ActiveSpace& getActiveSpace()					= 0;
 	virtual int 		 setActiveSpace(ActiveSpace& space) = 0;

@@ -12,7 +12,6 @@ public:
 	//////////////////////////////////////////////////////////
 	WORLD_ID	 createWorld(WorldConfig& space);
 	WORLD_ID	 getCurrentWorld();
-	int 		 setCurrentWorld(WORLD_ID id);
 	WORLD_ID	 changeWorld(WORLD_ID id);
 	ActiveSpace& getActiveSpace();
 	int 		 setActiveSpace(ActiveSpace& space);
@@ -38,10 +37,9 @@ private:
 		Vec3		mPosition;
 	};
 
-	World				mCurrentWorld;
+	World&				mCurrentWorld;
 
 	std::vector<World>	mWorlds;
-
 
 	std::vector<IApproachingCallback*>	mApproachingCallbacks;
 	std::vector<ITriggerCallback*>		mTriggerCallbacks;

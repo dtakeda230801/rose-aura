@@ -1,23 +1,34 @@
 #include "WorldNavigator.h"
 
-WorldNavigator::WORLD_ID	 WorldNavigator::createWorld(WorldConfig& space)
+WorldNavigator::WORLD_ID	 WorldNavigator::createWorld(WorldConfig& conf)
 {
-	return 0;
+	unsigned int worldId = mWorlds.size() + 1;
+	Vec3 position = { 0,0,0 };
+
+	mWorlds.emplace_back(worldId, conf, position);
+
+	if (mWorlds.size() == 1) {
+		mCurrentWorld = mWorlds[0];
+	}
+
+	return worldId;
 }
 
 WorldNavigator::WORLD_ID	 WorldNavigator::getCurrentWorld()
 {
-	return 0;
-}
-
-int WorldNavigator::setCurrentWorld(WORLD_ID id)
-{
-	return 0;
+	return mCurrentWorld.mId;
 }
 
 WorldNavigator::WORLD_ID	 WorldNavigator::changeWorld(WORLD_ID id)
 {
-	return 0;
+	for (auto world : mWorlds) {
+		if (world.mId == id) {
+			mCurrentWorld = world;
+			return 0;
+		}
+	}
+
+	return -1;
 }
 
 WorldNavigator::ActiveSpace& WorldNavigator::getActiveSpace()

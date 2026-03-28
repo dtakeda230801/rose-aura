@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="DummyGame">
-      <UniqueIdentifier>{419078e0-2179-47cd-a58e-3e0261270e65}</UniqueIdentifier>
-    </Filter>
     <Filter Include="RoseAura Interface">
       <UniqueIdentifier>{162150b2-d62e-4c31-897a-22208cdc693f}</UniqueIdentifier>
     </Filter>
@@ -38,9 +35,6 @@
     </ClCompile>
     <ClCompile Include="framework\src\WorldNavigator.cpp">
       <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="dummy_game\Main.cpp">
-      <Filter>DummyGame</Filter>
     </ClCompile>
     <ClCompile Include="framework\src\RoseAura.cpp">
       <Filter>ソース ファイル</Filter>
@@ -88,7 +82,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="dummy_game\input_map.json" />
     <None Include="vcpkg.json" />
   </ItemGroup>
 </Project>

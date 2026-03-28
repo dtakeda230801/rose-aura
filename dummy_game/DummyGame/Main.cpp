@@ -146,7 +146,7 @@ private:
 
 std::string readInputConf()
 {
-	std::ifstream file("dummy_game\\input_map.json");
+	std::ifstream file("input_map.json");
 
 	if (!file) {
 		Utility::printLog("can not read input_map.json");

@@ -8,6 +8,9 @@
 ////////////////////////////////////
 void GraphicsManager::runUntilClosed()
 {
+	InitWindow(800, 450, "Rose Aura");
+	SetTargetFPS(60);
+
 	while (!WindowShouldClose())
 	{
 		BeginDrawing();
@@ -44,8 +47,6 @@ void GraphicsManager::removeRenderer(IObjectRenderer* renderer)
 
 GraphicsManager::GraphicsManager()
 {
-	InitWindow(800, 450, "Rose Aura");
-	SetTargetFPS(60);
 }
 
 ////////////////////////////////////

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <mutex>
 
 #include "IWorldNavigator.h"
 
@@ -12,30 +13,32 @@ public:
 	//////////////////////////////////////////////////////////
 	WORLD_ID	 createWorld(WorldConfig& space);
 	WORLD_ID	 getCurrentWorld();
-	WORLD_ID	 changeWorld(WORLD_ID id);
-	ActiveSpace& getActiveSpace();
-	int 		 setActiveSpace(ActiveSpace& space);
-	int          updatePosition(Vec3& pos);
-	Vec3&		 getPosition();
+	RARetCode	 changeWorld(WORLD_ID id);
+	Bounds		 getActiveSpace();
+	Vec3         getActiveSpacePosition();
+	RARetCode    moveActiveSpace(Vec3& pos);
+	void		 resetActiveSpace();
+	RARetCode    movePosition(Vec3& pos);
+	Vec3		 getPosition();
 
-	int			 registerTrigger(TRIGGER_ID id, Vec3& location, float distance);
-	int			 removeTrigger(TRIGGER_ID id);
+	RARetCode	 registerTrigger(TRIGGER_ID id, Vec3& location, float distance);
+	RARetCode	 removeTrigger(TRIGGER_ID id);
 
-	void		 registerApproachingCallback(IApproachingCallback* cb);
-	void		 unregisterApproachingCallback(IApproachingCallback* cb);
-	void		 registerTriggerCallback(ITriggerCallback* cb);
-	void		 unregisterTriggerCallback(ITriggerCallback* cb);
-	void		 registerActiveSpaceUpdate(IActiveSpaceCallback* cb);
-	void		 unregisterActiveSpaceUpdate(IActiveSpaceCallback* cb);
+	RARetCode	 registerTriggerCallback(ITriggerCallback* cb);
+	RARetCode	 unregisterTriggerCallback(ITriggerCallback* cb);
+	RARetCode	 registerActiveSpaceUpdate(IActiveSpaceCallback* cb);
+	RARetCode	 unregisterActiveSpaceUpdate(IActiveSpaceCallback* cb);
 
 	WorldNavigator();
 	virtual ~WorldNavigator() = default;
 private:
-	struct World {
-		WORLD_ID	mId;
-		WorldConfig mWorldCongig;
-		Vec3		mPosition;
-	};
+	float  calcDistance(int a, int b);
+	Vec3   calcCenter(Bounds& bounds);
+	Bounds calcBounds(Vec3& center, Extent& range);
+	bool   fitWithin(Bounds& base, Bounds& target);
+	bool   fitWithin(Bounds& base, Vec3& target);
+	Vec3   adjustPosition(Bounds& base, Vec3& current, Vec3& next);
+	int    checkCrossing(int max, int min, int current, int next);
 
 	struct Trigger {
 		TRIGGER_ID	mId;
@@ -43,12 +46,27 @@ private:
 		float		mDistance;
 	};
 
-	World*					mCurrentWorld;
+	struct World {
+		WORLD_ID	mId;
+		Bounds      mWorldSpace;
+		Extent      mActiveRange;
+		Bounds      mActiveSpace;
+		Extent		mNonScrollRange;
+		Bounds      mNonScrollSpace;
+		bool        mEnableFollowing;
+		bool		mLimitScrolling;
+		Vec3		mPosition;
+		Vec3        mScrollPosition;
+
+		std::vector<Trigger>
+					mTriggers;
+	};
+
+	std::mutex      mMutex;
 
 	std::vector<World>		mWorlds;
-	std::vector<Trigger>	mTriggers;
+	World*					mCurrentWorld;
 
-	std::vector<IApproachingCallback*>	mApproachingCallbacks;
 	std::vector<ITriggerCallback*>		mTriggerCallbacks;
 	std::vector<IActiveSpaceCallback*>	mActiveSpaceCallbacks;
 };

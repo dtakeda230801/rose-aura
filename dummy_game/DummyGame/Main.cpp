@@ -188,7 +188,7 @@ int main()
 		graphicsManager.setRenderer(dotRenderer);
 
 		////////////////////////////////////////////
-		centralLooper.start(60);
+		centralLooper.start(30);
 
 		graphicsManager.runUntilClosed();
 

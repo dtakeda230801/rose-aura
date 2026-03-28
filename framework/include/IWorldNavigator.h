@@ -1,5 +1,9 @@
 #pragma once
 
+#include "RoseAuraReturnCode.h"
+
+using namespace RoseAuraReturnCode;
+
 class IWorldNavigator {
 public:
 	struct Vec3 {
@@ -8,32 +12,32 @@ public:
 		int mZ;
 	};
 
-	struct ActiveSpace {
+	struct Extent {
+		unsigned int mX;
+		unsigned int mY;
+		unsigned int mZ;
+	};
+
+	struct Bounds {
 		Vec3 mMin;
 		Vec3 mMax;
 	};
 
-	typedef struct {
-		Vec3		mMin;
-		Vec3		mMax;
-		Vec3		mNonScrollRange;
-		ActiveSpace mActiveSpace;
-	} WorldConfig;
+	struct WorldConfig {
+		Bounds      mWorldSpace;
+		Extent      mActiveRange;
+		Extent		mNonScrollRange;
+		Vec3        mPosition;
+		bool        mEnableFollowing;
+		bool		mLimitScrolling;
+	};
 
 	using WORLD_ID   = unsigned int;
 	using TRIGGER_ID = unsigned int;
 
-	class IApproachingCallback {
-	public:
-		virtual bool onApproaching(WORLD_ID worldId, TRIGGER_ID eventId, Vec3& position) = 0;
-
-		virtual ~IApproachingCallback() = default;
-	protected:
-		IApproachingCallback() = default;
-	};
-
 	class ITriggerCallback {
 	public:
+		virtual bool onApproaching(WORLD_ID worldId, TRIGGER_ID eventId, Vec3& position) = 0;
 		virtual void onTrigger(WORLD_ID worldId, TRIGGER_ID eventId) = 0;
 
 		virtual ~ITriggerCallback() = default;
@@ -43,35 +47,34 @@ public:
 
 	class IActiveSpaceCallback {
 	public:
-		virtual void onUpdate(WORLD_ID worldId, ActiveSpace activeSpace) = 0;
+		virtual void onUpdate(WORLD_ID worldId, Bounds activeSpace) = 0;
 
 		virtual ~IActiveSpaceCallback() = default;
 	protected:
 		IActiveSpaceCallback() = default;
 	};
 
-
 	#define isValidWorldId(x) 0!=x 
 
 	//////////////////////////////////////////////////////////
 	// APIs
 	//////////////////////////////////////////////////////////
-	virtual WORLD_ID	 createWorld(WorldConfig& space)    = 0;
-	virtual WORLD_ID	 getCurrentWorld()				    = 0;
-	virtual WORLD_ID	 changeWorld(WORLD_ID id)	        = 0;
-	virtual ActiveSpace& getActiveSpace()					= 0;
-	virtual int 		 setActiveSpace(ActiveSpace& space) = 0;
-	virtual int          updatePosition(Vec3& pos)		= 0;
-	virtual Vec3&		 getPosition()						= 0;
+	virtual WORLD_ID  createWorld(WorldConfig& space)    = 0;
+	virtual WORLD_ID  getCurrentWorld()			         = 0;
+	virtual RARetCode changeWorld(WORLD_ID id)	         = 0;
+	virtual Bounds	  getActiveSpace()					 = 0;
+	virtual Vec3      getActiveSpacePosition()			 = 0;
+	virtual RARetCode moveActiveSpace(Vec3& pos)		 = 0;
+	virtual void	  resetActiveSpace()				 = 0;
+	virtual RARetCode movePosition(Vec3& pos)			 = 0;
+	virtual Vec3	  getPosition()						 = 0;
 
-	virtual int			 registerTrigger(TRIGGER_ID id, Vec3& location, float distance) = 0;
-	virtual int			 removeTrigger(TRIGGER_ID id)	= 0;
+	virtual RARetCode registerTrigger(TRIGGER_ID id, Vec3& location, float distance) = 0;
+	virtual RARetCode removeTrigger(TRIGGER_ID id)	= 0;
 
-	virtual void		 registerApproachingCallback(IApproachingCallback* cb) = 0;
-	virtual void		 unregisterApproachingCallback(IApproachingCallback* cb) = 0;
-	virtual void		 registerTriggerCallback(ITriggerCallback* cb) = 0;
-	virtual void		 unregisterTriggerCallback(ITriggerCallback* cb) = 0;
-	virtual void		 registerActiveSpaceUpdate(IActiveSpaceCallback* cb) = 0;
-	virtual void		 unregisterActiveSpaceUpdate(IActiveSpaceCallback* cb) = 0;
+	virtual RARetCode registerTriggerCallback(ITriggerCallback* cb) = 0;
+	virtual RARetCode unregisterTriggerCallback(ITriggerCallback* cb) = 0;
+	virtual RARetCode registerActiveSpaceUpdate(IActiveSpaceCallback* cb) = 0;
+	virtual RARetCode unregisterActiveSpaceUpdate(IActiveSpaceCallback* cb) = 0;
 };
 

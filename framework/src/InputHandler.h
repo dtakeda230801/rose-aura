@@ -15,7 +15,6 @@ public:
 	RARetCode registerCallback(IInputHandlerCallback* cb);
 	RARetCode unregisterCallback(IInputHandlerCallback* cb);
 
-
 	InputHandler();
 	virtual ~InputHandler() = default;
 private:

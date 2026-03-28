@@ -6,24 +6,24 @@
 ////////////////////////////////////
 // APIs
 ////////////////////////////////////
-int CentralLooper::start(int timeOfFrame) {
+RARetCode CentralLooper::start(unsigned int  timeOfFrame)
+{
+
 	if (mStarted) {
-		return -1;
+		return RARetCode::RET_ERR_INVALID_STATE;
 	}
 
-	//TODO check timeOfFrame
-
 	mTimeOfFrame = timeOfFrame;
-
-	mStarted = true;
+	mStarted     = true;
 
 	mThread = std::thread(&CentralLooper::run, this);
-	return 0;
+	return RARetCode::RET_OK;
 }
 
-int CentralLooper::stop() {
+RARetCode CentralLooper::stop()
+{
 	if (!mStarted) {
-		return -1;
+		return RARetCode::RET_ERR_INVALID_STATE;
 	}
 
 	{
@@ -34,32 +34,46 @@ int CentralLooper::stop() {
 	if (mThread.joinable()) {
 		mThread.join();
 	}
-	return 0;
+	return RARetCode::RET_OK;
 }
 
-int CentralLooper::enqueueTask(ITask* task) {
+RARetCode CentralLooper::enqueueTask(ITask* task)
+{
 	if (!task) {
-		return -1;
+		return RARetCode::RET_ERR_INVALID_ARG;
 	}
 
 	std::lock_guard<std::mutex> lock(mMutex);
 	mTaskQueue.push(task);
-	return 0;
+	return RARetCode::RET_OK;
 }
 
-int CentralLooper::registerFrameSyncCallback(IFrameSyncCallback* cb) {
+RARetCode CentralLooper::registerFrameSyncCallback(IFrameSyncCallback* cb)
+{
+	if (!cb) {
+		return RARetCode::RET_ERR_INVALID_ARG;
+	}
+
 	std::lock_guard<std::mutex> lock(mMutex);
 	mFrameSyncCallbacks.push_back(cb);
-	return 0;
+	return RARetCode::RET_OK;
+	;
 }
 
-int CentralLooper::unregisterFrameSyncCallback(IFrameSyncCallback* cb) {
+RARetCode CentralLooper::unregisterFrameSyncCallback(IFrameSyncCallback* cb)
+{
+	if (!cb) {
+		return RARetCode::RET_ERR_INVALID_ARG;
+	}
+
 	std::lock_guard<std::mutex> lock(mMutex);
-	mFrameSyncCallbacks.erase(
-		std::remove(mFrameSyncCallbacks.begin(), mFrameSyncCallbacks.end(), cb),	mFrameSyncCallbacks.end() );
-	return 0;
-}
 
+	if (0 != Utility::eraseVectorElm(mFrameSyncCallbacks, cb)) {
+		return RARetCode::RET_ERR_INVALID_ARG;
+	}
+
+	return RARetCode::RET_OK;
+}
 
 CentralLooper::CentralLooper() :
 	mStarted(false), mTimeOfFrame(0)
@@ -89,7 +103,7 @@ void CentralLooper::run() {
 		}
 
 		auto takenTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - frameStart);
-		int takenTimeInt = takenTime.count() / 1000;
+		int takenTimeInt = static_cast<int>(takenTime.count() / 1000);
 		if (takenTimeInt > mTimeOfFrame) {
 			Utility::printLog("The frame time is over specified time.(%d)", takenTime);
 		}

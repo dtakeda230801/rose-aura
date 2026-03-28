@@ -8,12 +8,11 @@
 class GraphicsManager : public IGraphicsManager
 {
 public:
-	void runUntilClosed();
+	void	  runUntilClosed();
+	RARetCode setRenderer(IObjectRenderer* renderer);
+	RARetCode removeRenderer(IObjectRenderer* renderer);
 
-	void setRenderer(IObjectRenderer* renderer);
-	void removeRenderer(IObjectRenderer* renderer);
-
-	GraphicsManager();
+	GraphicsManager() = default;
 	virtual ~GraphicsManager() = default;
 
 private:

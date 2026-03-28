@@ -1,20 +1,22 @@
 #include "pch.h"
 #include "rose_aura_test.h"
+
 #include "RoseAura.h"
+#include "RoseAuraReturnCode.h"
+
+using namespace RoseAuraReturnCode;
 
 class TestTask : public ICentralLooper::ITask {
 public:
-	int	doTask()
+	void doTask()
 	{
-		return 0;
 	};
 
-	int	finish()
+	void finish()
 	{
-		return 0;
 	};
 
-	std::string getTaskId()
+	std::string getTaskName()
 	{
 		return "Test Task";
 	};
@@ -25,9 +27,8 @@ public:
 
 class TestCallback : public ICentralLooper::IFrameSyncCallback {
 public:
-	int sync()
+	void sync()
 	{
-		return 0;
 	};
 
 	virtual ~TestCallback() = default;
@@ -38,7 +39,7 @@ TEST(testCentralLooper, APITest)
 {
 	ROSE_AURA_TEST_BEGIN;
 	{
-		int ret;
+		RARetCode ret;
 
 		TestTask*		testTask = new TestTask();
 		TestCallback*	testCb	 = new TestCallback();
@@ -47,9 +48,17 @@ TEST(testCentralLooper, APITest)
 
 		ICentralLooper& cl = ra->getCentralLooper();
 
-		cl.enqueueTask(testTask);
-		cl.registerFrameSyncCallback(testCb);
-		cl.unregisterFrameSyncCallback(testCb);
+		EXPECT_EQ(cl.enqueueTask(testTask)					, RARetCode::RET_OK);
+		EXPECT_EQ(cl.enqueueTask(nullptr)					, RARetCode::RET_ERR_INVALID_ARG);
+		EXPECT_EQ(cl.registerFrameSyncCallback(testCb)		, RARetCode::RET_OK);
+		EXPECT_EQ(cl.registerFrameSyncCallback(nullptr)		, RARetCode::RET_ERR_INVALID_ARG);
+		EXPECT_EQ(cl.unregisterFrameSyncCallback(testCb)	, RARetCode::RET_OK);
+		EXPECT_EQ(cl.unregisterFrameSyncCallback(nullptr)	, RARetCode::RET_ERR_INVALID_ARG);
+
+		EXPECT_EQ(cl.stop()		, RARetCode::RET_ERR_INVALID_STATE);
+		EXPECT_EQ(cl.start(100)	, RARetCode::RET_OK);
+		EXPECT_EQ(cl.start(100)	, RARetCode::RET_ERR_INVALID_STATE);
+		EXPECT_EQ(cl.stop()		, RARetCode::RET_OK);;
 
 		delete testTask;
 		delete testCb;

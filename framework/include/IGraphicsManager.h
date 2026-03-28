@@ -1,5 +1,9 @@
 #pragma once
 
+#include "RoseAuraReturnCode.h"
+
+using namespace RoseAuraReturnCode;
+
 class IGraphicsManager {
 public:
 	class IObjectRenderer {
@@ -14,7 +18,7 @@ public:
 	//////////////////////////////////////////////////////////
 	// APIs
 	//////////////////////////////////////////////////////////
-	virtual void runUntilClosed()							= 0;
-	virtual void setRenderer(IObjectRenderer* renderer)		= 0;
-	virtual void removeRenderer(IObjectRenderer* renderer)	= 0;
+	virtual void      runUntilClosed()							= 0;
+	virtual RARetCode setRenderer(IObjectRenderer* renderer)	= 0;
+	virtual RARetCode removeRenderer(IObjectRenderer* renderer)	= 0;
 };

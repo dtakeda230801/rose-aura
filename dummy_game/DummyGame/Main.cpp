@@ -7,35 +7,34 @@
 #include <string>
 
 #include "RoseAura.h"
+#include "RoseAuraReturnCode.h"
 
 #include "Utility.h"
-
 #include "raylib.h"
+
+using namespace RoseAuraReturnCode;
 
 class ContinuousInputTask : 
 	  public ICentralLooper::ITask
 	, public ICentralLooper::IFrameSyncCallback {
 public:
 	//ITask
-	int doTask()
+	void doTask()
 	{
 		mInputHandler.update();
-		return 0;
 	};
-	int finish()
+	void finish()
 	{
-		return 0;
 	};
-	std::string getTaskId()
+	std::string getTaskName()
 	{
 		return "Test Task";
 	}
 
 	//IFrameSyncCallback
-	int sync()
+	void sync()
 	{
 		mCentralLooper.enqueueTask(this);
-		return 0;
 	}
 
 	ContinuousInputTask(ICentralLooper& centralLooper, IInputHandler& inputHandler) :

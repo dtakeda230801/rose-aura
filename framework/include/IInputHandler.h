@@ -2,6 +2,9 @@
 
 #include <string>
 #include <vector>
+#include "RoseAuraReturnCode.h"
+
+using namespace RoseAuraReturnCode;
 
 class IInputHandler {
 public:
@@ -36,8 +39,8 @@ public:
 	//////////////////////////////////////////////////////////
 	// APIs
 	//////////////////////////////////////////////////////////
-	virtual int update()	= 0;
-	virtual int setConf(std::string conf)	= 0;
-	virtual int registerCallback(IInputHandlerCallback* cb) = 0;
-	virtual int unregisterCallback(IInputHandlerCallback* cb) = 0;
+	virtual void      update() = 0;
+	virtual RARetCode setConf(std::string conf) = 0;
+	virtual RARetCode registerCallback(IInputHandlerCallback* cb) = 0;
+	virtual RARetCode unregisterCallback(IInputHandlerCallback* cb) = 0;
 };

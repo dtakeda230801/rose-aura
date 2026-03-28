@@ -80,6 +80,9 @@
     <ClInclude Include="framework\src\InputHandler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="framework\include\RoseAuraReturnCode.h">
+      <Filter>RoseAura Interface</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />

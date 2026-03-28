@@ -13,24 +13,29 @@ using json = nlohmann::json;
 ////////////////////////////////////
 // APIs
 ////////////////////////////////////
-int InputHandler::update()
+void InputHandler::update()
 {
 	std::lock_guard<std::mutex> lock(mMutex);
 	handleXInput();
 	handleKeyboard();
-	return 0;
 }
 
-int InputHandler::setConf(std::string conf)
+RARetCode InputHandler::setConf(std::string conf)
 {
-	Utility::printLog("InputHandler::setConf");
-
 	std::lock_guard<std::mutex> lock(mMutex);
 
 	mXInputMap.clear();
 	mKeyboardMap.clear();
 
-	json j = json::parse(conf);
+	json j;
+
+	try {
+		j = json::parse(conf);
+	}
+	catch (const json::parse_error& e) {
+		Utility::printLog("json perse error:%s", e.what());
+		return RARetCode::RET_ERR_INVALID_ARG;
+	}
 
 	for (auto& [type, values] : j.items())	{
 		std::string xinput   = values["xinput"];
@@ -40,39 +45,36 @@ int InputHandler::setConf(std::string conf)
 		mXInputMap.emplace_back(inputype, static_cast<unsigned short>(std::stoul(xinput, nullptr, 16)));
 		mKeyboardMap.emplace_back(inputype, keyboard[0]);
 	}
-	return 0;
+	return RARetCode::RET_OK;
 }
 
-int InputHandler::registerCallback(IInputHandlerCallback* cb)
+RARetCode InputHandler::registerCallback(IInputHandlerCallback* cb)
 {
+	if (!cb) {
+		return RARetCode::RET_ERR_INVALID_ARG;
+	}
+
+	std::lock_guard<std::mutex> lock(mMutex);
 	mInputHandlerCallbacks.push_back(cb);
-	return 0;
+	return RARetCode::RET_OK;
 }
 
-int InputHandler::unregisterCallback(IInputHandlerCallback* cb)
+RARetCode InputHandler::unregisterCallback(IInputHandlerCallback* cb)
 {
-	mInputHandlerCallbacks.erase(
-		std::remove(mInputHandlerCallbacks.begin(), mInputHandlerCallbacks.end(), cb), mInputHandlerCallbacks.end());
-	return 0;
-}
+	if (!cb) {
+		return RARetCode::RET_ERR_INVALID_ARG;
+	}
 
+	std::lock_guard<std::mutex> lock(mMutex);
+	if (0 != Utility::eraseVectorElm(mInputHandlerCallbacks,cb)) {
+		return RARetCode::RET_ERR_INVALID_ARG;
+	}
+	return RARetCode::RET_OK;
+}
 
 InputHandler::InputHandler() :
 	mXInputPrevPktNum(0), mXInputPrevButtonState(0)
 {
-	/*
-	mXInputMap.emplace_back(IInputHandlerCallback::UP,		XINPUT_GAMEPAD_DPAD_UP);
-	mXInputMap.emplace_back(IInputHandlerCallback::DOWN,	XINPUT_GAMEPAD_DPAD_DOWN);
-	mXInputMap.emplace_back(IInputHandlerCallback::LEFT,	XINPUT_GAMEPAD_DPAD_LEFT);
-	mXInputMap.emplace_back(IInputHandlerCallback::RIGHT,	XINPUT_GAMEPAD_DPAD_RIGHT);
-	mXInputMap.emplace_back(IInputHandlerCallback::ACTION1, XINPUT_GAMEPAD_A);
-
-	mKeyboardMap.emplace_back(IInputHandlerCallback::UP,      'W');
-	mKeyboardMap.emplace_back(IInputHandlerCallback::DOWN,    'S');
-	mKeyboardMap.emplace_back(IInputHandlerCallback::LEFT,    'A');
-	mKeyboardMap.emplace_back(IInputHandlerCallback::RIGHT,   'D');
-	mKeyboardMap.emplace_back(IInputHandlerCallback::ACTION1, 'E');
-	*/
 }
 
 ////////////////////////////////////

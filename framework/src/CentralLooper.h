@@ -5,18 +5,20 @@
 #include <memory>
 
 #include "ICentralLooper.h"
+#include "RoseAuraReturnCode.h"
+
+using namespace RoseAuraReturnCode;
 
 class CentralLooper : public ICentralLooper {
 public:
 	//////////////////////////////////////////////////////////
 	// APIs
 	//////////////////////////////////////////////////////////
-	int start(int timeOfFrame);
-	int stop();
-	int enqueueTask(ITask* task);
-	int registerFrameSyncCallback(IFrameSyncCallback* cb);
-	int unregisterFrameSyncCallback(IFrameSyncCallback* cb);
-
+	RARetCode start(unsigned int  timeOfFrame);
+	RARetCode stop();
+	RARetCode enqueueTask(ITask* task);
+	RARetCode registerFrameSyncCallback(IFrameSyncCallback* cb);
+	RARetCode unregisterFrameSyncCallback(IFrameSyncCallback* cb);
 
 	CentralLooper();
 	virtual ~CentralLooper() = default;

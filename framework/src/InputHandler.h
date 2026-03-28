@@ -10,10 +10,10 @@ public:
 	//////////////////////////////////////////////////////////
 	// APIs
 	//////////////////////////////////////////////////////////
-	int  update();
-	int  setConf(std::string conf);
-	int registerCallback(IInputHandlerCallback* cb);
-	int unregisterCallback(IInputHandlerCallback* cb);
+	void      update();
+	RARetCode setConf(std::string conf);
+	RARetCode registerCallback(IInputHandlerCallback* cb);
+	RARetCode unregisterCallback(IInputHandlerCallback* cb);
 
 
 	InputHandler();

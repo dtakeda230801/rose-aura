@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <cstdarg>
 #include <string>
+#include <vector>
 
 #define FLUORITE_LOG_BUFF_SIZE 1024
 
@@ -17,5 +18,4 @@ void Utility::printLog(const char* format, ...) {
     OutputDebugStringA("[ROSE_AURA DEBUG]");
     OutputDebugStringA(buffer);
     OutputDebugStringA("\n");
-
 }

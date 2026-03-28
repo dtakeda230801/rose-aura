@@ -1,6 +1,9 @@
 #pragma once
 
 #include <string>
+#include "RoseAuraReturnCode.h"
+
+using namespace RoseAuraReturnCode;
 
 class ICentralLooper {
 public:
@@ -9,9 +12,9 @@ public:
 	//////////////////////////////////////////////////////////
 	class ITask {
 	public:
-		virtual int			doTask() = 0;
-		virtual int			finish() = 0;
-		virtual std::string getTaskId() = 0;
+		virtual void doTask() = 0;
+		virtual void finish() = 0;
+		virtual std::string getTaskName() = 0;
 
 		virtual ~ITask() = default;
 	protected:
@@ -20,7 +23,7 @@ public:
 
 	class IFrameSyncCallback {
 	public:
-		virtual int sync() = 0;
+		virtual void sync() = 0;
 
 		virtual ~IFrameSyncCallback() = default;
 	protected:
@@ -30,10 +33,9 @@ public:
 	//////////////////////////////////////////////////////////
 	// APIs
 	//////////////////////////////////////////////////////////
-	virtual int start(int timeOfFrame) = 0;
-	virtual int stop() = 0;
-	virtual int enqueueTask(ITask* task) = 0;
-	virtual int registerFrameSyncCallback(IFrameSyncCallback* cb) = 0;
-	virtual int unregisterFrameSyncCallback(IFrameSyncCallback* cb) = 0;
-
+	virtual RARetCode start(unsigned int timeOfFrame) = 0;
+	virtual RARetCode stop() = 0;
+	virtual RARetCode enqueueTask(ITask* task) = 0;
+	virtual RARetCode registerFrameSyncCallback(IFrameSyncCallback* cb) = 0;
+	virtual RARetCode unregisterFrameSyncCallback(IFrameSyncCallback* cb) = 0;
 };

@@ -42,6 +42,7 @@
     <ClInclude Include="framework\include\IObjectRepository.h" />
     <ClInclude Include="framework\include\IWorldNavigator.h" />
     <ClInclude Include="framework\include\RoseAura.h" />
+    <ClInclude Include="framework\include\RoseAuraReturnCode.h" />
     <ClInclude Include="framework\src\CentralLooper.h" />
     <ClInclude Include="framework\src\GraphicsManager.h" />
     <ClInclude Include="framework\src\InputHandler.h" />

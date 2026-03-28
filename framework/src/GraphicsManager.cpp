@@ -30,23 +30,34 @@ void GraphicsManager::runUntilClosed()
 	CloseWindow();
 }
 
-void GraphicsManager::setRenderer(IObjectRenderer* renderer)
-{
+RARetCode GraphicsManager::setRenderer(IObjectRenderer* renderer)
+{	
+	if (!renderer) {
+		return RARetCode::RET_ERR_INVALID_ARG;
+	}
+
 	mMutex.lock();
 	mRenderers.push_back(renderer);
 	mMutex.unlock();
+
+	return RARetCode::RET_OK;
 }
 
-void GraphicsManager::removeRenderer(IObjectRenderer* renderer)
+RARetCode GraphicsManager::removeRenderer(IObjectRenderer* renderer)
 {
+	if (!renderer) {
+		return RARetCode::RET_ERR_INVALID_ARG;
+	}
+			
+	RARetCode ret = RARetCode::RET_OK;
+
 	mMutex.lock();
-	mRenderers.erase(
-		std::remove(mRenderers.begin(), mRenderers.end(), renderer), mRenderers.end());
+	if (0 != Utility::eraseVectorElm(mRenderers, renderer)) {
+		ret = RARetCode::RET_ERR_INVALID_ARG;
+	}
 	mMutex.unlock();
-}
 
-GraphicsManager::GraphicsManager()
-{
+	return ret;
 }
 
 ////////////////////////////////////

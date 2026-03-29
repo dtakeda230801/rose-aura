@@ -131,7 +131,7 @@ RARetCode WorldNavigator::movePosition(Vec3& pos)
 
 	for (Trigger t : world.mTriggers) {
 		if (t.mDistance >= calcDistance(t.mLocation, world.mPosition)) {
-			if (t.mCb->onApproaching(world.mId, t.mId, t.mLocation)) {
+			if (t.mCb->onApproaching(world.mId, t.mId, world.mPosition, t.mLocation)) {
 				t.mCb->onTrigger(world.mId, t.mId);
 			}
 		}

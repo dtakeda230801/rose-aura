@@ -30,7 +30,7 @@ public:
 
 	class ITriggerCallback {
 	public:
-		virtual bool onApproaching(WORLD_ID worldId, TRIGGER_ID eventId, Vec3& position) = 0;
+		virtual bool onApproaching(WORLD_ID worldId, TRIGGER_ID eventId, Vec3& trigerLocation, Vec3& position) = 0;
 		virtual void onTrigger(WORLD_ID worldId, TRIGGER_ID eventId) = 0;
 
 		virtual ~ITriggerCallback() = default;

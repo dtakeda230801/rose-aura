@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <cmath>
 
 #include "RoseAura.h"
 #include "RoseAuraReturnCode.h"
@@ -19,6 +20,8 @@ using namespace RoseAuraReturnCode;
 
 #define TXT_POS_X 10
 #define TXT_POS_Y 10
+
+#define CIRCLE_SIZE 10
 
 IWorldNavigator::WorldConfig gWorldConf;
 
@@ -155,7 +158,7 @@ public:
 	void render()
 	{
 		IWorldNavigator::Vec3 pos = mWorldNavigator.getPosition();
-		DrawCircle(pos.mX, pos.mY, 10, SKYBLUE);
+		DrawCircle(pos.mX, pos.mY, CIRCLE_SIZE, SKYBLUE);
 	};
 
 	void onEvent(std::vector<std::pair<InputState, InputType>>& events)
@@ -196,7 +199,6 @@ public:
 		}
 	}
 
-
 	DotRenderer(IGraphicsManager& graphicsManager
 		      , IWorldNavigator&  worldNavigator
 		      , IObjectRenderer*  txtRenderer):
@@ -214,6 +216,75 @@ private:
 	IObjectRenderer*  mTxtRenderer;
 
 	bool       mTextOn = true;
+};
+
+class DotTrigger :public IGraphicsManager::IObjectRenderer
+			    , public IWorldNavigator::ITriggerCallback
+{
+public:
+	//IObjectRenderer
+	void render()
+	{
+		std::lock_guard<std::mutex> lock(mMutex);
+		DrawCircle(mPosition.mX, mPosition.mY, CIRCLE_SIZE, mColor);
+	};
+
+	//ITriggerCallback
+	bool onApproaching(IWorldNavigator::WORLD_ID	worldId
+		             , IWorldNavigator::TRIGGER_ID	eventId
+					 , IWorldNavigator::Vec3&		trigerLocation
+		             , IWorldNavigator::Vec3&		position)
+	{
+		//Utility::printLog("Approaching...");
+
+		bool ret = false;
+		if (CIRCLE_SIZE > calcDistance(trigerLocation, position)) {
+			ret = true;
+		}
+		else {
+			std::lock_guard<std::mutex> lock(mMutex);
+			mColor = RED;
+		}
+		return ret;
+	};
+
+	void onTrigger(IWorldNavigator::WORLD_ID	worldId
+		         , IWorldNavigator::TRIGGER_ID	eventId)
+	{
+		std::lock_guard<std::mutex> lock(mMutex);
+		mColor = PINK;
+	};
+
+	IWorldNavigator::TRIGGER_ID getId() {
+		return mId;
+	}
+
+	IWorldNavigator::Vec3& getLocation() {
+		return mPosition;
+	}
+
+	float getDistance() {
+		return mDistance;
+	}
+
+	DotTrigger()		  = default;
+	virtual ~DotTrigger() = default;
+
+private:
+	float calcDistance(IWorldNavigator::Vec3& a, IWorldNavigator::Vec3& b)
+	{
+		return static_cast<float>(std::sqrt(
+			  (static_cast<double>(b.mX - a.mX) * static_cast<double>(b.mX - a.mX))
+			+ (static_cast<double>(b.mY - a.mY) * static_cast<double>(b.mY - a.mY))
+			+ (static_cast<double>(b.mZ - a.mZ) * static_cast<double>(b.mZ - a.mZ))));
+	}
+	
+	std::mutex					mMutex;
+	IWorldNavigator::TRIGGER_ID mId		  = 1;
+	IWorldNavigator::Vec3		mPosition = { 200,200, 0 };
+	float						mDistance = 30.f;
+	Color						mColor    = RED;
+
 };
 
 std::string readInputConf()
@@ -247,6 +318,9 @@ int main()
 		IWorldNavigator&    worldNavigator  = rose_aura->getWorldNavigator();
 
 		ContinuousInputTask* inputTask   = new ContinuousInputTask(centralLooper,inputHandler);
+
+		DotTrigger*			 dotTrigger     = new DotTrigger();
+
 		BGRenderer*		     bgRenderer	 = new BGRenderer();
 		ActiveSpaceRenderer* asRenderer  = new ActiveSpaceRenderer();
 		TxTRenderer*	     txtRenderer = new TxTRenderer();
@@ -256,6 +330,7 @@ int main()
 		gWorldConf.mActiveSpaceCb = asRenderer;
 
 		IWorldNavigator::WORLD_ID wId = worldNavigator.createWorld(gWorldConf);
+		worldNavigator.registerTrigger(dotTrigger->getId(), dotTrigger->getLocation(), dotTrigger->getDistance(), dotTrigger);
 
 		centralLooper.registerFrameSyncCallback(inputTask);
 		centralLooper.enqueueTask(inputTask);
@@ -266,6 +341,7 @@ int main()
 		graphicsManager.setRenderer(bgRenderer);
 		graphicsManager.setRenderer(asRenderer);
 		graphicsManager.setRenderer(txtRenderer);
+		graphicsManager.setRenderer(dotTrigger);
 		graphicsManager.setRenderer(dotRenderer);
 
 		////////////////////////////////////////////
@@ -276,12 +352,12 @@ int main()
 		centralLooper.stop();
 
 		////////////////////////////////////////////
-
-
 		delete dotRenderer;
 		delete txtRenderer;
 		delete asRenderer;
 		delete bgRenderer;
+
+		delete dotTrigger;
 
 		delete inputTask;
 	}

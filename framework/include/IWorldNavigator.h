@@ -54,7 +54,7 @@ public:
 		IActiveSpaceCallback() = default;
 	};
 
-	#define isValidWorldId(x) 0!=x 
+	#define isValidWorldId(x) (0 != x) 
 
 	//////////////////////////////////////////////////////////
 	// APIs

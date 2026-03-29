@@ -32,13 +32,14 @@ public:
 	WorldNavigator();
 	virtual ~WorldNavigator() = default;
 private:
-	float  calcDistance(int a, int b);
+	float  calcDistance(Vec3& a, Vec3& b);
 	Vec3   calcCenter(Bounds& bounds);
 	Bounds calcBounds(Vec3& center, Extent& range);
 	bool   fitWithin(Bounds& base, Bounds& target);
 	bool   fitWithin(Bounds& base, Vec3& target);
 	Vec3   adjustPosition(Bounds& base, Vec3& current, Vec3& next);
 	int    checkCrossing(int max, int min, int current, int next);
+	void   doActiveSpaceCallbacks();
 
 	struct Trigger {
 		TRIGGER_ID	mId;
@@ -65,7 +66,7 @@ private:
 	std::mutex      mMutex;
 
 	std::vector<World>		mWorlds;
-	World*					mCurrentWorld;
+	int 					mCurrentWorldIndex;
 
 	std::vector<ITriggerCallback*>		mTriggerCallbacks;
 	std::vector<IActiveSpaceCallback*>	mActiveSpaceCallbacks;

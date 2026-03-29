@@ -1,10 +1,16 @@
 #pragma once
 
+#include <vector>
+
 class IObjectRepository {
 public:
+
+	using OBJECT_ID = unsigned int;
+	using GROUP_ID  = unsigned int;
+
 	class Object {
 	public:
-		virtual unsigned int getObjectId() = 0;
+		virtual OBJECT_ID getObjectId() = 0;
 
 		virtual ~Object() = default;
 	protected:
@@ -14,7 +20,9 @@ public:
 	//////////////////////////////////////////////////////////
 	// APIs
 	//////////////////////////////////////////////////////////
-	virtual void	registerObject(Object* obj) = 0;
-	virtual void    removeObject(Object* obj)   = 0;
-	virtual Object* getObject(unsigned int id)  = 0;
+	virtual void	registerObject(Object* obj)    = 0;
+	virtual void    removeObject(Object* obj)      = 0;
+	virtual Object& getObject(OBJECT_ID id)        = 0;
+	virtual std::vector<Object&>& 
+		            getObjectsByGroup(GROUP_ID id) = 0;
 };

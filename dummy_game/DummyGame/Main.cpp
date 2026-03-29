@@ -14,6 +14,39 @@
 
 using namespace RoseAuraReturnCode;
 
+#define WIN_SIZE_W 800
+#define WIN_SIZE_H 600
+
+#define TXT_POS_X 10
+#define TXT_POS_Y 10
+
+IWorldNavigator::WorldConfig gWorldConf;
+
+void buildConf1()
+{
+	gWorldConf.mWorldSpace.mMin.mX = 100;
+	gWorldConf.mWorldSpace.mMin.mY = 100;
+	gWorldConf.mWorldSpace.mMin.mZ = 0;
+	gWorldConf.mWorldSpace.mMax.mX = 700;
+	gWorldConf.mWorldSpace.mMax.mY = 500;
+	gWorldConf.mWorldSpace.mMax.mZ = 0;
+
+	gWorldConf.mActiveRange.mX = 100;
+	gWorldConf.mActiveRange.mY = 100;
+	gWorldConf.mActiveRange.mZ = 100;
+
+	gWorldConf.mNonScrollRange.mX = 50;
+	gWorldConf.mNonScrollRange.mY = 50;
+	gWorldConf.mNonScrollRange.mZ = 50;
+
+	gWorldConf.mPosition.mX = 400;
+	gWorldConf.mPosition.mY = 300;
+	gWorldConf.mPosition.mZ = 0;
+	
+	gWorldConf.mEnableFollowing = true;
+	gWorldConf.mLimitScrolling  = true;
+}
+
 class ContinuousInputTask : 
 	  public ICentralLooper::ITask
 	, public ICentralLooper::IFrameSyncCallback {
@@ -43,7 +76,7 @@ public:
 	{
 	}
 
-	~ContinuousInputTask() = default;
+	virtual ~ContinuousInputTask() = default;
 private:
 	ICentralLooper& mCentralLooper;
 	IInputHandler&	mInputHandler;
@@ -55,10 +88,50 @@ public:
 	void render()
 	{
 		ClearBackground(RAYWHITE);
+
+		Rectangle rect = { static_cast<float>(gWorldConf.mWorldSpace.mMin.mX)
+			             , static_cast<float>(gWorldConf.mWorldSpace.mMin.mY)
+			             , static_cast<float>(gWorldConf.mWorldSpace.mMax.mX - gWorldConf.mWorldSpace.mMin.mX)
+			             , static_cast<float>(gWorldConf.mWorldSpace.mMax.mY - gWorldConf.mWorldSpace.mMin.mY) };
+		DrawRectangleLinesEx(rect, 3.0f, LIGHTGRAY);
 	};
 
-	~BGRenderer() = default;
 	BGRenderer() = default;
+	virtual ~BGRenderer() = default;
+};
+
+class ActiveSpaceRenderer : public IGraphicsManager::IObjectRenderer
+	                      , public IWorldNavigator::IActiveSpaceCallback
+{
+public:
+	void render()
+	{
+		std::lock_guard<std::mutex> lock(mMutex);
+		Rectangle rect = { static_cast<float>(mX)
+						  ,static_cast<float>(mY)
+			              ,static_cast<float>(mW)
+			              ,static_cast<float>(mH) };
+		DrawRectangleLinesEx(rect, 3.0f, BLUE);
+	};
+
+	void onUpdate(IWorldNavigator::WORLD_ID worldId, IWorldNavigator::Bounds activeSpace)
+	{
+		std::lock_guard<std::mutex> lock(mMutex);
+		mX = activeSpace.mMin.mX;
+		mY = activeSpace.mMin.mY;
+		mW = activeSpace.mMax.mX - activeSpace.mMin.mX;
+		mH = activeSpace.mMax.mY - activeSpace.mMin.mY; 
+	}
+
+	ActiveSpaceRenderer() = default;
+	virtual ~ActiveSpaceRenderer() = default;
+
+private:
+	std::mutex mMutex;
+	unsigned int mX = gWorldConf.mPosition.mX - gWorldConf.mActiveRange.mX;
+	unsigned int mY = gWorldConf.mPosition.mY - gWorldConf.mActiveRange.mY;
+	unsigned int mW = gWorldConf.mActiveRange.mX*2;
+	unsigned int mH = gWorldConf.mActiveRange.mY*2;
 };
 
 class TxTRenderer : public IGraphicsManager::IObjectRenderer
@@ -66,11 +139,11 @@ class TxTRenderer : public IGraphicsManager::IObjectRenderer
 public:
 	void render()
 	{
-		DrawText("Hello, raylib!", 190, 200, 30, DARKGRAY);
+		DrawText("Rose Aura Dummy Game", TXT_POS_X, TXT_POS_Y, 30, DARKGRAY);
 	};
 
-	~TxTRenderer() = default;
 	TxTRenderer() = default;
+	virtual ~TxTRenderer() = default;
 };
 
 class DotRenderer :
@@ -81,32 +154,33 @@ public:
 
 	void render()
 	{
-		std::lock_guard<std::mutex> lock(mMutex);
-		DrawCircle(mX, mY, 10, SKYBLUE);
+		IWorldNavigator::Vec3 pos = mWorldNavigator.getPosition();
+		DrawCircle(pos.mX, pos.mY, 10, SKYBLUE);
 	};
 
 	void onEvent(std::vector<std::pair<InputState, InputType>>& events)
 	{
-		std::lock_guard<std::mutex> lock(mMutex);
-
 		for (auto event : events) {
 			//Utility::printLog("MyDot Input(%d / %d)", event.first, event.second);
 			InputState state = event.first;
 			InputType  type  = event.second;
 
+			IWorldNavigator::Vec3 pos = mWorldNavigator.getPosition();
+
 			if (state == InputState::PUSHED || state == InputState::PRESSED) {
 				if (type == InputType::UP) {
-					mY -= 5;
+					pos.mY -= 5;
 				}
 				else if (type == InputType::DOWN) {
-					mY += 5;
+					pos.mY += 5;
 				}
 				else if (type == InputType::LEFT) {
-					mX -= 5;
+					pos.mX -= 5;
 				}
 				else if (type == InputType::RIGHT) {
-					mX += 5;
+					pos.mX += 5;
 				}
+				mWorldNavigator.movePosition(pos);
 			}
 
 			if (state == InputState::PUSHED && type == InputType::ACTION1) {
@@ -123,24 +197,23 @@ public:
 	}
 
 
-	DotRenderer(IGraphicsManager& graphicsManager, IObjectRenderer* txtRenderer):
-		mGraphicsManager(graphicsManager),mTxtRenderer(txtRenderer)
+	DotRenderer(IGraphicsManager& graphicsManager
+		      , IWorldNavigator&  worldNavigator
+		      , IObjectRenderer*  txtRenderer):
+		mGraphicsManager(graphicsManager)
+      , mWorldNavigator(worldNavigator)
+	  , mTxtRenderer(txtRenderer)
 	{
 	};
 
-	~DotRenderer() = default;
+	virtual ~DotRenderer() = default;
 
 private:
 	IGraphicsManager& mGraphicsManager;
+	IWorldNavigator&  mWorldNavigator;
+	IObjectRenderer*  mTxtRenderer;
 
-	std::mutex		   mMutex;
-
-	unsigned int mX = 420;
-	unsigned int mY = 215;
-
-	bool         mTextOn = true;
-
-	IObjectRenderer*	mTxtRenderer;
+	bool       mTextOn = true;
 };
 
 std::string readInputConf()
@@ -158,25 +231,32 @@ std::string readInputConf()
 	return buffer.str();
 }
 
-
 int main()
 {
 	{ //for _CrtDumpMemoryLeaks()
+		////////////////////////////////////////////
+		buildConf1();
 
 		////////////////////////////////////////////
+
 		std::unique_ptr<RoseAura> rose_aura = RoseAura::create();
 
 		ICentralLooper&		centralLooper	= rose_aura->getCentralLooper();
 		IInputHandler&		inputHandler	= rose_aura->getInputHandler();
 		IGraphicsManager&	graphicsManager = rose_aura->getGraphicsManager();
+		IWorldNavigator&    worldNavigator  = rose_aura->getWorldNavigator();
 
-		ContinuousInputTask* inputTask = new ContinuousInputTask(centralLooper,inputHandler);
-
-		BGRenderer*		bgRenderer	   = new BGRenderer();
-		TxTRenderer*	txtRenderer	   = new TxTRenderer();
-		DotRenderer*	dotRenderer    = new DotRenderer(graphicsManager, txtRenderer);
+		ContinuousInputTask* inputTask   = new ContinuousInputTask(centralLooper,inputHandler);
+		BGRenderer*		     bgRenderer	 = new BGRenderer();
+		ActiveSpaceRenderer* asRenderer  = new ActiveSpaceRenderer();
+		TxTRenderer*	     txtRenderer = new TxTRenderer();
+		DotRenderer*	     dotRenderer = new DotRenderer(graphicsManager, worldNavigator, txtRenderer);
 
 		////////////////////////////////////////////
+		gWorldConf.mActiveSpaceCb = asRenderer;
+
+		IWorldNavigator::WORLD_ID wId = worldNavigator.createWorld(gWorldConf);
+
 		centralLooper.registerFrameSyncCallback(inputTask);
 		centralLooper.enqueueTask(inputTask);
 
@@ -184,6 +264,7 @@ int main()
 		inputHandler.registerCallback(dotRenderer);
 
 		graphicsManager.setRenderer(bgRenderer);
+		graphicsManager.setRenderer(asRenderer);
 		graphicsManager.setRenderer(txtRenderer);
 		graphicsManager.setRenderer(dotRenderer);
 
@@ -199,6 +280,7 @@ int main()
 
 		delete dotRenderer;
 		delete txtRenderer;
+		delete asRenderer;
 		delete bgRenderer;
 
 		delete inputTask;

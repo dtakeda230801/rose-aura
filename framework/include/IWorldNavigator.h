@@ -6,6 +6,11 @@ using namespace RoseAuraReturnCode;
 
 class IWorldNavigator {
 public:
+	using WORLD_ID = unsigned int;
+	using TRIGGER_ID = unsigned int;
+
+#define isValidWorldId(x) (0 != x) 
+
 	struct Vec3 {
 		int mX;
 		int mY;
@@ -22,18 +27,6 @@ public:
 		Vec3 mMin;
 		Vec3 mMax;
 	};
-
-	struct WorldConfig {
-		Bounds      mWorldSpace;
-		Extent      mActiveRange;
-		Extent		mNonScrollRange;
-		Vec3        mPosition;
-		bool        mEnableFollowing;
-		bool		mLimitScrolling;
-	};
-
-	using WORLD_ID   = unsigned int;
-	using TRIGGER_ID = unsigned int;
 
 	class ITriggerCallback {
 	public:
@@ -54,7 +47,17 @@ public:
 		IActiveSpaceCallback() = default;
 	};
 
-	#define isValidWorldId(x) (0 != x) 
+	struct WorldConfig {
+		Bounds      mWorldSpace;
+		Extent      mActiveRange;
+		Extent		mNonScrollRange;
+		Vec3        mPosition;
+		bool        mEnableFollowing;
+		bool		mLimitScrolling;
+
+		IActiveSpaceCallback*
+				    mActiveSpaceCb;
+	};
 
 	//////////////////////////////////////////////////////////
 	// APIs
@@ -69,12 +72,7 @@ public:
 	virtual RARetCode movePosition(Vec3& pos)			 = 0;
 	virtual Vec3	  getPosition()						 = 0;
 
-	virtual RARetCode registerTrigger(TRIGGER_ID id, Vec3& location, float distance) = 0;
+	virtual RARetCode registerTrigger(TRIGGER_ID id, Vec3& location, float distance, ITriggerCallback* cb) = 0;
 	virtual RARetCode removeTrigger(TRIGGER_ID id)	= 0;
-
-	virtual RARetCode registerTriggerCallback(ITriggerCallback* cb) = 0;
-	virtual RARetCode unregisterTriggerCallback(ITriggerCallback* cb) = 0;
-	virtual RARetCode registerActiveSpaceUpdate(IActiveSpaceCallback* cb) = 0;
-	virtual RARetCode unregisterActiveSpaceUpdate(IActiveSpaceCallback* cb) = 0;
 };
 

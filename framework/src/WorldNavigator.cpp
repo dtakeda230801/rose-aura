@@ -8,6 +8,10 @@
 //////////////////////////////////////////////////////////
 WorldNavigator::WORLD_ID WorldNavigator::createWorld(WorldConfig& conf)
 {
+	if (!conf.mActiveSpaceCb) {
+		return 0;
+	}
+
 	std::lock_guard<std::mutex> lock(mMutex);
 	World world;
 
@@ -21,6 +25,7 @@ WorldNavigator::WORLD_ID WorldNavigator::createWorld(WorldConfig& conf)
 	world.mLimitScrolling   = conf.mLimitScrolling;
 	world.mPosition         = conf.mPosition;
 	world.mScrollPosition   = conf.mPosition;
+	world.mActiveSpaceCb    = conf.mActiveSpaceCb;
 
 	mWorlds.push_back(world);
 
@@ -62,17 +67,21 @@ WorldNavigator::Vec3 WorldNavigator::getActiveSpacePosition()
 RARetCode WorldNavigator::moveActiveSpace(Vec3& pos)
 {
 	std::lock_guard<std::mutex> lock(mMutex);
-	mWorlds[mCurrentWorldIndex].mActiveSpace = calcBounds(pos, mWorlds[mCurrentWorldIndex].mActiveRange);
-	doActiveSpaceCallbacks();
+	World& world = mWorlds[mCurrentWorldIndex];
+	world.mActiveSpace = calcBounds(pos, world.mActiveRange);
+
+	world.mActiveSpaceCb->onUpdate(world.mId, world.mActiveSpace);
+
 	return RARetCode::RET_OK;
 }
 
 void WorldNavigator::resetActiveSpace()
 {
 	std::lock_guard<std::mutex> lock(mMutex);
-	mWorlds[mCurrentWorldIndex].mActiveSpace 
-		= calcBounds(mWorlds[mCurrentWorldIndex].mPosition, mWorlds[mCurrentWorldIndex].mActiveRange);
-	doActiveSpaceCallbacks();
+	World& world = mWorlds[mCurrentWorldIndex];
+	world.mActiveSpace = calcBounds(world.mPosition, world.mActiveRange);
+
+	world.mActiveSpaceCb->onUpdate(world.mId, world.mActiveSpace);
 }
 
 RARetCode WorldNavigator::movePosition(Vec3& pos)
@@ -81,51 +90,49 @@ RARetCode WorldNavigator::movePosition(Vec3& pos)
 	bool	  doCallback = false;
 
 	std::lock_guard<std::mutex> lock(mMutex);
-	Vec3 previous = mWorlds[mCurrentWorldIndex].mPosition;
+	World& world  = mWorlds[mCurrentWorldIndex];
+	Vec3 previous = world.mPosition;
 
-	if (!fitWithin(mWorlds[mCurrentWorldIndex].mWorldSpace, pos)) {
-		mWorlds[mCurrentWorldIndex].mPosition 
-			= adjustPosition(mWorlds[mCurrentWorldIndex].mWorldSpace, mWorlds[mCurrentWorldIndex].mPosition, pos);
+	if (!fitWithin(world.mWorldSpace, pos)) {
+		world.mPosition	= adjustPosition(world.mWorldSpace, world.mPosition, pos);
 		ret = RARetCode::RET_ADJUSTED;
 	}
 	else {
-		mWorlds[mCurrentWorldIndex].mPosition = pos;
+		world.mPosition = pos;
 	}
 
-	if (mWorlds[mCurrentWorldIndex].mLimitScrolling)
+	if (world.mLimitScrolling)
 	{
-		if (!fitWithin(mWorlds[mCurrentWorldIndex].mNonScrollSpace, pos)) {
-			Vec3& scrollPos = mWorlds[mCurrentWorldIndex].mScrollPosition;
-			Vec3& current   = mWorlds[mCurrentWorldIndex].mPosition;
+		if (!fitWithin(world.mNonScrollSpace, pos)) {
+			Vec3& scrollPos = world.mScrollPosition;
+			Vec3& current   = world.mPosition;
 
 			scrollPos.mX = scrollPos.mX + (current.mX - previous.mX);
 			scrollPos.mY = scrollPos.mY + (current.mY - previous.mY);
-			scrollPos.mX = scrollPos.mZ + (current.mZ - previous.mZ);
+			scrollPos.mZ = scrollPos.mZ + (current.mZ - previous.mZ);
 
-			mWorlds[mCurrentWorldIndex].mNonScrollSpace 
-				= calcBounds(scrollPos, mWorlds[mCurrentWorldIndex].mNonScrollRange);
+			world.mNonScrollSpace
+				= calcBounds(scrollPos, world.mNonScrollRange);
 
-			if (mWorlds[mCurrentWorldIndex].mEnableFollowing) {
-				mWorlds[mCurrentWorldIndex].mActiveSpace = calcBounds(scrollPos, mWorlds[mCurrentWorldIndex].mActiveRange);
+			if (world.mEnableFollowing) {
+				world.mActiveSpace = calcBounds(scrollPos, world.mActiveRange);
 				doCallback = true;
 			}
 		}
-	} else if (mWorlds[mCurrentWorldIndex].mEnableFollowing) {
-		mWorlds[mCurrentWorldIndex].mActiveSpace 
-			= calcBounds(mWorlds[mCurrentWorldIndex].mPosition, mWorlds[mCurrentWorldIndex].mActiveRange);
+	} else if (world.mEnableFollowing) {
+		world.mActiveSpace
+			= calcBounds(world.mPosition, world.mActiveRange);
 		doCallback = true;
 	}
 
 	if (doCallback) {
-		doActiveSpaceCallbacks();
+		world.mActiveSpaceCb->onUpdate(world.mId, world.mActiveSpace);
 	}
 
-	for (Trigger t : mWorlds[mCurrentWorldIndex].mTriggers) {
-		if (t.mDistance >= calcDistance(t.mLocation, mWorlds[mCurrentWorldIndex].mPosition)) {
-			for (ITriggerCallback* cb : mTriggerCallbacks) {
-				if (cb->onApproaching(mWorlds[mCurrentWorldIndex].mId, t.mId, t.mLocation)) {
-					cb->onTrigger(mWorlds[mCurrentWorldIndex].mId, t.mId);
-				}
+	for (Trigger t : world.mTriggers) {
+		if (t.mDistance >= calcDistance(t.mLocation, world.mPosition)) {
+			if (t.mCb->onApproaching(world.mId, t.mId, t.mLocation)) {
+				t.mCb->onTrigger(world.mId, t.mId);
 			}
 		}
 	}
@@ -138,9 +145,13 @@ WorldNavigator::Vec3 WorldNavigator::getPosition()
 	return mWorlds[mCurrentWorldIndex].mPosition;
 }
 
-RARetCode WorldNavigator::registerTrigger(TRIGGER_ID id, Vec3& location, float distance)
+RARetCode WorldNavigator::registerTrigger(TRIGGER_ID id, Vec3& location, float distance, ITriggerCallback* cb)
 {
 	if (!fitWithin(mWorlds[mCurrentWorldIndex].mWorldSpace, location)) {
+		return RARetCode::RET_ERR_INVALID_PARAMS;
+	}
+
+	if (!cb) {
 		return RARetCode::RET_ERR_INVALID_PARAMS;
 	}
 
@@ -153,7 +164,7 @@ RARetCode WorldNavigator::registerTrigger(TRIGGER_ID id, Vec3& location, float d
 		}
 	}
 
-	mWorlds[mCurrentWorldIndex].mTriggers.emplace_back(id, location, distance);
+	mWorlds[mCurrentWorldIndex].mTriggers.emplace_back(id, location, distance,cb);
 	return RARetCode::RET_OK;
 }
 
@@ -177,53 +188,6 @@ RARetCode WorldNavigator::removeTrigger(TRIGGER_ID id)
 
 	return ret;
 }
-
-RARetCode WorldNavigator::registerTriggerCallback(ITriggerCallback* cb)
-{
-	std::lock_guard<std::mutex> lock(mMutex);
-	if (!cb) {
-		return RARetCode::RET_ERR_INVALID_ARG;
-	}
-	mTriggerCallbacks.push_back(cb);
-	return RARetCode::RET_OK;
-}
-
-RARetCode WorldNavigator::unregisterTriggerCallback(ITriggerCallback* cb)
-{
-	std::lock_guard<std::mutex> lock(mMutex);
-	if (!cb) {
-		return RARetCode::RET_ERR_INVALID_ARG;
-	}
-
-	if (0 != Utility::eraseVectorElm(mTriggerCallbacks, cb)) {
-		return RARetCode::RET_ERR_INVALID_ARG;
-	}
-	return RARetCode::RET_OK;
-}
-
-RARetCode WorldNavigator::registerActiveSpaceUpdate(IActiveSpaceCallback* cb)
-{
-	std::lock_guard<std::mutex> lock(mMutex);
-	if (!cb) {
-		return RARetCode::RET_ERR_INVALID_ARG;
-	}
-	mActiveSpaceCallbacks.push_back(cb);
-	return RARetCode::RET_OK;
-}
-
-RARetCode WorldNavigator::unregisterActiveSpaceUpdate(IActiveSpaceCallback* cb)
-{
-	std::lock_guard<std::mutex> lock(mMutex);
-	if (!cb) {
-		return RARetCode::RET_ERR_INVALID_ARG;
-	}
-
-	if (0 != Utility::eraseVectorElm(mActiveSpaceCallbacks, cb)) {
-		return RARetCode::RET_ERR_INVALID_ARG;
-	}
-	return RARetCode::RET_OK;
-}
-
 
 WorldNavigator::WorldNavigator()
 	: mCurrentWorldIndex(-1)
@@ -289,14 +253,14 @@ bool WorldNavigator::fitWithin(Bounds& base, Bounds& target)
 bool WorldNavigator::fitWithin(Bounds& base, Vec3& target)
 {
 	if (base.mMax.mX < target.mX
-  	 && base.mMax.mY < target.mY
-	 && base.mMax.mZ < target.mZ) {
+  	 || base.mMax.mY < target.mY
+	 || base.mMax.mZ < target.mZ) {
 		return false;
 	}
 
 	if (base.mMin.mX > target.mX
- 	 && base.mMin.mY > target.mY
-	 && base.mMin.mZ > target.mZ) {
+ 	 || base.mMin.mY > target.mY
+	 || base.mMin.mZ > target.mZ) {
 		return false;
 	}
 
@@ -323,21 +287,14 @@ int WorldNavigator::checkCrossing(int min, int max, int current, int next)
 	tmin = static_cast<float>(min - current) / static_cast<float>(next - current);
 	tmax = static_cast<float>(max - current) / static_cast<float>(next - current);
 
-	if (0.0f < tmin && tmin < 1.0f) {
+	if (0.0f <= tmin && tmin < 1.0f) {
 		ret = min;
 	}
-	else if (0.0f < tmax && tmax < 1.0f) {
+	else if (0.0f <= tmax && tmax < 1.0f) {
 		ret = max;
 	}
 	else {
 		ret= next;
 	}
 	return ret;
-}
-
-void WorldNavigator::doActiveSpaceCallbacks()
-{
-	for (IActiveSpaceCallback* cb : mActiveSpaceCallbacks) {
-		cb->onUpdate(mWorlds[mCurrentWorldIndex].mId, mWorlds[mCurrentWorldIndex].mActiveSpace);
-	}
 }

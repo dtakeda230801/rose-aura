@@ -21,13 +21,8 @@ public:
 	RARetCode    movePosition(Vec3& pos);
 	Vec3		 getPosition();
 
-	RARetCode	 registerTrigger(TRIGGER_ID id, Vec3& location, float distance);
+	RARetCode	 registerTrigger(TRIGGER_ID id, Vec3& location, float distance, ITriggerCallback* cb);
 	RARetCode	 removeTrigger(TRIGGER_ID id);
-
-	RARetCode	 registerTriggerCallback(ITriggerCallback* cb);
-	RARetCode	 unregisterTriggerCallback(ITriggerCallback* cb);
-	RARetCode	 registerActiveSpaceUpdate(IActiveSpaceCallback* cb);
-	RARetCode	 unregisterActiveSpaceUpdate(IActiveSpaceCallback* cb);
 
 	WorldNavigator();
 	virtual ~WorldNavigator() = default;
@@ -39,12 +34,13 @@ private:
 	bool   fitWithin(Bounds& base, Vec3& target);
 	Vec3   adjustPosition(Bounds& base, Vec3& current, Vec3& next);
 	int    checkCrossing(int max, int min, int current, int next);
-	void   doActiveSpaceCallbacks();
 
 	struct Trigger {
 		TRIGGER_ID	mId;
 		Vec3		mLocation;
 		float		mDistance;
+		ITriggerCallback*
+			mCb;
 	};
 
 	struct World {
@@ -59,6 +55,9 @@ private:
 		Vec3		mPosition;
 		Vec3        mScrollPosition;
 
+		IActiveSpaceCallback*
+					mActiveSpaceCb;
+
 		std::vector<Trigger>
 					mTriggers;
 	};
@@ -67,7 +66,4 @@ private:
 
 	std::vector<World>		mWorlds;
 	int 					mCurrentWorldIndex;
-
-	std::vector<ITriggerCallback*>		mTriggerCallbacks;
-	std::vector<IActiveSpaceCallback*>	mActiveSpaceCallbacks;
 };

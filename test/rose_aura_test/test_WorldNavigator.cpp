@@ -65,20 +65,26 @@ TEST(testWorldNavigator, APITest)
 {
 	ROSE_AURA_TEST_BEGIN;
 	{
-		bool check;
-
-		TriggerCallback*     trCb = new TriggerCallback();
 		ActiveSpaceCallback* asCb = new ActiveSpaceCallback();
+		TriggerCallback*     trCb = new TriggerCallback();
 
+		buildConf1();
+
+		bool check;
 		IWorldNavigator::WORLD_ID w1, w2;
 		IWorldNavigator::Bounds   b;
 		IWorldNavigator::Vec3	  v;
-		buildConf1();
 
+		///////////////////////////////////////////
 		std::unique_ptr<RoseAura> ra = RoseAura::create();
 
 		IWorldNavigator& wn = ra->getWorldNavigator();
 
+		conf1.mActiveSpaceCb = nullptr;
+		w1 = wn.createWorld(conf1);
+		EXPECT_FALSE(isValidWorldId(w1));
+
+		conf1.mActiveSpaceCb = asCb;
 		w1 = wn.createWorld(conf1);
 		EXPECT_TRUE(isValidWorldId(w1));
 
@@ -147,24 +153,11 @@ TEST(testWorldNavigator, APITest)
 		v.mX = 100;
 		v.mY = 100;
 		v.mZ = 100;
-		EXPECT_EQ(wn.registerTrigger(0x0001, v, 30.0f), RARetCode::RET_OK);
-		EXPECT_EQ(wn.registerTrigger(0x0001, v, 30.0f), RARetCode::RET_ERR_INVALID_PARAMS);
+		EXPECT_EQ(wn.registerTrigger(0x0001, v, 30.0f, nullptr), RARetCode::RET_ERR_INVALID_PARAMS);
+		EXPECT_EQ(wn.registerTrigger(0x0001, v, 30.0f, trCb)   , RARetCode::RET_OK);
+		EXPECT_EQ(wn.registerTrigger(0x0001, v, 30.0f, trCb)   , RARetCode::RET_ERR_INVALID_PARAMS);
 		EXPECT_EQ(wn.removeTrigger(0x0001), RARetCode::RET_OK);
 		EXPECT_EQ(wn.removeTrigger(0x0001), RARetCode::RET_ERR_INVALID_ARG);
-
-		///////////////////////////////////////////
-		EXPECT_EQ(wn.registerTriggerCallback(nullptr)  , RARetCode::RET_ERR_INVALID_ARG);
-		EXPECT_EQ(wn.registerTriggerCallback(trCb)     , RARetCode::RET_OK);
-		EXPECT_EQ(wn.unregisterTriggerCallback(nullptr), RARetCode::RET_ERR_INVALID_ARG);
-		EXPECT_EQ(wn.unregisterTriggerCallback(trCb)   , RARetCode::RET_OK);
-		EXPECT_EQ(wn.unregisterTriggerCallback(trCb)   , RARetCode::RET_ERR_INVALID_ARG);
-
-		///////////////////////////////////////////
-		EXPECT_EQ(wn.registerActiveSpaceUpdate(nullptr)  , RARetCode::RET_ERR_INVALID_ARG);
-		EXPECT_EQ(wn.registerActiveSpaceUpdate(asCb)     , RARetCode::RET_OK);
-		EXPECT_EQ(wn.unregisterActiveSpaceUpdate(nullptr), RARetCode::RET_ERR_INVALID_ARG);
-		EXPECT_EQ(wn.unregisterActiveSpaceUpdate(asCb)   , RARetCode::RET_OK);
-		EXPECT_EQ(wn.unregisterActiveSpaceUpdate(asCb)   , RARetCode::RET_ERR_INVALID_ARG);
 
 		///////////////////////////////////////////
 		delete trCb;

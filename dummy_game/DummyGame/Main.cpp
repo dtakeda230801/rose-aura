@@ -138,15 +138,43 @@ private:
 };
 
 class TxTRenderer : public IGraphicsManager::IObjectRenderer
+			  	  , public IInputHandler::IInputHandlerCallback
 {
 public:
+	//IObjectRenderer
 	void render()
 	{
-		DrawText("Rose Aura Dummy Game", TXT_POS_X, TXT_POS_Y, 30, DARKGRAY);
+		std::lock_guard<std::mutex> lock(mMutex);
+		if (mDisplay) {
+			DrawText("Rose Aura Dummy Game", TXT_POS_X, TXT_POS_Y, 30, DARKGRAY);
+		}
 	};
+
+	//IInputHandlerCallback
+	void onEvent(std::vector<std::pair<InputState, InputType>>& events)
+	{
+		for (auto event : events) {
+			InputState state = event.first;
+			InputType  type = event.second;
+
+			if (state == InputState::PUSHED && type == InputType::ACTION1) {
+				if (mDisplay) {
+					mDisplay = false;
+				}
+				else {
+					mDisplay = true;
+				}
+			}
+		}
+	}
 
 	TxTRenderer() = default;
 	virtual ~TxTRenderer() = default;
+
+private:
+	std::mutex		mMutex;
+	bool			mDisplay = true;
+
 };
 
 class DotRenderer :
@@ -185,35 +213,18 @@ public:
 				}
 				mWorldNavigator.movePosition(pos);
 			}
-
-			if (state == InputState::PUSHED && type == InputType::ACTION1) {
-				if (mTextOn) {
-					mTextOn = false;
-					mGraphicsManager.removeRenderer(mTxtRenderer);
-				}
-				else {
-					mTextOn = true;
-					mGraphicsManager.setRenderer(mTxtRenderer);
-				}
-			}
 		}
 	}
 
-	DotRenderer(IGraphicsManager& graphicsManager
-		      , IWorldNavigator&  worldNavigator
-		      , IObjectRenderer*  txtRenderer):
-		mGraphicsManager(graphicsManager)
-      , mWorldNavigator(worldNavigator)
-	  , mTxtRenderer(txtRenderer)
+	DotRenderer(IWorldNavigator&  worldNavigator):
+		mWorldNavigator(worldNavigator)
 	{
 	};
 
 	virtual ~DotRenderer() = default;
 
 private:
-	IGraphicsManager& mGraphicsManager;
 	IWorldNavigator&  mWorldNavigator;
-	IObjectRenderer*  mTxtRenderer;
 
 	bool       mTextOn = true;
 };
@@ -319,12 +330,12 @@ int main()
 
 		ContinuousInputTask* inputTask   = new ContinuousInputTask(centralLooper,inputHandler);
 
-		DotTrigger*			 dotTrigger     = new DotTrigger();
+		DotTrigger*			 dotTrigger  = new DotTrigger();
 
 		BGRenderer*		     bgRenderer	 = new BGRenderer();
 		ActiveSpaceRenderer* asRenderer  = new ActiveSpaceRenderer();
 		TxTRenderer*	     txtRenderer = new TxTRenderer();
-		DotRenderer*	     dotRenderer = new DotRenderer(graphicsManager, worldNavigator, txtRenderer);
+		DotRenderer*	     dotRenderer = new DotRenderer(worldNavigator);
 
 		////////////////////////////////////////////
 		gWorldConf.mActiveSpaceCb = asRenderer;
@@ -336,6 +347,7 @@ int main()
 		centralLooper.enqueueTask(inputTask);
 
 		inputHandler.setConf(readInputConf());
+		inputHandler.registerCallback(txtRenderer);
 		inputHandler.registerCallback(dotRenderer);
 
 		graphicsManager.setRenderer(bgRenderer);

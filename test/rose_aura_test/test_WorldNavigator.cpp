@@ -36,9 +36,10 @@ void buildConf1()
 class TriggerCallback : public IWorldNavigator::ITriggerCallback
 {
 public:
-	bool onApproaching(IWorldNavigator::WORLD_ID worldId
-		             , IWorldNavigator::TRIGGER_ID eventId
-		             , IWorldNavigator::Vec3& position)
+	bool onApproaching(IWorldNavigator::WORLD_ID	worldId
+		             , IWorldNavigator::TRIGGER_ID	eventId
+					 , IWorldNavigator::Vec3&		trigerLocation
+		             , IWorldNavigator::Vec3&		position)
 	{
 		return false;
 	}

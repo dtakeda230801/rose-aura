@@ -1,15 +1,42 @@
 #include "ObjectRepository.h"
 
-void	ObjectRepository::registerObject(Object* obj)
+
+ObjectRepository::OBJECT_ID 
+	ObjectRepository::registerObject(std::unique_ptr<ObjectBinder> binder)
 {
+	return 0;
 }
 
-void    ObjectRepository::removeObject(Object* obj)
+RARetCode ObjectRepository::unregisterObject(OBJECT_ID id)
 {
+	return RARetCode::RET_OK;
 }
 
-ObjectRepository::Object* ObjectRepository::getObject(unsigned int id)
+RARetCode ObjectRepository::addTag(OBJECT_ID id, std::vector<TAG_ID>& tags)
 {
-	return nullptr;
+	return RARetCode::RET_OK;
 }
 
+RARetCode ObjectRepository::removeTag(OBJECT_ID id, TAG_ID tag)
+{
+	return RARetCode::RET_OK;
+}
+
+RARetCode ObjectRepository::activate(OBJECT_ID id)
+{
+	return RARetCode::RET_OK;
+}
+
+RARetCode ObjectRepository::deactivate(OBJECT_ID id)
+{
+	return RARetCode::RET_OK;
+}
+
+RARetCode ObjectRepository::activateByTag(TAG_ID id)
+{
+	return RARetCode::RET_OK;
+}
+RARetCode ObjectRepository::deactivateByTag(TAG_ID id)
+{
+	return RARetCode::RET_OK;
+}

@@ -9,8 +9,10 @@ public:
 		mInt += 1;
 	};
 
-	TestObj(int in) :
-		mInt(in)
+	///////////////////////
+	TestObj(int in, IInputHandler& ih) :
+		 mInt(in)
+		,mInputHandler(ih)
 	{
 	}
 
@@ -18,6 +20,7 @@ public:
 
 private:
 	int		mInt;
+	IInputHandler& mInputHandler;
 };
 
 
@@ -30,7 +33,7 @@ TEST(testObjectRepository, APITest)
 		IObjectRepository& objR = ra->getObjectRepository();
 
 		IObjectRepository::ObjectBinder builder
-			= objR.makeObjectBinder<TestObj, int>(10);
+			= objR.makeObjectBinder<TestObj, int>(10, ra->getInputHandler());
 
 		TestObj* test = static_cast<TestObj*>(builder.create(builder.params));
 		builder.destroy(test);

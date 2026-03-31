@@ -19,8 +19,8 @@ public:
     {
         void* (*create)(void*);
         void  (*destroy)(void*);
-        void  (*destroyParams)(void*);
         void*  params;
+        void  (*destroyParams)(void*);
     };
 
 	//////////////////////////////////////////////////////////
@@ -29,7 +29,7 @@ public:
     template<class T, class... Args>
     ObjectBinder makeObjectBinder(Args&&... args)
     {
-        using Tuple = std::tuple<std::decay_t<Args>...>;
+        using Tuple = std::tuple<Args...>;
 
         Tuple* tuple =
             new Tuple(std::forward<Args>(args)...);
@@ -42,10 +42,9 @@ public:
                     static_cast<Tuple*>(data);
 
                 return std::apply(
-                    [](auto&&... xs)
+                    [](auto&&... xs) -> void*
                     {
-                        return static_cast<void*>(
-                            new T(std::forward<decltype(xs)>(xs)...));
+                        return new T(std::forward<decltype(xs)>(xs)...);
                     },
                     *params);
             },
@@ -55,14 +54,14 @@ public:
                 delete static_cast<T*>(p);
             },
 
+            // params
+            tuple,
+
             // destroy params
             [](void* p)
             {
                 delete static_cast<Tuple*>(p);
             },
-
-            // params
-            tuple
         };
     }
 

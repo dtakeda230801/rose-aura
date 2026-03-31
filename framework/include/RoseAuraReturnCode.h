@@ -8,5 +8,6 @@ namespace RoseAuraReturnCode {
 		RET_ERR_INVALID_ARG    = -2,
 		RET_ERR_INVALID_STATE  = -3,
 		RET_ERR_INVALID_PARAMS = -4,
+		RET_ERR_NOT_FOUND	   = -5,
 	};
 }

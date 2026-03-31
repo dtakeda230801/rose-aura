@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <memory>
+#include <functional>
 
 #include "RoseAuraReturnCode.h"
 
@@ -17,62 +18,75 @@ public:
 
     struct ObjectBinder
     {
-        void* (*create)(void*);
-        void  (*destroy)(void*);
+        std::function<void* (void*)>create;
+        std::function<void (void*)>destroy;
         void*  params;
-        void  (*destroyParams)(void*);
+        std::function<void (void*)>destroyParams;
     };
 
 	//////////////////////////////////////////////////////////
 	// APIs
 	//////////////////////////////////////////////////////////
     template<class T, class... Args>
-    ObjectBinder makeObjectBinder(Args&&... args)
+    ObjectBinder makeObjectBinder(void (T::*initializer)(), void (T::*terminator)(), Args&&... args)
     {
-        using Tuple = std::tuple<Args...>;
+        using Tuple  = std::tuple<Args...>;
+        Tuple* tuple = new Tuple(std::forward<Args>(args)...);
+        ObjectBinder ret{};
 
-        Tuple* tuple =
-            new Tuple(std::forward<Args>(args)...);
+        // === create ===
+        ret.create = [initializer](void* data)->void*
+        {
+            auto tuple = static_cast<Tuple*>(data);
 
-        return {
-            // create
-            [](void* data)->void*
-            {
-                auto params =
-                    static_cast<Tuple*>(data);
+            T* obj = std::apply(
+                  [](auto&&... xs) { return new T(std::forward<decltype(xs)>(xs)...); }
+                , *tuple);
 
-                return std::apply(
-                    [](auto&&... xs) -> void*
-                    {
-                        return new T(std::forward<decltype(xs)>(xs)...);
-                    },
-                    *params);
-            },
-            // destroy
-            [](void* p)
-            {
-                delete static_cast<T*>(p);
-            },
+            if (initializer) {
+                (obj->*initializer)();
+            }
 
-            // params
-            tuple,
-
-            // destroy params
-            [](void* p)
-            {
-                delete static_cast<Tuple*>(p);
-            },
+            return obj;
         };
+
+        // === destroy ===
+        ret.destroy = [terminator](void* p)
+        {
+            T* obj = static_cast<T*>(p);
+
+            if (terminator) {
+                (obj->*terminator)();
+            }
+
+            delete obj;
+        };
+
+        // === params ===
+        ret.params = tuple;
+
+        // === destroy params ===
+        ret.destroyParams = [](void* p)
+        {
+            delete static_cast<Tuple*>(p);
+        };
+
+        return ret;
     }
 
-	virtual OBJECT_ID registerObject(std::unique_ptr<ObjectBinder> binder) = 0;
-	virtual RARetCode unregisterObject(OBJECT_ID id)                       = 0;
-	virtual RARetCode addTag(OBJECT_ID id, std::vector<TAG_ID>& tags)      = 0;
-	virtual RARetCode removeTag(OBJECT_ID id, TAG_ID tag)                  = 0;
+	virtual OBJECT_ID registerObject(ObjectBinder binder)                            = 0;
+    virtual OBJECT_ID registerObject(ObjectBinder binder, std::vector<TAG_ID>& tags) = 0;
+	virtual RARetCode unregisterObject(OBJECT_ID id)                                 = 0;
+	virtual RARetCode addTag(OBJECT_ID id, std::vector<TAG_ID>& tags)                = 0;
+	virtual RARetCode removeTag(OBJECT_ID id, TAG_ID tag)                            = 0;
 
     virtual RARetCode activate(OBJECT_ID id)   = 0;
     virtual RARetCode deactivate(OBJECT_ID id) = 0;
 
     virtual RARetCode activateByTag(TAG_ID id)   = 0;
     virtual RARetCode deactivateByTag(TAG_ID id) = 0;
+
+    virtual bool isActivate(OBJECT_ID id) = 0;
+    virtual bool isActivateByTag(TAG_ID id) = 0;
+
 };

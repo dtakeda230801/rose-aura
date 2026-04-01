@@ -26,7 +26,6 @@ using namespace RoseAuraReturnCode;
 IWorldNavigator::WorldConfig	gWorldConf;
 IObjectRepository::TAG_ID		gDummyGameTag = 0x01;
 
-
 void buildConf1()
 {
 	gWorldConf.mWorldSpace.mMin.mX = 100;

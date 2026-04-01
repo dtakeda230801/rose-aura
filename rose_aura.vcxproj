@@ -30,6 +30,7 @@
     <ClCompile Include="framework\src\CentralLooper.cpp" />
     <ClCompile Include="framework\src\GraphicsManager.cpp" />
     <ClCompile Include="framework\src\InputHandler.cpp" />
+    <ClCompile Include="framework\src\MediaCoordinator.cpp" />
     <ClCompile Include="framework\src\ObjectRepository.cpp" />
     <ClCompile Include="framework\src\RoseAura.cpp" />
     <ClCompile Include="framework\src\Utility.cpp" />
@@ -39,6 +40,7 @@
     <ClInclude Include="framework\include\ICentralLooper.h" />
     <ClInclude Include="framework\include\IGraphicsManager.h" />
     <ClInclude Include="framework\include\IInputHandler.h" />
+    <ClInclude Include="framework\include\IMediaCoordinator.h" />
     <ClInclude Include="framework\include\IObjectRepository.h" />
     <ClInclude Include="framework\include\IWorldNavigator.h" />
     <ClInclude Include="framework\include\RoseAura.h" />
@@ -46,6 +48,7 @@
     <ClInclude Include="framework\src\CentralLooper.h" />
     <ClInclude Include="framework\src\GraphicsManager.h" />
     <ClInclude Include="framework\src\InputHandler.h" />
+    <ClInclude Include="framework\src\MediaCoordinator.h" />
     <ClInclude Include="framework\src\ObjectRepository.h" />
     <ClInclude Include="framework\src\RoseAuraImpl.h" />
     <ClInclude Include="framework\src\Utility.h" />

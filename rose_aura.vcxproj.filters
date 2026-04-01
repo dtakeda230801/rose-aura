@@ -39,6 +39,9 @@
     <ClCompile Include="framework\src\RoseAura.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="framework\src\MediaCoordinator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework\src\CentralLooper.h">
@@ -82,6 +85,12 @@
     </ClInclude>
     <ClInclude Include="framework\include\RoseAuraReturnCode.h">
       <Filter>RoseAura Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\include\IMediaCoordinator.h">
+      <Filter>RoseAura Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\src\MediaCoordinator.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

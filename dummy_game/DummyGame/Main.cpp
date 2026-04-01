@@ -403,6 +403,45 @@ private:
 	Color						mColor    = RED;
 
 };
+////////////////////////////////////////////
+////////////////////////////////////////////
+class SoundTester : public IInputHandler::IInputHandlerCallback
+{
+public:
+	//IInputHandlerCallback
+	void onEvent(std::vector<std::pair<InputState, InputType>>& events)
+	{
+		for (auto event : events) {
+			InputState state = event.first;
+			InputType  type = event.second;
+
+			if (state == InputState::PUSHED && type == InputType::ACTION2) {
+				mMediaCoordinator.test();
+			}
+		}
+	}
+
+	void init()
+	{
+		mInputHandler.registerCallback(this);
+	}
+
+	void fin()
+	{
+		mInputHandler.unregisterCallback(this);
+	}
+
+	SoundTester(IInputHandler& ih, IMediaCoordinator& mc) :
+		 mInputHandler(ih)
+		,mMediaCoordinator(mc)
+	{
+	}
+	virtual ~SoundTester() = default;
+
+private:
+	IInputHandler&     mInputHandler;
+	IMediaCoordinator& mMediaCoordinator;
+};
 
 ////////////////////////////////////////////
 ////////////////////////////////////////////
@@ -441,6 +480,7 @@ int main()
 		IGraphicsManager&  graphicsManager  = rose_aura->getGraphicsManager();
 		IWorldNavigator&   worldNavigator   = rose_aura->getWorldNavigator();
 		IObjectRepository& objectRepository = rose_aura->getObjectRepository();
+		IMediaCoordinator& mediaCoordinator = rose_aura->getMediaCoordinator();
 
 		////////////////////////////////////////////
 		id = objectRepository.registerObject(
@@ -487,6 +527,14 @@ int main()
 			objectRepository.makeObjectBinder<DotRenderer, IWorldNavigator&, IGraphicsManager&, IInputHandler&>(
 				  &DotRenderer::init , &DotRenderer::fin
 				, worldNavigator , graphicsManager , inputHandler)
+			, tags
+		);
+		ids.push_back(id);
+
+		id = objectRepository.registerObject(
+			objectRepository.makeObjectBinder<SoundTester, IInputHandler&, IMediaCoordinator&>(
+				&SoundTester::init, &SoundTester::fin
+				, inputHandler, mediaCoordinator)
 			, tags
 		);
 		ids.push_back(id);

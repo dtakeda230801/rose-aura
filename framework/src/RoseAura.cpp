@@ -1,8 +1,6 @@
 #include "RoseAura.h"
 #include "RoseAuraImpl.h"
 
-#include "CentralLooper.h"
-
 std::unique_ptr<RoseAura> RoseAura::create()
 {
 	return std::make_unique<RoseAuraImpl>();
@@ -15,8 +13,8 @@ RoseAuraImpl::RoseAuraImpl()
 	mInputHandler		= std::make_unique<InputHandler>();
 	mObjectRepository	= std::make_unique<ObjectRepository>();
 	mWorldNavigator		= std::make_unique<WorldNavigator>();
+	mMediaCoordinator   = std::make_unique<MediaCoordinator>();
 }
-
 
 ICentralLooper& RoseAuraImpl::getCentralLooper()
 {
@@ -42,3 +40,9 @@ IWorldNavigator& RoseAuraImpl::getWorldNavigator()
 {
 	return *mWorldNavigator;
 }
+
+IMediaCoordinator& RoseAuraImpl::getMediaCoordinator()
+{
+	return *mMediaCoordinator;
+}
+

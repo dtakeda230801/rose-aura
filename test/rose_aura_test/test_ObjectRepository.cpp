@@ -132,7 +132,7 @@ TEST(testObjectRepository, APITest)
 		ret = objR.addTag(id1, TEST_TAG1);
 		EXPECT_EQ(ret, RARetCode::RET_OK);
 
-		IObjectRepository::OBJECT_ID id2 = objR.registerObject(
+		id2 = objR.registerObject(
 			objR.makeObjectBinder<TestObj, int, IInputHandler&>(
 				  &TestObj::init
 				, &TestObj::term

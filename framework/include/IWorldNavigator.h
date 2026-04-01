@@ -54,9 +54,6 @@ public:
 		Vec3        mPosition;
 		bool        mEnableFollowing;
 		bool		mLimitScrolling;
-
-		IActiveSpaceCallback*
-				    mActiveSpaceCb;
 	};
 
 	//////////////////////////////////////////////////////////
@@ -74,5 +71,8 @@ public:
 
 	virtual RARetCode registerTrigger(TRIGGER_ID id, Vec3& location, float distance, ITriggerCallback* cb) = 0;
 	virtual RARetCode removeTrigger(TRIGGER_ID id)	= 0;
+
+	virtual RARetCode registerActiveSpaceCallback(IActiveSpaceCallback* cb)   = 0;
+	virtual RARetCode unregisterActiveSpaceCallback() = 0;
 };
 

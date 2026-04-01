@@ -8,10 +8,6 @@
 //////////////////////////////////////////////////////////
 WorldNavigator::WORLD_ID WorldNavigator::createWorld(WorldConfig& conf)
 {
-	if (!conf.mActiveSpaceCb) {
-		return 0;
-	}
-
 	std::lock_guard<std::mutex> lock(mMutex);
 	World world;
 
@@ -25,7 +21,7 @@ WorldNavigator::WORLD_ID WorldNavigator::createWorld(WorldConfig& conf)
 	world.mLimitScrolling   = conf.mLimitScrolling;
 	world.mPosition         = conf.mPosition;
 	world.mScrollPosition   = conf.mPosition;
-	world.mActiveSpaceCb    = conf.mActiveSpaceCb;
+	world.mActiveSpaceCb    = nullptr;
 
 	mWorlds.push_back(world);
 
@@ -188,6 +184,36 @@ RARetCode WorldNavigator::removeTrigger(TRIGGER_ID id)
 
 	return ret;
 }
+
+RARetCode WorldNavigator::registerActiveSpaceCallback(IActiveSpaceCallback* cb)
+{
+	World& currentWorld = mWorlds[mCurrentWorldIndex];
+
+	if (currentWorld.mActiveSpaceCb) {
+		return RARetCode::RET_ERR_INVALID_STATE;
+	}
+
+	std::lock_guard<std::mutex> lock(mMutex);
+	currentWorld.mActiveSpaceCb = cb;
+
+	return RARetCode::RET_OK;
+}
+
+RARetCode	 WorldNavigator::unregisterActiveSpaceCallback()
+{
+	World& currentWorld = mWorlds[mCurrentWorldIndex];
+
+	if (!currentWorld.mActiveSpaceCb) {
+		return RARetCode::RET_ERR_INVALID_STATE;
+	}
+
+	std::lock_guard<std::mutex> lock(mMutex);
+	currentWorld.mActiveSpaceCb = nullptr;
+
+	return RARetCode::RET_OK;
+
+}
+
 
 WorldNavigator::WorldNavigator()
 	: mCurrentWorldIndex(-1)

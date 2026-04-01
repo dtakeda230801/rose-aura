@@ -24,6 +24,10 @@ public:
 	RARetCode	 registerTrigger(TRIGGER_ID id, Vec3& location, float distance, ITriggerCallback* cb);
 	RARetCode	 removeTrigger(TRIGGER_ID id);
 
+	RARetCode	 registerActiveSpaceCallback(IActiveSpaceCallback* cb);
+	RARetCode	 unregisterActiveSpaceCallback();
+
+
 	WorldNavigator();
 	virtual ~WorldNavigator() = default;
 private:

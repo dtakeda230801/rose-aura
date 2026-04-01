@@ -23,7 +23,9 @@ using namespace RoseAuraReturnCode;
 
 #define CIRCLE_SIZE 10
 
-IWorldNavigator::WorldConfig gWorldConf;
+IWorldNavigator::WorldConfig	gWorldConf;
+IObjectRepository::TAG_ID		gDummyGameTag = 0x01;
+
 
 void buildConf1()
 {
@@ -50,7 +52,9 @@ void buildConf1()
 	gWorldConf.mLimitScrolling  = true;
 }
 
-class ContinuousInputTask : 
+////////////////////////////////////////////
+////////////////////////////////////////////
+class ContinuousInputTask :
 	  public ICentralLooper::ITask
 	, public ICentralLooper::IFrameSyncCallback {
 public:
@@ -75,6 +79,18 @@ public:
 		mCentralLooper.enqueueTask(this);
 	}
 
+	void init()
+	{
+		mCentralLooper.registerFrameSyncCallback(this);
+		mCentralLooper.enqueueTask(this);
+	}
+
+	void fin()
+	{
+		mCentralLooper.unregisterFrameSyncCallback(this);
+	}
+
+
 	ContinuousInputTask(ICentralLooper& centralLooper, IInputHandler& inputHandler) :
 		 mCentralLooper(centralLooper)
 		,mInputHandler(inputHandler)
@@ -87,6 +103,8 @@ private:
 	IInputHandler&	mInputHandler;
 };
 
+////////////////////////////////////////////
+////////////////////////////////////////////
 class BGRenderer : public IGraphicsManager::IObjectRenderer
 {
 public:
@@ -101,10 +119,29 @@ public:
 		DrawRectangleLinesEx(rect, 3.0f, LIGHTGRAY);
 	};
 
-	BGRenderer() = default;
+	void init()
+	{
+		mGraphicsManager.setRenderer(this);
+	}
+
+	void fin()
+	{
+		mGraphicsManager.removeRenderer(this);
+	}
+
+	BGRenderer(IGraphicsManager& objR) :
+		mGraphicsManager(objR)
+	{
+	}
+
 	virtual ~BGRenderer() = default;
+
+private:
+	IGraphicsManager& mGraphicsManager;
 };
 
+////////////////////////////////////////////
+////////////////////////////////////////////
 class ActiveSpaceRenderer : public IGraphicsManager::IObjectRenderer
 	                      , public IWorldNavigator::IActiveSpaceCallback
 {
@@ -128,10 +165,30 @@ public:
 		mH = activeSpace.mMax.mY - activeSpace.mMin.mY; 
 	}
 
-	ActiveSpaceRenderer() = default;
+	void init()
+	{
+		mWorldNavigator.registerActiveSpaceCallback(this);
+		mGraphicsManager.setRenderer(this);
+	}
+
+	void fin()
+	{
+		mGraphicsManager.removeRenderer(this);
+		mWorldNavigator.unregisterActiveSpaceCallback();
+	}
+
+	ActiveSpaceRenderer(IGraphicsManager& gm, IWorldNavigator& wn) : 
+		mGraphicsManager(gm), mWorldNavigator(wn)
+	{
+
+	}
+
 	virtual ~ActiveSpaceRenderer() = default;
 
 private:
+	IGraphicsManager& mGraphicsManager;
+	IWorldNavigator&  mWorldNavigator;
+
 	std::mutex mMutex;
 	unsigned int mX = gWorldConf.mPosition.mX - gWorldConf.mActiveRange.mX;
 	unsigned int mY = gWorldConf.mPosition.mY - gWorldConf.mActiveRange.mY;
@@ -139,6 +196,8 @@ private:
 	unsigned int mH = gWorldConf.mActiveRange.mY*2;
 };
 
+////////////////////////////////////////////
+////////////////////////////////////////////
 class TxTRenderer : public IGraphicsManager::IObjectRenderer
 			  	  , public IInputHandler::IInputHandlerCallback
 {
@@ -170,15 +229,36 @@ public:
 		}
 	}
 
-	TxTRenderer() = default;
+	void init()
+	{
+		mInputHandler.registerCallback(this);
+		mGraphicsManager.setRenderer(this);
+	}
+
+	void fin()
+	{
+		mGraphicsManager.removeRenderer(this);
+		mInputHandler.unregisterCallback(this);
+	}
+
+	TxTRenderer(IGraphicsManager& gm, IInputHandler& ih) :
+		 mGraphicsManager(gm)
+		,mInputHandler(ih)
+	{
+	}
 	virtual ~TxTRenderer() = default;
 
 private:
+	IGraphicsManager&	mGraphicsManager;
+	IInputHandler&		mInputHandler;
+
 	std::mutex		mMutex;
 	bool			mDisplay = true;
 
 };
 
+////////////////////////////////////////////
+////////////////////////////////////////////
 class DotRenderer :
 	  public IGraphicsManager::IObjectRenderer
 	, public IInputHandler::IInputHandlerCallback
@@ -218,8 +298,22 @@ public:
 		}
 	}
 
-	DotRenderer(IWorldNavigator&  worldNavigator):
-		mWorldNavigator(worldNavigator)
+	void init()
+	{
+		mGraphicsManager.setRenderer(this);
+		mInputHandler.registerCallback(this);
+	}
+
+	void fin()
+	{
+		mInputHandler.unregisterCallback(this);
+		mGraphicsManager.removeRenderer(this);
+	}
+
+	DotRenderer(IWorldNavigator&  worldNavigator, IGraphicsManager& gm, IInputHandler& ih):
+		  mWorldNavigator(worldNavigator)
+		, mGraphicsManager(gm)
+		, mInputHandler(ih)
 	{
 	};
 
@@ -227,10 +321,14 @@ public:
 
 private:
 	IWorldNavigator&  mWorldNavigator;
+	IGraphicsManager& mGraphicsManager;
+	IInputHandler&    mInputHandler;
 
 	bool       mTextOn = true;
 };
 
+////////////////////////////////////////////
+////////////////////////////////////////////
 class DotTrigger :public IGraphicsManager::IObjectRenderer
 			    , public IWorldNavigator::ITriggerCallback
 {
@@ -268,19 +366,23 @@ public:
 		mColor = PINK;
 	};
 
-	IWorldNavigator::TRIGGER_ID getId() {
-		return mId;
+	void init()
+	{
+		mGraphicsManager.setRenderer(this);
+		mWorldNavigator.registerTrigger(mId, mPosition, mDistance, this);
 	}
 
-	IWorldNavigator::Vec3& getLocation() {
-		return mPosition;
+	void fin()
+	{
+		mWorldNavigator.removeTrigger(mId);
+		mGraphicsManager.removeRenderer(this);
 	}
 
-	float getDistance() {
-		return mDistance;
-	}
-
-	DotTrigger()		  = default;
+	DotTrigger(IGraphicsManager& gm, IWorldNavigator& wn) :
+		  mGraphicsManager(gm)
+		, mWorldNavigator(wn)
+	{
+	};
 	virtual ~DotTrigger() = default;
 
 private:
@@ -292,6 +394,9 @@ private:
 			+ (static_cast<double>(b.mZ - a.mZ) * static_cast<double>(b.mZ - a.mZ))));
 	}
 	
+	IGraphicsManager& mGraphicsManager;
+	IWorldNavigator&  mWorldNavigator;
+
 	std::mutex					mMutex;
 	IWorldNavigator::TRIGGER_ID mId		  = 1;
 	IWorldNavigator::Vec3		mPosition = { 200,200, 0 };
@@ -300,6 +405,8 @@ private:
 
 };
 
+////////////////////////////////////////////
+////////////////////////////////////////////
 std::string readInputConf()
 {
 	std::ifstream file("input_map.json");
@@ -315,14 +422,19 @@ std::string readInputConf()
 	return buffer.str();
 }
 
+////////////////////////////////////////////
+////////////////////////////////////////////
 int main()
 {
 	{ //for _CrtDumpMemoryLeaks()
 		////////////////////////////////////////////
+
 		buildConf1();
+		IObjectRepository::OBJECT_ID id;
+		std::vector<IObjectRepository::OBJECT_ID>	ids;
+		std::vector<IObjectRepository::TAG_ID>		tags = { gDummyGameTag };
 
 		////////////////////////////////////////////
-
 		std::unique_ptr<RoseAura> rose_aura = RoseAura::create();
 
 		ICentralLooper&	   centralLooper	= rose_aura->getCentralLooper();
@@ -331,50 +443,69 @@ int main()
 		IWorldNavigator&   worldNavigator   = rose_aura->getWorldNavigator();
 		IObjectRepository& objectRepository = rose_aura->getObjectRepository();
 
-		ContinuousInputTask* inputTask   = new ContinuousInputTask(centralLooper,inputHandler);
+		////////////////////////////////////////////
+		id = objectRepository.registerObject(
+			objectRepository.makeObjectBinder<ContinuousInputTask, ICentralLooper&, IInputHandler&>(
+				  &ContinuousInputTask::init , &ContinuousInputTask::fin
+				, centralLooper , inputHandler)
+			, tags
+		);
+		ids.push_back(id);
 
-		DotTrigger*			 dotTrigger  = new DotTrigger();
+		id = objectRepository.registerObject(
+			objectRepository.makeObjectBinder<DotTrigger, IGraphicsManager&, IWorldNavigator&>(
+				  &DotTrigger::init	, &DotTrigger::fin
+				, graphicsManager , worldNavigator)
+			, tags
+		);
+		ids.push_back(id);
 
-		BGRenderer*		     bgRenderer	 = new BGRenderer();
-		ActiveSpaceRenderer* asRenderer  = new ActiveSpaceRenderer();
-		TxTRenderer*	     txtRenderer = new TxTRenderer();
-		DotRenderer*	     dotRenderer = new DotRenderer(worldNavigator);
+		id = objectRepository.registerObject(
+			objectRepository.makeObjectBinder<BGRenderer, IGraphicsManager&>(
+				  &BGRenderer::init	, &BGRenderer::fin
+				, graphicsManager )
+			, tags
+		);
+		ids.push_back(id);
+
+		id = objectRepository.registerObject(
+			objectRepository.makeObjectBinder<ActiveSpaceRenderer, IGraphicsManager&, IWorldNavigator&>(
+				  &ActiveSpaceRenderer::init , &ActiveSpaceRenderer::fin
+				, graphicsManager , worldNavigator )
+			, tags
+		);
+		ids.push_back(id);
+
+		id = objectRepository.registerObject(
+			objectRepository.makeObjectBinder<TxTRenderer, IGraphicsManager&, IInputHandler&>(
+				  &TxTRenderer::init , &TxTRenderer::fin
+				, graphicsManager , inputHandler)
+			, tags
+		);
+		ids.push_back(id);
+
+		id = objectRepository.registerObject(
+			objectRepository.makeObjectBinder<DotRenderer, IWorldNavigator&, IGraphicsManager&, IInputHandler&>(
+				  &DotRenderer::init , &DotRenderer::fin
+				, worldNavigator , graphicsManager , inputHandler)
+			, tags
+		);
+		ids.push_back(id);
 
 		////////////////////////////////////////////
-		gWorldConf.mActiveSpaceCb = asRenderer;
-
 		IWorldNavigator::WORLD_ID wId = worldNavigator.createWorld(gWorldConf);
-		worldNavigator.registerTrigger(dotTrigger->getId(), dotTrigger->getLocation(), dotTrigger->getDistance(), dotTrigger);
-
-		centralLooper.registerFrameSyncCallback(inputTask);
-		centralLooper.enqueueTask(inputTask);
-
 		inputHandler.setConf(readInputConf());
-		inputHandler.registerCallback(txtRenderer);
-		inputHandler.registerCallback(dotRenderer);
 
-		graphicsManager.setRenderer(bgRenderer);
-		graphicsManager.setRenderer(asRenderer);
-		graphicsManager.setRenderer(txtRenderer);
-		graphicsManager.setRenderer(dotTrigger);
-		graphicsManager.setRenderer(dotRenderer);
+		objectRepository.activateByTag(gDummyGameTag);
 
 		////////////////////////////////////////////
 		centralLooper.start(30);
-
 		graphicsManager.runUntilClosed();
 
-		centralLooper.stop();
-
 		////////////////////////////////////////////
-		delete dotRenderer;
-		delete txtRenderer;
-		delete asRenderer;
-		delete bgRenderer;
+		centralLooper.stop();
+		objectRepository.deactivateByTag(gDummyGameTag);
 
-		delete dotTrigger;
-
-		delete inputTask;
 	}
 	_CrtDumpMemoryLeaks();
 

@@ -66,12 +66,13 @@ TEST(testWorldNavigator, APITest)
 {
 	ROSE_AURA_TEST_BEGIN;
 	{
+		bool		check;
+
 		ActiveSpaceCallback* asCb = new ActiveSpaceCallback();
 		TriggerCallback*     trCb = new TriggerCallback();
 
 		buildConf1();
 
-		bool check;
 		IWorldNavigator::WORLD_ID w1, w2;
 		IWorldNavigator::Bounds   b;
 		IWorldNavigator::Vec3	  v;
@@ -81,13 +82,14 @@ TEST(testWorldNavigator, APITest)
 
 		IWorldNavigator& wn = ra->getWorldNavigator();
 
-		conf1.mActiveSpaceCb = nullptr;
-		w1 = wn.createWorld(conf1);
-		EXPECT_FALSE(isValidWorldId(w1));
-
-		conf1.mActiveSpaceCb = asCb;
 		w1 = wn.createWorld(conf1);
 		EXPECT_TRUE(isValidWorldId(w1));
+		
+		EXPECT_EQ(wn.registerActiveSpaceCallback(asCb), RARetCode::RET_OK);
+		EXPECT_EQ(wn.registerActiveSpaceCallback(asCb), RARetCode::RET_ERR_INVALID_STATE);
+		EXPECT_EQ(wn.unregisterActiveSpaceCallback()  , RARetCode::RET_OK);
+		EXPECT_EQ(wn.unregisterActiveSpaceCallback()  , RARetCode::RET_ERR_INVALID_STATE);
+		EXPECT_EQ(wn.registerActiveSpaceCallback(asCb), RARetCode::RET_OK);
 
 		w2 = wn.createWorld(conf1);
 		EXPECT_TRUE(isValidWorldId(w2));

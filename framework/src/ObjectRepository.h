@@ -9,17 +9,18 @@ public:
 	struct ObjectEntry {
 		OBJECT_ID			 mId;
 		void*				 mInstance;
-		ObjectBinder	     mBinder;
+		std::unique_ptr<ObjectBinder>
+							 mBinder;
 		std::vector<TAG_ID>  mTags;
 	};
 
 	//////////////////////////////////////////////////////////
 	// APIs
 	//////////////////////////////////////////////////////////
-	OBJECT_ID registerObject(ObjectBinder binder);
-	OBJECT_ID registerObject(ObjectBinder binder, std::vector<TAG_ID>& tags);
+	OBJECT_ID registerObject(std::unique_ptr<ObjectBinder> binder);
+	OBJECT_ID registerObject(std::unique_ptr<ObjectBinder> binder, std::vector<TAG_ID>& tags);
 	RARetCode unregisterObject(OBJECT_ID id);
-	RARetCode addTag(OBJECT_ID id, std::vector<TAG_ID>& tags);
+	RARetCode addTag(OBJECT_ID id, TAG_ID tag);
 	RARetCode removeTag(OBJECT_ID id, TAG_ID tag);
 
 	RARetCode activate(OBJECT_ID id);

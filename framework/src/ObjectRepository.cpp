@@ -2,21 +2,21 @@
 #include "Utility.h"
 
 ObjectRepository::OBJECT_ID 
-	ObjectRepository::registerObject(ObjectBinder binder)
+	ObjectRepository::registerObject(std::unique_ptr<ObjectBinder> binder)
 {
 	std::vector<TAG_ID> tags = {};
 	return registerObject(std::move(binder), tags);
 }
 
 ObjectRepository::OBJECT_ID 
-	ObjectRepository::registerObject(ObjectBinder binder, std::vector<TAG_ID>& tags)
+	ObjectRepository::registerObject(std::unique_ptr<ObjectBinder> binder, std::vector<TAG_ID>& tags)
 {
 	OBJECT_ID id = ++mIdCounter;
 
 	std::unique_ptr<ObjectEntry> entry = std::make_unique<ObjectEntry>();
 	entry->mId       = id;
 	entry->mInstance = nullptr;
-	entry->mBinder   = binder;
+	entry->mBinder   = std::move(binder);
 
 	if (!tags.empty()) {
 		entry->mTags.assign(tags.begin(), tags.end());
@@ -38,7 +38,7 @@ RARetCode ObjectRepository::unregisterObject(OBJECT_ID id)
 	}
 
 	deactivateInternal(objEntry);
-	objEntry->mBinder.destroyParams(objEntry->mBinder.params);
+	objEntry->mBinder->destroyParams(objEntry->mBinder->params);
 
 	auto newEnd = std::remove_if(mObjects.begin(), mObjects.end(),
 		[id](const std::unique_ptr<ObjectEntry>& entry) {
@@ -53,26 +53,16 @@ RARetCode ObjectRepository::unregisterObject(OBJECT_ID id)
 	return ret;
 }
 
-RARetCode ObjectRepository::addTag(OBJECT_ID id, std::vector<TAG_ID>& tags)
+RARetCode ObjectRepository::addTag(OBJECT_ID id, TAG_ID tag)
 {
-	if (tags.empty()) {
-		return RARetCode::RET_ERR_INVALID_ARG;
-	}
-
 	ObjectEntry* objEntry = searchObjectEntry(id);
 	if (!objEntry) {
 		return RARetCode::RET_ERR_NOT_FOUND;
 	}
 
 	std::vector<TAG_ID>& objTags = objEntry->mTags;
+	objTags.push_back(tag);
 
-	for (const auto& tag : tags)
-	{
-		if (std::find(objTags.begin(), objTags.end(), tag) == objTags.end())
-		{
-			objTags.push_back(tag);
-		}
-	}
 	return RARetCode::RET_OK;
 }
 
@@ -180,7 +170,7 @@ ObjectRepository::~ObjectRepository()
 {
 	for (std::unique_ptr<ObjectEntry>& entry : mObjects) {
 		deactivateInternal(entry.get());
-		entry->mBinder.destroyParams(entry->mBinder.params);
+		entry->mBinder->destroyParams(entry->mBinder->params);
 	}
 }
 
@@ -219,8 +209,8 @@ RARetCode ObjectRepository::activateInternal(ObjectEntry* entry)
 	if (entry->mInstance) {
 		return RARetCode::RET_ERR_INVALID_STATE;
 	}
-	ObjectBinder& binder = entry->mBinder;
-	entry->mInstance = binder.create(binder.params);
+	ObjectBinder* binder = entry->mBinder.get();
+	entry->mInstance = binder->create(binder->params);
 	return RARetCode::RET_OK;
 }
 
@@ -229,8 +219,8 @@ RARetCode ObjectRepository::deactivateInternal(ObjectEntry* entry)
 	if (!entry->mInstance) {
 		return RARetCode::RET_ERR_INVALID_STATE;
 	}
-	ObjectBinder& binder = entry->mBinder;
-	binder.destroy(entry->mInstance);
+	ObjectBinder* binder = entry->mBinder.get();
+	binder->destroy(entry->mInstance);
 	entry->mInstance = nullptr;
 	return RARetCode::RET_OK;
 }

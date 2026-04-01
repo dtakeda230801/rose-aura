@@ -12,7 +12,7 @@ class IObjectRepository {
 public:
 
 	using OBJECT_ID = unsigned int;
-	using TAG_ID = unsigned int;
+	using TAG_ID    = unsigned int;
 
 #define isValidObjectId(x) (0 < x)
 
@@ -28,15 +28,14 @@ public:
 	// APIs
 	//////////////////////////////////////////////////////////
     template<class T, class... Args>
-    ObjectBinder makeObjectBinder(void (T::*initializer)(), void (T::*terminator)(), Args&&... args)
+    std::unique_ptr<ObjectBinder> makeObjectBinder(void (T::*initializer)(), void (T::*terminator)(), Args&&... args)
     {
         using Tuple  = std::tuple<Args...>;
         Tuple* tuple = new Tuple(std::forward<Args>(args)...);
-        ObjectBinder ret{};
+        std::unique_ptr<ObjectBinder> ret = std::make_unique<ObjectBinder>();
 
         // === create ===
-        ret.create = [initializer](void* data)->void*
-        {
+        ret->create = [initializer](void* data)->void* {
             auto tuple = static_cast<Tuple*>(data);
 
             T* obj = std::apply(
@@ -51,8 +50,7 @@ public:
         };
 
         // === destroy ===
-        ret.destroy = [terminator](void* p)
-        {
+        ret->destroy = [terminator](void* p) {
             T* obj = static_cast<T*>(p);
 
             if (terminator) {
@@ -63,22 +61,23 @@ public:
         };
 
         // === params ===
-        ret.params = tuple;
+        ret->params = tuple;
 
         // === destroy params ===
-        ret.destroyParams = [](void* p)
-        {
+        ret->destroyParams = [](void* p) {
             delete static_cast<Tuple*>(p);
         };
 
         return ret;
     }
 
-	virtual OBJECT_ID registerObject(ObjectBinder binder)                            = 0;
-    virtual OBJECT_ID registerObject(ObjectBinder binder, std::vector<TAG_ID>& tags) = 0;
-	virtual RARetCode unregisterObject(OBJECT_ID id)                                 = 0;
-	virtual RARetCode addTag(OBJECT_ID id, std::vector<TAG_ID>& tags)                = 0;
-	virtual RARetCode removeTag(OBJECT_ID id, TAG_ID tag)                            = 0;
+	virtual OBJECT_ID registerObject(std::unique_ptr<ObjectBinder> binder)                            = 0;
+    virtual OBJECT_ID registerObject(std::unique_ptr<ObjectBinder> binder, std::vector<TAG_ID>& tags) = 0;
+
+    virtual RARetCode unregisterObject(OBJECT_ID id)       = 0;
+	
+    virtual RARetCode addTag(OBJECT_ID id, TAG_ID tag)     = 0;
+	virtual RARetCode removeTag(OBJECT_ID id, TAG_ID tag)  = 0;
 
     virtual RARetCode activate(OBJECT_ID id)   = 0;
     virtual RARetCode deactivate(OBJECT_ID id) = 0;
@@ -86,7 +85,7 @@ public:
     virtual RARetCode activateByTag(TAG_ID id)   = 0;
     virtual RARetCode deactivateByTag(TAG_ID id) = 0;
 
-    virtual bool isActivate(OBJECT_ID id) = 0;
+    virtual bool isActivate(OBJECT_ID id)   = 0;
     virtual bool isActivateByTag(TAG_ID id) = 0;
 
 };

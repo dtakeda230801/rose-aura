@@ -59,9 +59,11 @@ public:
 	{
 		mInputHandler.update();
 	};
+
 	void finish()
 	{
 	};
+
 	std::string getTaskName()
 	{
 		return "Test Task";
@@ -323,10 +325,11 @@ int main()
 
 		std::unique_ptr<RoseAura> rose_aura = RoseAura::create();
 
-		ICentralLooper&		centralLooper	= rose_aura->getCentralLooper();
-		IInputHandler&		inputHandler	= rose_aura->getInputHandler();
-		IGraphicsManager&	graphicsManager = rose_aura->getGraphicsManager();
-		IWorldNavigator&    worldNavigator  = rose_aura->getWorldNavigator();
+		ICentralLooper&	   centralLooper	= rose_aura->getCentralLooper();
+		IInputHandler&	   inputHandler	    = rose_aura->getInputHandler();
+		IGraphicsManager&  graphicsManager  = rose_aura->getGraphicsManager();
+		IWorldNavigator&   worldNavigator   = rose_aura->getWorldNavigator();
+		IObjectRepository& objectRepository = rose_aura->getObjectRepository();
 
 		ContinuousInputTask* inputTask   = new ContinuousInputTask(centralLooper,inputHandler);
 

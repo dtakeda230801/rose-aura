@@ -9,11 +9,39 @@
 
 #pragma comment(lib, "ole32.lib")
 
-void MediaCoordinator::renderAudioThread()
-{
-    HRESULT ret = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
-    if (ret != S_OK) {
+RARetCode MediaCoordinator::start()
+{
+    if (mStarted) {
+        return RARetCode::RET_ERR_INVALID_STATE;
+    }
+
+    mStarted = true;
+
+    mThread = std::thread(&MediaCoordinator::renderToDevice, this);
+    return RARetCode::RET_OK;
+}
+
+RARetCode MediaCoordinator::stop()
+{
+    if (!mStarted) {
+        return RARetCode::RET_ERR_INVALID_STATE;
+    }
+
+    mStarted = false;
+
+    if (mThread.joinable()) {
+        mThread.join();
+    }
+    return RARetCode::RET_OK;
+}
+
+
+void MediaCoordinator::renderToDevice()
+{
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+
+    if (hr != S_OK) {
         Utility::printLog("CoInitializeEx fails");
         return;
     }
@@ -24,193 +52,237 @@ void MediaCoordinator::renderAudioThread()
         IAudioClient* audioClient = nullptr;
         IAudioRenderClient* renderClient = nullptr;
 
-        CoCreateInstance(
+        hr = CoCreateInstance(
             __uuidof(MMDeviceEnumerator),
             nullptr,
             CLSCTX_ALL,
             IID_PPV_ARGS(&enumerator));
         
-        if (!enumerator) {
+        if (hr != S_OK) {
             Utility::printLog("CoCreateInstance for IMMDeviceEnumerator fails");
             return;
         }
 
-        enumerator->GetDefaultAudioEndpoint(
+        hr = enumerator->GetDefaultAudioEndpoint(
             eRender,
             eConsole,
             &device);
 
-        if (!device) {
+        if (hr != S_OK) {
             Utility::printLog("GetDefaultAudioEndpoint fails");
             return;
         }
 
-        device->Activate(
+        hr = device->Activate(
             __uuidof(IAudioClient),
             CLSCTX_ALL,
             nullptr,
             (void**)&audioClient);
 
-        if (!audioClient) {
+        if (hr != S_OK) {
             Utility::printLog("Activate fails");
             return;
         }
 
-    }
+        WAVEFORMATEX* mixFormat = nullptr;
+        hr = audioClient->GetMixFormat(&mixFormat);
 
+        if (hr != S_OK) {
+            Utility::printLog("GetMixFormat fails");
+            return;
+        }
 
+        HANDLE audioEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        if (audioEvent == nullptr) {
+            Utility::printLog("GetMixFormat fails");
+            return;
+        }
 
-}
+        //REFERENCE_TIME bufferDuration = 10000000; // 1 sec
+        REFERENCE_TIME bufferDuration = 200000; // 50 sec
 
+        hr = audioClient->Initialize(
+            AUDCLNT_SHAREMODE_SHARED,
+            AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
+            bufferDuration,
+            0,
+            mixFormat,
+            nullptr);
 
+        if (hr != S_OK) {
+            Utility::printLog("Initialize fails");
+            return;
+        }
 
-void MediaCoordinator::test()
-{
-    CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+        hr = audioClient->SetEventHandle(audioEvent);
+        if (hr != S_OK) {
+            Utility::printLog("SetEventHandle fails");
+            return;
+        }
 
-    WavData wav;
-    if (!loadWav("M:\\e\\works\\Dev\\test.wav", wav)) {
-        std::cout << "failed load wav\n";
-        return;
-    }
+        UINT32 bufferFrameCount;
+        hr = audioClient->GetBufferSize(&bufferFrameCount);
+        if (hr != S_OK) {
+            Utility::printLog("GetBufferSize fails");
+            return;
+        }
 
-    IMMDeviceEnumerator* enumerator   = nullptr;
-    IMMDevice*           device       = nullptr;
-    IAudioClient*        audioClient  = nullptr;
-    IAudioRenderClient*  renderClient = nullptr;
+        hr = audioClient->GetService(IID_PPV_ARGS(&renderClient));
+        if (hr != S_OK) {
+            Utility::printLog("GetService fails");
+            return;
+        }
 
-    CoCreateInstance(
-        __uuidof(MMDeviceEnumerator),
-        nullptr,
-        CLSCTX_ALL,
-        IID_PPV_ARGS(&enumerator));
+        hr = audioClient->Start();
+        if (hr != S_OK) {
+            Utility::printLog("Start fails");
+            return;
+        }
 
-    enumerator->GetDefaultAudioEndpoint(
-        eRender,
-        eConsole,
-        &device);
+        int channels = mixFormat->nChannels;
 
-    device->Activate(
-        __uuidof(IAudioClient),
-        CLSCTX_ALL,
-        nullptr,
-        (void**)&audioClient);
-
-    WAVEFORMATEX* mixFormat = nullptr;
-    audioClient->GetMixFormat(&mixFormat);
-
-    HANDLE audioEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-
-    REFERENCE_TIME bufferDuration = 10000000; // 1 sec
-
-    audioClient->Initialize(
-        AUDCLNT_SHAREMODE_SHARED,
-        AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
-        bufferDuration,
-        0,
-        mixFormat,
-        nullptr);
-
-    audioClient->SetEventHandle(audioEvent);
-
-    UINT32 bufferFrameCount;
-    audioClient->GetBufferSize(&bufferFrameCount);
-
-    audioClient->GetService(
-        IID_PPV_ARGS(&renderClient));
-
-    audioClient->Start();
-
-    size_t cursor = 0;
-    int channels = mixFormat->nChannels;
-
-    while (cursor < wav.samples.size())
-    {
-        WaitForSingleObject(audioEvent, INFINITE);
-
-        UINT32 padding;
-        audioClient->GetCurrentPadding(&padding);
-
-        UINT32 framesAvailable =
-            bufferFrameCount - padding;
-
-        BYTE* data;
-        renderClient->GetBuffer(framesAvailable, &data);
-
-        float* out = (float*)data;
-
-        for (UINT32 f = 0; f < framesAvailable; ++f)
+        while (mStarted)
         {
-            for (int ch = 0; ch < channels; ++ch)
+            WaitForSingleObject(audioEvent, INFINITE);
+
+            UINT32 padding;
+            hr = audioClient->GetCurrentPadding(&padding);
+            if (hr != S_OK) {
+                Utility::printLog("GetCurrentPadding fails");
+                return;
+            }
+
+            UINT32 framesAvailable =
+                bufferFrameCount - padding;
+
+            if (framesAvailable == 0)
+                continue;
+
+            BYTE* data;
+            hr = renderClient->GetBuffer(framesAvailable, &data);
+            if (hr != S_OK) {
+                Utility::printLog("GetBuffer fails");
+                return;
+            }
+            float* out = (float*)data;
+
+            for (UINT32 f = 0; f < framesAvailable ; ++f)
             {
-                if (cursor < wav.samples.size())
-                    *out++ = wav.samples[cursor++];
-                else
-                    *out++ = 0.0f;
+                if (mPlay) {
+                    unsigned int ret = requestData(&out, framesAvailable - f, channels);
+                    f += ret;
+                }
+                else {
+                    for (int ch = 0; ch < channels;ch++) {
+                        *out++ = 0.0f;
+                    }
+                }
+            }
+
+            hr = renderClient->ReleaseBuffer(framesAvailable, 0);
+            if (hr != S_OK) {
+                Utility::printLog("ReleaseBuffer fails");
+                return;
             }
         }
 
-        renderClient->ReleaseBuffer(framesAvailable, 0);
+        Sleep(500);
+
+        hr = audioClient->Stop();
+        if (hr != S_OK) {
+            Utility::printLog("Stop fails");
+            return;
+        }
+
+        CoTaskMemFree(mixFormat);
+        hr = renderClient->Release();
+        if (hr != S_OK) {
+            Utility::printLog("Release fails");
+            return;
+        }
+        hr = audioClient->Release();
+        if (hr != S_OK) {
+            Utility::printLog("Release fails");
+            return;
+        }
+        hr = device->Release();
+        if (hr != S_OK) {
+            Utility::printLog("Release fails");
+            return;
+        }
+        hr = enumerator->Release();
+        if (hr != S_OK) {
+            Utility::printLog("Release fails");
+            return;
+        }
+
+        CoUninitialize();
     }
-
-    Sleep(500);
-
-    audioClient->Stop();
-
-    CoTaskMemFree(mixFormat);
-    renderClient->Release();
-    audioClient->Release();
-    device->Release();
-    enumerator->Release();
-
-    CoUninitialize();
-
 }
 
 
+MediaCoordinator::MediaCoordinator() :
+      mStarted(false)
+    , mPlay(false)
+{
+    if (!loadWav("M:\\e\\works\\Dev\\test.wav", mWavData)) {
+        std::cout << "failed load wav\n";
+        return;
+    }
+};
+
+void MediaCoordinator::test()
+{
+    if (!mPlay) {
+        mPlay = true;
+    }
+}
+
 bool MediaCoordinator::loadWav(const char* path, WavData& out)
 {
-    std::ifstream f(path, std::ios::binary);
-    if (!f) return false;
+    std::ifstream waveFile(path, std::ios::binary);
+    if (!waveFile) return false;
 
     char riff[4];
-    f.read(riff, 4);
-    f.ignore(4); // size
-    f.ignore(4); // WAVE
+    waveFile.read(riff, 4);
+    char size[4];
+    waveFile.read(size, 4);
+    char wave[4];
+    waveFile.read(wave, 4);
 
     char chunk[4];
     int fmtSize;
 
     // find fmt
     while (true) {
-        f.read(chunk, 4);
-        f.read((char*)&fmtSize, 4);
+        waveFile.read(chunk, 4);
+        waveFile.read((char*)&fmtSize, 4);
         if (memcmp(chunk, "fmt ", 4) == 0)
             break;
-        f.ignore(fmtSize);
+        waveFile.ignore(fmtSize);
     }
 
     short audioFormat;
     short channels;
     int sampleRate;
-    f.read((char*)&audioFormat, 2);
-    f.read((char*)&channels, 2);
-    f.read((char*)&sampleRate, 4);
-    f.ignore(6);
+    waveFile.read((char*)&audioFormat, 2);
+    waveFile.read((char*)&channels, 2);
+    waveFile.read((char*)&sampleRate, 4);
+    waveFile.ignore(6);
     short bitsPerSample;
-    f.read((char*)&bitsPerSample, 2);
+    waveFile.read((char*)&bitsPerSample, 2);
 
     if (fmtSize > 16)
-        f.ignore(fmtSize - 16);
+        waveFile.ignore(fmtSize - 16);
 
     // find data
     int dataSize;
     while (true) {
-        f.read(chunk, 4);
-        f.read((char*)&dataSize, 4);
+        waveFile.read(chunk, 4);
+        waveFile.read((char*)&dataSize, 4);
         if (memcmp(chunk, "data", 4) == 0)
             break;
-        f.ignore(dataSize);
+        waveFile.ignore(dataSize);
     }
 
     int sampleCount = dataSize / (bitsPerSample / 8);
@@ -219,20 +291,42 @@ bool MediaCoordinator::loadWav(const char* path, WavData& out)
 
     if (bitsPerSample == 16) {
         std::vector<short> tmp(sampleCount);
-        f.read((char*)tmp.data(), dataSize);
+        waveFile.read((char*)tmp.data(), dataSize);
 
         for (int i = 0; i < sampleCount; ++i)
             out.samples[i] = tmp[i] / 32768.0f;
     }
     else if (bitsPerSample == 32) {
-        f.read((char*)out.samples.data(), dataSize);
+        waveFile.read((char*)out.samples.data(), dataSize);
     }
     else {
         return false;
     }
 
-    out.channels = channels;
+    out.channels   = channels;
     out.sampleRate = sampleRate;
+    out.current    = 0;
     return true;
 
+}
+
+unsigned int MediaCoordinator::requestData(float** buff, unsigned int size, unsigned int chs)
+{
+    float*          b  = *buff;
+    unsigned int    ret = 0;
+
+    for (ret; ret < size && mWavData.current < mWavData.samples.size(); ++ret) {
+        for (int ch = 0; ch < chs; ++ch) {
+            *b++ = mWavData.samples[mWavData.current++];
+        }
+    }
+
+    if (mWavData.samples.size() <= mWavData.current) {
+        mWavData.current = 0;
+        mPlay = false;
+    }
+
+    Utility::printLog("Write:%d",mWavData.current);
+
+    return ret;
 }

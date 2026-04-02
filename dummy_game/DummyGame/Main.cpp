@@ -546,11 +546,13 @@ int main()
 		objectRepository.activateByTag(gDummyGameTag);
 
 		////////////////////////////////////////////
+		mediaCoordinator.start();
 		centralLooper.start(30);
 		graphicsManager.runUntilClosed();
 
 		////////////////////////////////////////////
 		centralLooper.stop();
+		mediaCoordinator.stop();
 		objectRepository.deactivateByTag(gDummyGameTag);
 
 	}

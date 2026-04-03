@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <thread>
 
 #include "IMediaCoordinator.h"
 
@@ -14,23 +15,34 @@ public:
 		int channels;
 		int sampleRate;
 		std::vector<float> samples;
+		unsigned int current;
 	};
 
 
 	//////////////////////////////////////////////////////////
 	// APIs
 	//////////////////////////////////////////////////////////
+	RARetCode start();
+	RARetCode stop();
+
 	void test();
 
-	MediaCoordinator() = default;
+	MediaCoordinator();
 	virtual ~MediaCoordinator() = default;
 
 private:
 	bool loadWav(const char* path, WavData& out);
 
-	void renderAudioThread();
+	unsigned int requestData(float** buff,unsigned int size, unsigned int chs);
 
+	void renderToDevice();
 
-	bool mStarted;
+	WavData			mWavData;
+
+	std::thread		mThread;
+
+	bool			mStarted;
+
+	bool			mPlay;
 
 };

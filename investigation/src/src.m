@@ -1,25 +1,8 @@
 clear;
 close all;
-
-function dst = src(in,src_fs,dst_fs)
-
-  len = length(in);
-
-  dst_count = 0;
-
-  for i = 0:len-1
-    t_in          = i * (1/src_fs);
-    t_in_plus_one = (i+1)*(1/src_fs);
-
-    if (t_in <= dst_count * (1/dst_fs)
-     && dst_count * (1/dst_fs) < t_in_plus_one)
-     dst(dst_count+1) = (src(i+2) - src(i+1)) * (dst_count * (1/dst_fs) - t_in) + src(i+1);
-    endif
-  endfor
-end
-
 pkg load signal
 
+%%%
 [x, fs] = audioread("test.wav");
 
 if columns(x) == 2
@@ -28,40 +11,34 @@ endif
 
 N = length(x);
 
-N_mod = mod(N,200)
+%%%
+clear rate_converter
 
-dst_pos = 1;
-dst
+dst_fs = 48000;
 
-for w = 1:199:N - N_mod
-  y = x(w:w+199);
-  dst = src(y,fs,10*000);
-  dst_ret(dst_pos:length(dst)) = dst;
-endfor
-y = x(w:w+N_mod-1);
-length(y)
+window_size  = 1024;
+window_start = 1;
+window_end   = window_start + window_size - 1;
 
-t = (0:N-1) / fs;
+src_out = [];
 
-figure(1);
-plot(t, x);
-xlabel("Time [sec]");
-ylabel("Amplitude");
-title("Waveform");
-grid on;
+while window_start < N
+  y = x(window_start:window_end);
 
-X = fft(x);
+  src_out_temp = rate_converter( y, 1/fs , 1 / dst_fs );
+  src_out_len = length(src_out);
+  src_out(src_out_len + 1 : src_out_len + length(src_out_temp),1) = src_out_temp;
 
-P2 = abs(X / N);
-P1 = P2(1:floor(N/2)+1);
-P1(2:end-1) = 2 * P1(2:end-1);
+  window_start = window_start + window_size;
+  window_end   = window_start + window_size - 1;
+  if window_end > N
+    window_end = N;
+  endif
+endwhile
 
-f = fs * (0:floor(N/2)) / N;
+size(src_out)
 
-figure(2);
-semilogx(f, 20*log10(P1 + 1e-12));
-xlabel("Frequency [Hz]");
-ylabel("Magnitude [dB]");
-title("Frequency Spectrum (Log Frequency)");
-grid on;
-xlim([20 fs/2]);
+custom_plot(x      ,441000)
+custom_plot(src_out,dst_fs)
+
+

@@ -11,7 +11,9 @@
 
 #pragma comment(lib, "ole32.lib")
 
-
+////////////////////////////////////
+// APIs
+////////////////////////////////////
 RARetCode SoundCoordinator::start()
 {
     if (mStarted) {
@@ -43,18 +45,14 @@ unsigned int SoundCoordinator::getSystemSamplingRate()
     return mSystemSamplingRate;
 }
 
-unsigned int SoundCoordinator::getChannels()
+unsigned int SoundCoordinator::getSystemChannels()
 {
     return mSystemChannels;
 }
 
-RARetCode SoundCoordinator::playOneShut(RequestDataFunction func)
+RARetCode SoundCoordinator::playOneShut(SoundDescriptor func)
 {
-    if (!func) {
-        return RARetCode::RET_ERR_INVALID_ARG;
-    }
-
-    mRequestDataFuncs.push_back(func);
+    return RARetCode::RET_OK;
 }
 
 
@@ -64,6 +62,50 @@ void SoundCoordinator::recover()
     mRecover = true;
 }
 
+void SoundCoordinator::test()
+{
+    if (!mPlay) {
+        mPlay = true;
+
+        mSRCOutBuff = nullptr;
+        mSRCOutFrameCurrent = 0;
+        mSRCOutFrameLen = 0;
+
+        mSamplingRateConverter.reset();
+        mSamplingRateConverter.setConfig(mWaveFileHolder->mSamplingRate
+            , mSystemChannels
+            , mSystemSamplingRate);
+    }
+}
+
+SoundCoordinator::SoundCoordinator() :
+    mStarted(false)
+    , mRecover(false)
+    , mSystemChannels(2)
+    , mSystemSamplingRate(48000)
+    , mPlay(false)
+    , mSRCOutBuff(nullptr)
+    , mSRCOutFrameCurrent(0)
+    , mSRCOutFrameLen(0)
+    , mWaveFileHolder(nullptr)
+{
+    allocateSystemBuffer();
+
+    mWaveFileHolder = new Utility::WaveFileHolder("M:\\e\\works\\Dev\\test.wav");
+};
+
+SoundCoordinator::~SoundCoordinator()
+{
+    releaseSystemBuffer();
+    if (mWaveFileHolder) {
+        delete mWaveFileHolder;
+    }
+}
+
+
+////////////////////////////////////
+// Private
+////////////////////////////////////
 // Helper for COM API
 #define CALL_WITH_RETURN(x,y)   if (S_OK != x){Utility::printLog(y);return;} 
 #define CALL_WITH_CONTINUE(x,y) if (S_OK != x){Utility::printLog(y);continue;} 
@@ -188,46 +230,6 @@ void SoundCoordinator::renderToDevice()
     }
     CoUninitialize();
     Utility::printLog("Stop Sound Rendering Thread");
-}
-
-SoundCoordinator::SoundCoordinator() :
-      mStarted(false)
-    , mRecover(false)
-    , mSystemChannels(2)
-    , mSystemSamplingRate(48000)
-    , mPlay(false)
-    , mSRCOutBuff(nullptr)
-    , mSRCOutFrameCurrent(0)
-    , mSRCOutFrameLen(0)
-    , mWaveFileHolder(nullptr)
-{
-    allocateSystemBuffer();
-
-    mWaveFileHolder = new Utility::WaveFileHolder("M:\\e\\works\\Dev\\test.wav");
-};
-
-SoundCoordinator::~SoundCoordinator()
-{
-    releaseSystemBuffer();
-    if (mWaveFileHolder) {
-        delete mWaveFileHolder;
-    }
-}
-
-void SoundCoordinator::test()
-{
-    if (!mPlay) {
-        mPlay = true;
-
-        mSRCOutBuff         = nullptr;
-        mSRCOutFrameCurrent = 0;
-        mSRCOutFrameLen     = 0;
-
-        mSamplingRateConverter.reset();
-        mSamplingRateConverter.setConfig(mWaveFileHolder->mSamplingRate
-                                       , mSystemChannels
-                                       , mSystemSamplingRate);
-    }
 }
 
 unsigned int SoundCoordinator::requestData(float** buff, unsigned int frameLen)
@@ -372,3 +374,4 @@ void SoundCoordinator::dumpSystemBufferCondition()
         , mSystemBuffer.mBuffer[1].mWritePointer, mSystemBuffer.mBuffer[1].mReadPointer, mSystemBuffer.mBuffer[1].mBufferSize);
     Utility::printLog("===================");
 }
+

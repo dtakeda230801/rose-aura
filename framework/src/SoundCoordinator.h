@@ -14,6 +14,30 @@ public:
 	//////////////////////////////////////////////////////////
 	// Internal Classes
 	//////////////////////////////////////////////////////////
+    class IRenderer {
+    public:
+        void setSystemConf(unsigned int samplingRate, unsigned int channels)
+        {
+            mSystemSamplingRate = samplingRate;
+            mSystemChannels     = channels;
+        }
+
+        virtual unsigned int requestData(float** buff, unsigned int frameLen) = 0;
+
+        IRenderer(SoundDescriptor descriptor) :
+            mDesctiptor(descriptor)
+            , mSystemSamplingRate(0)
+            , mSystemChannels(0)
+        {
+        }
+        virtual ~IRenderer() = default;
+
+    protected:
+        unsigned int mSystemSamplingRate;
+        unsigned int mSystemChannels;
+
+        SoundDescriptor  mDesctiptor;
+    };
 
 	//////////////////////////////////////////////////////////
 	// APIs
@@ -22,9 +46,9 @@ public:
 	RARetCode stop();
 
     unsigned int getSystemSamplingRate();
-    unsigned int getChannels();
+    unsigned int getSystemChannels();
 
-    RARetCode playOneShut(RequestDataFunction func);
+    RARetCode playOneShut(SoundDescriptor func);
 
     void recover();
 
@@ -131,8 +155,5 @@ private:
     const unsigned int SYSTEM_BUFFER_BASE_SIZE = 480;
 
     SBHolder       mSystemBuffer;
-
-    std::vector<RequestDataFunction>
-                   mRequestDataFuncs;
 
 };

@@ -9,7 +9,13 @@ public:
 	//////////////////////////////////////////////////////////
 	// Internal Classes
 	//////////////////////////////////////////////////////////
-	using RequestDataFunction = unsigned int(*)(float**, unsigned int);
+	using RequestDataHandler = unsigned int(*)(float**, unsigned int);
+
+	struct SoundDescriptor {
+		RequestDataHandler mHandler;
+		unsigned int	   mSamplingRate;
+		unsigned int	   mChannels;
+	};
 
 	//////////////////////////////////////////////////////////
 	// APIs
@@ -18,9 +24,9 @@ public:
 	virtual RARetCode stop()  = 0;
 
 	virtual unsigned int getSystemSamplingRate() = 0;
-	virtual unsigned int getChannels()           = 0;
+	virtual unsigned int getSystemChannels()     = 0;
 
-	virtual RARetCode playOneShut(RequestDataFunction func) = 0;
+	virtual RARetCode playOneShut(SoundDescriptor descriptor) = 0;
 
 	virtual void test() = 0;
 };

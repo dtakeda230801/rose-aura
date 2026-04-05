@@ -431,15 +431,19 @@ public:
 		mInputHandler.unregisterCallback(this);
 	}
 
+	void loadWaveFile() {
+
+	}
+
 	SoundTester(IInputHandler& ih, ISoundCoordinator& mc) :
-		 mInputHandler(ih)
-		,mSoundCoordinator(mc)
+		mInputHandler(ih)
+		, mSoundCoordinator(mc)
 	{
 	}
 	virtual ~SoundTester() = default;
 
 private:
-	IInputHandler&     mInputHandler;
+	IInputHandler& mInputHandler;
 	ISoundCoordinator& mSoundCoordinator;
 };
 

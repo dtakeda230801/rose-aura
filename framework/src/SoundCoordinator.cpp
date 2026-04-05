@@ -1,11 +1,13 @@
 #include "SoundCoordinator.h"
 #include "Utility.h"
 
+#include <memory>
 #include <mmdeviceapi.h>
 #include <combaseapi.h>
 #include <audioclient.h>
 #include <fstream>
 #include <iostream>
+#include <atlcomcli.h>
 
 #pragma comment(lib, "ole32.lib")
 
@@ -36,227 +38,177 @@ RARetCode SoundCoordinator::stop()
     return RARetCode::RET_OK;
 }
 
+unsigned int SoundCoordinator::getSystemSamplingRate()
+{
+    return mSystemSamplingRate;
+}
+
+unsigned int SoundCoordinator::getChannels()
+{
+    return mSystemChannels;
+}
+
+RARetCode SoundCoordinator::playOneShut(RequestDataFunction func)
+{
+    if (!func) {
+        return RARetCode::RET_ERR_INVALID_ARG;
+    }
+
+    mRequestDataFuncs.push_back(func);
+}
+
+
+void SoundCoordinator::recover()
+{
+    Utility::printLog("Start Recovering");
+    mRecover = true;
+}
+
+// Helper for COM API
+#define CALL_WITH_RETURN(x,y)   if (S_OK != x){Utility::printLog(y);return;} 
+#define CALL_WITH_CONTINUE(x,y) if (S_OK != x){Utility::printLog(y);continue;} 
+#define CALL_WITH_BREAK(x,y)    if (S_OK != x){Utility::printLog(y);break;} 
+#define CALL_WITH_THROUGH(x,y)  if (S_OK != x){Utility::printLog(y);} 
 
 void SoundCoordinator::renderToDevice()
 {
-    HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    Utility::printLog("Start Sound Rendering Thread");
 
-    if (hr != S_OK) {
-        Utility::printLog("CoInitializeEx fails");
-        return;
-    }
+    CALL_WITH_RETURN(CoInitializeEx(nullptr, COINIT_MULTITHREADED), "CoInitializeEx fails");
 
     while (mStarted) {
-        IMMDeviceEnumerator* enumerator = nullptr;
-        IMMDevice* device = nullptr;
-        IAudioClient* audioClient = nullptr;
-        IAudioRenderClient* renderClient = nullptr;
+        Utility::printLog("Start initialization...");
 
-        hr = CoCreateInstance(
-            __uuidof(MMDeviceEnumerator),
-            nullptr,
-            CLSCTX_ALL,
-            IID_PPV_ARGS(&enumerator));
+        mRecover = false;
+
+        CComPtr<IMMDeviceEnumerator> enumerator   = nullptr;
+        CComPtr<IMMDevice>           device       = nullptr;
+        CComPtr<IAudioClient>        audioClient  = nullptr;
+        CComPtr<IAudioRenderClient>  renderClient = nullptr;
+
+        HANDLE audioEvent;
+
+        std::unique_ptr<SystemNotification> systemNotification
+            = std::make_unique<SystemNotification>(*this);
+
+        UINT32          buffFrameCount = 0;
+        WAVEFORMATEX*   mixFormat      = nullptr;
+        REFERENCE_TIME  bufferDuration = SYSTEM_BUFFER_DURATION;
+
+        CALL_WITH_CONTINUE(CoCreateInstance(
+            __uuidof(MMDeviceEnumerator),nullptr,CLSCTX_ALL,IID_PPV_ARGS(&enumerator))
+          , "CoCreateInstance for IMMDeviceEnumerator fails");
         
-        if (hr != S_OK) {
-            Utility::printLog("CoCreateInstance for IMMDeviceEnumerator fails");
-            return;
+
+        CALL_WITH_CONTINUE(enumerator->GetDefaultAudioEndpoint(
+            eRender, eConsole, &device), "GetDefaultAudioEndpoint fails");
+
+
+        CALL_WITH_CONTINUE(enumerator->RegisterEndpointNotificationCallback(systemNotification.get())
+            , "RegisterEndpointNotificationCallback fails");
+
+        CALL_WITH_CONTINUE(device->Activate(
+            __uuidof(IAudioClient), CLSCTX_ALL, nullptr, (void**)&audioClient)
+            , "Device Activate fails");
+
+        CALL_WITH_CONTINUE(audioClient->GetMixFormat(&mixFormat)
+            , "GetMixFormat fails");
+
+        audioEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        if (!audioEvent) {
+            Utility::printLog("CreateEvent fails");
+            continue;
         }
 
-        hr = enumerator->GetDefaultAudioEndpoint(
-            eRender,
-            eConsole,
-            &device);
+        CALL_WITH_CONTINUE(audioClient->Initialize(
+            AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_EVENTCALLBACK, bufferDuration
+            , 0, mixFormat, nullptr), "Audio Client Initialize fails");
 
-        if (hr != S_OK) {
-            Utility::printLog("GetDefaultAudioEndpoint fails");
-            return;
-        }
+        CALL_WITH_CONTINUE(audioClient->SetEventHandle(audioEvent)
+            , "SetEventHandle fails");
 
-        hr = device->Activate(
-            __uuidof(IAudioClient),
-            CLSCTX_ALL,
-            nullptr,
-            (void**)&audioClient);
+        CALL_WITH_CONTINUE(audioClient->GetBufferSize(&buffFrameCount)
+            , "GetBufferSize fails");
 
-        if (hr != S_OK) {
-            Utility::printLog("Activate fails");
-            return;
-        }
+        CALL_WITH_CONTINUE(audioClient->GetService(IID_PPV_ARGS(&renderClient))
+            , "GetService fails");
 
-        WAVEFORMATEX* mixFormat = nullptr;
-        hr = audioClient->GetMixFormat(&mixFormat);
-
-        if (hr != S_OK) {
-            Utility::printLog("GetMixFormat fails");
-            return;
-        }
-
-        HANDLE audioEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-        if (audioEvent == nullptr) {
-            Utility::printLog("GetMixFormat fails");
-            return;
-        }
-
-        //REFERENCE_TIME bufferDuration = 10000000; // 1 sec
-        REFERENCE_TIME bufferDuration = 200000; // 50 msec
-
-        hr = audioClient->Initialize(
-            AUDCLNT_SHAREMODE_SHARED,
-            AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
-            bufferDuration,
-            0,
-            mixFormat,
-            nullptr);
-
-        if (hr != S_OK) {
-            Utility::printLog("Initialize fails");
-            return;
-        }
-
-        hr = audioClient->SetEventHandle(audioEvent);
-        if (hr != S_OK) {
-            Utility::printLog("SetEventHandle fails");
-            return;
-        }
-
-        UINT32 bufferFrameCount;
-        hr = audioClient->GetBufferSize(&bufferFrameCount);
-        if (hr != S_OK) {
-            Utility::printLog("GetBufferSize fails");
-            return;
-        }
-
-        hr = audioClient->GetService(IID_PPV_ARGS(&renderClient));
-        if (hr != S_OK) {
-            Utility::printLog("GetService fails");
-            return;
-        }
-
-        hr = audioClient->Start();
-        if (hr != S_OK) {
-            Utility::printLog("Start fails");
-            return;
-        }
-
+        CALL_WITH_CONTINUE(audioClient->Start() 
+            , "Audio Client Start fails");
 
         mSystemChannels     = mixFormat->nChannels;
         mSystemSamplingRate = mixFormat->nSamplesPerSec;
 
-
-        while (mStarted)
+        Utility::printLog("Finish initialization");
+        while (mStarted && !mRecover)
         {
+            UINT32 padding;
+            UINT32 framesAvailable;
+            BYTE*  data;
+            float* out;
+
             WaitForSingleObject(audioEvent, INFINITE);
 
-            UINT32 padding;
-            hr = audioClient->GetCurrentPadding(&padding);
-            if (hr != S_OK) {
-                Utility::printLog("GetCurrentPadding fails");
-                return;
-            }
+            CALL_WITH_BREAK(audioClient->GetCurrentPadding(&padding)
+                , "GetCurrentPadding fails");
 
-            UINT32 framesAvailable =
-                bufferFrameCount - padding;
-
+            framesAvailable = buffFrameCount - padding;
             if (framesAvailable == 0)
-                continue;
-
-            BYTE* data;
-            hr = renderClient->GetBuffer(framesAvailable, &data);
-            if (hr != S_OK) {
-                Utility::printLog("GetBuffer fails");
-                return;
-            }
-            float* out = (float*)data;
-
-            for (UINT32 f = 0; f < framesAvailable ; ++f)
             {
-                if (mPlay) {
-                    unsigned int ret = requestData(&out, framesAvailable - f);
-                    f += ret;
-                }
-                else {
-                    for (int ch = 0; ch < mSystemChannels;ch++) {
-                        *out++ = 0.0f;
-                    }
-                }
+                continue;
             }
 
-            hr = renderClient->ReleaseBuffer(framesAvailable, 0);
-            if (hr != S_OK) {
-                Utility::printLog("ReleaseBuffer fails");
-                return;
+            CALL_WITH_BREAK(renderClient->GetBuffer(framesAvailable, &data)
+                ,"GetBuffer fails");
+
+            out = (float*)data;
+            unsigned int frame = 0;
+            while (frame < framesAvailable) {
+                frame = requestDataInternal(&out, framesAvailable);
+                out += frame;
             }
+
+            CALL_WITH_BREAK(renderClient->ReleaseBuffer(framesAvailable, 0)
+                , "ReleaseBuffer fails");
         }
 
-        Sleep(500);
+        Utility::printLog("Start termination...");
+        CALL_WITH_THROUGH(audioClient->Stop()
+            ,"Stop fails");
 
-        hr = audioClient->Stop();
-        if (hr != S_OK) {
-            Utility::printLog("Stop fails");
-            return;
-        }
+        CALL_WITH_THROUGH(audioClient->Reset()
+            ,"Reset fails");
 
         CoTaskMemFree(mixFormat);
-        hr = renderClient->Release();
-        if (hr != S_OK) {
-            Utility::printLog("Release fails");
-            return;
-        }
-        hr = audioClient->Release();
-        if (hr != S_OK) {
-            Utility::printLog("Release fails");
-            return;
-        }
-        hr = device->Release();
-        if (hr != S_OK) {
-            Utility::printLog("Release fails");
-            return;
-        }
-        hr = enumerator->Release();
-        if (hr != S_OK) {
-            Utility::printLog("Release fails");
-            return;
-        }
 
-        CoUninitialize();
+        CALL_WITH_THROUGH(enumerator->UnregisterEndpointNotificationCallback(systemNotification.get())
+            ,"UnregisterEndpointNotificationCallback fails");
+
+        Utility::printLog("Finish termination");
     }
+    CoUninitialize();
+    Utility::printLog("Stop Sound Rendering Thread");
 }
-
 
 SoundCoordinator::SoundCoordinator() :
       mStarted(false)
+    , mRecover(false)
     , mSystemChannels(2)
     , mSystemSamplingRate(48000)
     , mPlay(false)
     , mSRCOutBuff(nullptr)
     , mSRCOutFrameCurrent(0)
     , mSRCOutFrameLen(0)
-    , mConvertedCurrent(0)
     , mWaveFileHolder(nullptr)
 {
+    allocateSystemBuffer();
+
     mWaveFileHolder = new Utility::WaveFileHolder("M:\\e\\works\\Dev\\test.wav");
-
-    mSamplingRateConverter.reset();
-    mSamplingRateConverter.setConfig(mWaveFileHolder->mSamplingRate, mWaveFileHolder->mChannels, 48000);
-
-    float*       out;
-    unsigned int outFrameLen;
-
-    mSamplingRateConverter.apply(mWaveFileHolder->getFramePointer(0)
-                               , mWaveFileHolder->mFrameLen
-                               , &out
-                               , &outFrameLen);
-    mConvertedSamples.resize(outFrameLen * mWaveFileHolder->mChannels);
-
-    for (int i = 0; i < outFrameLen * mWaveFileHolder->mChannels; i++) {
-        mConvertedSamples[i] = *out++;
-    }
-    mSamplingRateConverter.releaseBuffer();
 };
 
 SoundCoordinator::~SoundCoordinator()
 {
+    releaseSystemBuffer();
     if (mWaveFileHolder) {
         delete mWaveFileHolder;
     }
@@ -266,8 +218,6 @@ void SoundCoordinator::test()
 {
     if (!mPlay) {
         mPlay = true;
-        mConvertedCurrent = 0;
-        mConvertedSamples.clear();
 
         mSRCOutBuff         = nullptr;
         mSRCOutFrameCurrent = 0;
@@ -279,30 +229,6 @@ void SoundCoordinator::test()
                                        , mSystemSamplingRate);
     }
 }
-
-/*
-unsigned int MediaCoordinator::requestData(float** buff, unsigned int size, unsigned int chs)
-{
-    float* b = *buff;
-    unsigned int ret = 0;
-    unsigned int inFrameLen = mConvertedSamples.size() / chs;
-
-
-    for (ret; ret < size && mConvertedCurrent < inFrameLen; ++ret) {
-        for (int ch = 0; ch < chs; ++ch) {
-            *b++ = mConvertedSamples[(mConvertedCurrent * chs) + ch];
-        }
-        mConvertedCurrent++;
-    }
-
-    if (inFrameLen <= mConvertedCurrent) {
-        mConvertedCurrent = 0;
-        mPlay = false;
-    }
-
-    return ret;
-}
-*/
 
 unsigned int SoundCoordinator::requestData(float** buff, unsigned int frameLen)
 {
@@ -355,31 +281,94 @@ unsigned int SoundCoordinator::requestData(float** buff, unsigned int frameLen)
         }
     }
 
-    Utility::printLog("request:(%d) write:(%d)", frameLen, ret);
-
     return ret;
 }
 
-
-/*
-unsigned int MediaCoordinator::requestData(float** buff, unsigned int size, unsigned int chs)
+unsigned int SoundCoordinator::requestDataInternal(float** buff, unsigned int frameNum)
 {
-    float*          b  = *buff;
-    unsigned int    ret = 0;
+    unsigned int outFrameNum = 0;
+    float*       outBuff     = *buff;
+    unsigned int count       = 0;
 
-    for (ret; ret < size && mWavData.current < mWavData.samples.size(); ++ret) {
-        for (int ch = 0; ch < chs; ++ch) {
-            *b++ = mWavData.samples[mWavData.current++];
+    while (outFrameNum < frameNum) {
+        SoundBuffer& writeSB = mSystemBuffer.mBuffer[mSystemBuffer.mWritePointer];
+
+        if (mPlay) {
+            float* writePoint = &writeSB.mBuffer[writeSB.mWritePointer];
+            unsigned int ret = requestData(&writePoint, (writeSB.mBufferSize - writeSB.mWritePointer)/mSystemChannels);
+            writeSB.mWritePointer += ret * mSystemChannels;
+        }
+
+        count = 0;
+        for (unsigned int writePoint = writeSB.mWritePointer; writePoint < writeSB.mBufferSize; writePoint += mSystemChannels) {
+            for (unsigned int ch = 0; ch < mSystemChannels; ++ch) {
+                writeSB.mBuffer[writePoint + ch] = 0.0f;
+                ++count;
+            }
+        }
+        writeSB.mWritePointer += count;
+
+        if (writeSB.mBufferSize <= writeSB.mWritePointer) {
+            mSystemBuffer.mWritePointer = (mSystemBuffer.mWritePointer + 1) & 0x1;
+        }
+
+        SoundBuffer& readSB = mSystemBuffer.mBuffer[mSystemBuffer.mReadPointer];
+
+        count = 0;
+        for (unsigned int readPoint = readSB.mReadPointer
+           ; readPoint < readSB.mWritePointer && outFrameNum < frameNum 
+           ; readPoint += mSystemChannels) {
+
+            for (unsigned int ch = 0; ch < mSystemChannels; ++ch) {
+                *outBuff++ = readSB.mBuffer[readPoint + ch];
+                ++count;
+            }
+
+            ++outFrameNum;
+        }
+        readSB.mReadPointer += count;
+
+        if (readSB.mBufferSize <= readSB.mReadPointer) {
+            readSB.mReadPointer  = 0;
+            readSB.mWritePointer = 0;
+            mSystemBuffer.mReadPointer = (mSystemBuffer.mReadPointer + 1) & 0x1;
         }
     }
-
-    if (mWavData.samples.size() <= mWavData.current) {
-        mWavData.current = 0;
-        mPlay = false;
-    }
-
-    Utility::printLog("Write:%d",mWavData.current);
-
-    return ret;
+    return outFrameNum;
 }
-*/
+
+
+void SoundCoordinator::allocateSystemBuffer()
+{
+    mSystemBuffer.mBuffer[0].mBuffer = new float[SYSTEM_BUFFER_BASE_SIZE * mSystemChannels];
+    mSystemBuffer.mBuffer[1].mBuffer = new float[SYSTEM_BUFFER_BASE_SIZE * mSystemChannels];
+
+    mSystemBuffer.mWritePointer = 0;
+    mSystemBuffer.mReadPointer  = 0;
+
+    mSystemBuffer.mBuffer[0].mBufferSize   = SYSTEM_BUFFER_BASE_SIZE * mSystemChannels;
+    mSystemBuffer.mBuffer[0].mWritePointer = 0;
+    mSystemBuffer.mBuffer[0].mReadPointer  = 0;
+
+    mSystemBuffer.mBuffer[1].mBufferSize   = SYSTEM_BUFFER_BASE_SIZE * mSystemChannels;
+    mSystemBuffer.mBuffer[1].mWritePointer = 0;
+    mSystemBuffer.mBuffer[1].mReadPointer  = 0;
+
+}
+
+void SoundCoordinator::releaseSystemBuffer()
+{
+    delete[] mSystemBuffer.mBuffer[0].mBuffer;
+    delete[] mSystemBuffer.mBuffer[1].mBuffer;
+}
+
+void SoundCoordinator::dumpSystemBufferCondition()
+{
+    Utility::printLog("===================");
+    Utility::printLog("System Buffer:wp(%d) rp(%d)", mSystemBuffer.mWritePointer, mSystemBuffer.mReadPointer);
+    Utility::printLog("Buffer1: wp(%d) rp(%d) size(%d)"
+        , mSystemBuffer.mBuffer[0].mWritePointer, mSystemBuffer.mBuffer[0].mReadPointer, mSystemBuffer.mBuffer[0].mBufferSize);
+    Utility::printLog("Buffer2: wp(%d) rp(%d) size(%d)"
+        , mSystemBuffer.mBuffer[1].mWritePointer, mSystemBuffer.mBuffer[1].mReadPointer, mSystemBuffer.mBuffer[1].mBufferSize);
+    Utility::printLog("===================");
+}

@@ -13,7 +13,7 @@ RoseAuraImpl::RoseAuraImpl()
 	mInputHandler		= std::make_unique<InputHandler>();
 	mObjectRepository	= std::make_unique<ObjectRepository>();
 	mWorldNavigator		= std::make_unique<WorldNavigator>();
-	mMediaCoordinator   = std::make_unique<MediaCoordinator>();
+	mSoundCoordinator   = std::make_unique<SoundCoordinator>();
 }
 
 ICentralLooper& RoseAuraImpl::getCentralLooper()
@@ -41,8 +41,8 @@ IWorldNavigator& RoseAuraImpl::getWorldNavigator()
 	return *mWorldNavigator;
 }
 
-IMediaCoordinator& RoseAuraImpl::getMediaCoordinator()
+ISoundCoordinator& RoseAuraImpl::getSoundCoordinator()
 {
-	return *mMediaCoordinator;
+	return *mSoundCoordinator;
 }
 

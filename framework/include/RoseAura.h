@@ -6,7 +6,7 @@
 #include "IInputHandler.h"
 #include "IObjectRepository.h"
 #include "IWorldNavigator.h"
-#include "IMediaCoordinator.h"
+#include "ISoundCoordinator.h"
 
 class RoseAura {
 public:
@@ -17,7 +17,7 @@ public:
 	virtual IInputHandler&		getInputHandler()		= 0;
 	virtual IObjectRepository&	getObjectRepository()	= 0;
 	virtual IWorldNavigator&	getWorldNavigator()		= 0;
-	virtual IMediaCoordinator& getMediaCoordinator()    = 0;
+	virtual ISoundCoordinator&  getSoundCoordinator()   = 0;
 
 	virtual ~RoseAura() = default;
 protected:

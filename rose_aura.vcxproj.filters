@@ -39,7 +39,10 @@
     <ClCompile Include="framework\src\RoseAura.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="framework\src\MediaCoordinator.cpp">
+    <ClCompile Include="framework\src\SoundCoordinator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\src\sound\SamplingRateConverter.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -86,10 +89,13 @@
     <ClInclude Include="framework\include\RoseAuraReturnCode.h">
       <Filter>RoseAura Interface</Filter>
     </ClInclude>
-    <ClInclude Include="framework\include\IMediaCoordinator.h">
+    <ClInclude Include="framework\include\ISoundCoordinator.h">
       <Filter>RoseAura Interface</Filter>
     </ClInclude>
-    <ClInclude Include="framework\src\MediaCoordinator.h">
+    <ClInclude Include="framework\src\SoundCoordinator.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\src\sound\SamplingRateConverter.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

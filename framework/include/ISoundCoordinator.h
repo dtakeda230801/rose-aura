@@ -4,7 +4,7 @@
 
 using namespace RoseAuraReturnCode;
 
-class IMediaCoordinator {
+class ISoundCoordinator {
 public:
 	//////////////////////////////////////////////////////////
 	// Internal Classes

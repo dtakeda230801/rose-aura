@@ -6,7 +6,7 @@
 #include "InputHandler.h"
 #include "ObjectRepository.h"
 #include "WorldNavigator.h"
-#include "MediaCoordinator.h"
+#include "SoundCoordinator.h"
 
 class RoseAuraImpl : public RoseAura{
 public:
@@ -15,7 +15,7 @@ public:
 	IInputHandler& 		getInputHandler();
 	IObjectRepository& 	getObjectRepository();
 	IWorldNavigator&	getWorldNavigator();
-	IMediaCoordinator&  getMediaCoordinator();
+	ISoundCoordinator&  getSoundCoordinator();
 
 	RoseAuraImpl();
 	virtual ~RoseAuraImpl() = default;
@@ -26,5 +26,5 @@ private:
 	std::unique_ptr<InputHandler>		mInputHandler;
 	std::unique_ptr<ObjectRepository>	mObjectRepository;
 	std::unique_ptr<WorldNavigator>		mWorldNavigator;
-	std::unique_ptr<MediaCoordinator>	mMediaCoordinator;
+	std::unique_ptr<SoundCoordinator>	mSoundCoordinator;
 };

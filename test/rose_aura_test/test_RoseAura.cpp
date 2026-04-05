@@ -8,11 +8,11 @@ TEST(testRoseAuraClass, APITest)
 	{
 		std::unique_ptr<RoseAura> ra = RoseAura::create();
 
-		ICentralLooper&		cl = ra->getCentralLooper();
-		IGraphicsManager&	gm = ra->getGraphicsManager();
-		IInputHandler&		ih = ra->getInputHandler();
-		IObjectRepository&	ir = ra->getObjectRepository();
-		IWorldNavigator&	iw = ra->getWorldNavigator();
+		ICentralLooper& cl = ra->getCentralLooper();
+		IGraphicsManager& gm = ra->getGraphicsManager();
+		IInputHandler& ih = ra->getInputHandler();
+		IObjectRepository& ir = ra->getObjectRepository();
+		IWorldNavigator& iw = ra->getWorldNavigator();
 	}
 	ROSE_AURA_TEST_FIN;
 }

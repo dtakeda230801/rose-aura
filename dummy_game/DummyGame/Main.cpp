@@ -416,7 +416,7 @@ public:
 			InputType  type = event.second;
 
 			if (state == InputState::PUSHED && type == InputType::ACTION2) {
-				mMediaCoordinator.test();
+				mSoundCoordinator.test();
 			}
 		}
 	}
@@ -431,16 +431,16 @@ public:
 		mInputHandler.unregisterCallback(this);
 	}
 
-	SoundTester(IInputHandler& ih, IMediaCoordinator& mc) :
+	SoundTester(IInputHandler& ih, ISoundCoordinator& mc) :
 		 mInputHandler(ih)
-		,mMediaCoordinator(mc)
+		,mSoundCoordinator(mc)
 	{
 	}
 	virtual ~SoundTester() = default;
 
 private:
 	IInputHandler&     mInputHandler;
-	IMediaCoordinator& mMediaCoordinator;
+	ISoundCoordinator& mSoundCoordinator;
 };
 
 ////////////////////////////////////////////
@@ -480,7 +480,7 @@ int main()
 		IGraphicsManager&  graphicsManager  = rose_aura->getGraphicsManager();
 		IWorldNavigator&   worldNavigator   = rose_aura->getWorldNavigator();
 		IObjectRepository& objectRepository = rose_aura->getObjectRepository();
-		IMediaCoordinator& mediaCoordinator = rose_aura->getMediaCoordinator();
+		ISoundCoordinator& mediaCoordinator = rose_aura->getSoundCoordinator();
 
 		////////////////////////////////////////////
 		id = objectRepository.registerObject(
@@ -532,7 +532,7 @@ int main()
 		ids.push_back(id);
 
 		id = objectRepository.registerObject(
-			objectRepository.makeObjectBinder<SoundTester, IInputHandler&, IMediaCoordinator&>(
+			objectRepository.makeObjectBinder<SoundTester, IInputHandler&, ISoundCoordinator&>(
 				&SoundTester::init, &SoundTester::fin
 				, inputHandler, mediaCoordinator)
 			, tags

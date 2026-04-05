@@ -1,0 +1,169 @@
+#include "pch.h"
+#include "rose_aura_test.h"
+
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <cstdint>
+#include <algorithm>
+
+#include "sound/SamplingRateConverter.h"
+#include "Utility.h"
+
+bool WriteWaveFile16(
+    const char* filename,
+    const float* data,
+    int frames,
+    int channels,
+    int sampleRate)
+{
+    std::ofstream file(filename, std::ios::binary);
+    if (!file) return false;
+
+    const int bitsPerSample = 16;
+    const int blockAlign = channels * bitsPerSample / 8;
+    const int byteRate = sampleRate * blockAlign;
+    const int dataSize = frames * blockAlign;
+
+    // =====================
+    // RIFF Header
+    // =====================
+    file.write("RIFF", 4);
+
+    uint32_t chunkSize = 36 + dataSize;
+    file.write(reinterpret_cast<char*>(&chunkSize), 4);
+
+    file.write("WAVE", 4);
+
+    // =====================
+    // fmt chunk
+    // =====================
+    file.write("fmt ", 4);
+
+    uint32_t subChunk1Size = 16;
+    uint16_t audioFormat = 1; // PCM
+    uint16_t numChannels = (uint16_t)channels;
+    uint32_t sampleRate32 = sampleRate;
+    uint16_t blockAlign16 = blockAlign;
+    uint16_t bitsPerSample16 = bitsPerSample;
+
+    file.write(reinterpret_cast<char*>(&subChunk1Size), 4);
+    file.write(reinterpret_cast<char*>(&audioFormat), 2);
+    file.write(reinterpret_cast<char*>(&numChannels), 2);
+    file.write(reinterpret_cast<char*>(&sampleRate32), 4);
+    file.write(
+        reinterpret_cast<const char*>(static_cast<const void*>(&byteRate)),
+        sizeof(byteRate));
+    file.write(reinterpret_cast<char*>(&blockAlign16), 2);
+    file.write(reinterpret_cast<char*>(&bitsPerSample16), 2);
+
+    // =====================
+    // data chunk
+    // =====================
+    file.write("data", 4);
+
+    uint32_t dataSize32 = dataSize;
+    file.write(reinterpret_cast<char*>(&dataSize32), 4);
+
+    // =====================
+    // float Å® int16 ïœä∑ÇµÇƒèëÇ´çûÇ›
+    // =====================
+    for (int i = 0; i < frames * channels; ++i)
+    {
+        float v = std::clamp(data[i], -1.0f, 1.0f);
+
+        int16_t s = static_cast<int16_t>(v * 32767.0f);
+        file.write(reinterpret_cast<char*>(&s), sizeof(int16_t));
+    }
+
+    return true;
+}
+
+
+TEST(testSamplingRateConverter, APITest)
+{
+	ROSE_AURA_TEST_BEGIN;
+	{
+        float*          out;
+        unsigned int    outFrameLen;
+        Utility::WaveFileHolder* waveFileHolder;
+
+        waveFileHolder = new Utility::WaveFileHolder("M:\\e\\works\\Dev\\test.wav");
+
+		SamplingRateConverter* src = new SamplingRateConverter();
+
+        WriteWaveFile16("M:\\e\\works\\Dev\\testOut1.wav"
+                      , &waveFileHolder->mSamples[0]
+                      , waveFileHolder->mFrameLen
+                      , waveFileHolder->mChannels
+                      , waveFileHolder->mSamplingRate);
+
+        //////////////////////////////////////////
+        src->setConfig(waveFileHolder->mSamplingRate, waveFileHolder->mChannels, 48000);
+
+        src->apply(&waveFileHolder->mSamples[0]
+                 , waveFileHolder->mFrameLen
+                 , &out
+                 , &outFrameLen);
+
+        Utility::printLog("testOut2 : %d samples", outFrameLen);
+
+        WriteWaveFile16("M:\\e\\works\\Dev\\testOut2.wav"
+                       , out
+                       , outFrameLen
+                       , waveFileHolder->mChannels
+                       , 48000);
+
+        src->releaseBuffer();
+
+        //////////////////////////////////////////
+        std::vector<float>  couvertOut;
+        unsigned int        convertOutCount = 0;
+
+        unsigned int        convertWinSize = 500;
+
+        waveFileHolder->mCurrentFrame = 0;
+
+        src->reset();
+        src->setConfig(waveFileHolder->mSamplingRate, waveFileHolder->mChannels, 48000);
+
+        ROSE_AURA_MESURMENT_TIME_BEGIN;
+        while (true) {
+            int win;
+
+            if (waveFileHolder->mCurrentFrame + convertWinSize < waveFileHolder->mFrameLen) {
+                win = convertWinSize;
+            }
+            else {
+                win = waveFileHolder->mFrameLen - waveFileHolder->mCurrentFrame;
+            }
+
+            src->apply(waveFileHolder->getFramePointer(waveFileHolder->mCurrentFrame), win, &out, &outFrameLen);
+            waveFileHolder->mCurrentFrame += win;
+            couvertOut.resize(couvertOut.size() + (outFrameLen * waveFileHolder->mChannels));
+            for (int i = 0; i < outFrameLen * waveFileHolder->mChannels; i++) {
+                couvertOut[convertOutCount + i] = *out++;
+            }
+            convertOutCount += outFrameLen * waveFileHolder->mChannels;
+
+            src->releaseBuffer();
+
+            if (waveFileHolder->mFrameLen <= waveFileHolder->mCurrentFrame) {
+                break;
+            }
+
+        }
+        ROSE_AURA_MESURMENT_TIME_FIN;
+
+        WriteWaveFile16("M:\\e\\works\\Dev\\testOut3.wav"
+                       , &couvertOut[0]
+                       , convertOutCount / waveFileHolder->mChannels
+                       , waveFileHolder->mChannels
+                       , 48000);
+        Utility::printLog("testOut3 : %d samples", convertOutCount / waveFileHolder->mChannels);
+
+        delete src;
+        delete waveFileHolder;
+	}
+	ROSE_AURA_TEST_FIN;
+}

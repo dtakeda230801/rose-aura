@@ -1,4 +1,4 @@
-#include "MediaCoordinator.h"
+#include "SoundCoordinator.h"
 #include "Utility.h"
 
 #include <mmdeviceapi.h>
@@ -10,7 +10,7 @@
 #pragma comment(lib, "ole32.lib")
 
 
-RARetCode MediaCoordinator::start()
+RARetCode SoundCoordinator::start()
 {
     if (mStarted) {
         return RARetCode::RET_ERR_INVALID_STATE;
@@ -18,11 +18,11 @@ RARetCode MediaCoordinator::start()
 
     mStarted = true;
 
-    mThread = std::thread(&MediaCoordinator::renderToDevice, this);
+    mThread = std::thread(&SoundCoordinator::renderToDevice, this);
     return RARetCode::RET_OK;
 }
 
-RARetCode MediaCoordinator::stop()
+RARetCode SoundCoordinator::stop()
 {
     if (!mStarted) {
         return RARetCode::RET_ERR_INVALID_STATE;
@@ -37,7 +37,7 @@ RARetCode MediaCoordinator::stop()
 }
 
 
-void MediaCoordinator::renderToDevice()
+void SoundCoordinator::renderToDevice()
 {
     HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
@@ -99,7 +99,7 @@ void MediaCoordinator::renderToDevice()
         }
 
         //REFERENCE_TIME bufferDuration = 10000000; // 1 sec
-        REFERENCE_TIME bufferDuration = 200000; // 50 sec
+        REFERENCE_TIME bufferDuration = 200000; // 50 msec
 
         hr = audioClient->Initialize(
             AUDCLNT_SHAREMODE_SHARED,
@@ -139,7 +139,10 @@ void MediaCoordinator::renderToDevice()
             return;
         }
 
-        int channels = mixFormat->nChannels;
+
+        mSystemChannels     = mixFormat->nChannels;
+        mSystemSamplingRate = mixFormat->nSamplesPerSec;
+
 
         while (mStarted)
         {
@@ -169,11 +172,11 @@ void MediaCoordinator::renderToDevice()
             for (UINT32 f = 0; f < framesAvailable ; ++f)
             {
                 if (mPlay) {
-                    unsigned int ret = requestData(&out, framesAvailable - f, channels);
+                    unsigned int ret = requestData(&out, framesAvailable - f);
                     f += ret;
                 }
                 else {
-                    for (int ch = 0; ch < channels;ch++) {
+                    for (int ch = 0; ch < mSystemChannels;ch++) {
                         *out++ = 0.0f;
                     }
                 }
@@ -221,95 +224,144 @@ void MediaCoordinator::renderToDevice()
 }
 
 
-MediaCoordinator::MediaCoordinator() :
+SoundCoordinator::SoundCoordinator() :
       mStarted(false)
+    , mSystemChannels(2)
+    , mSystemSamplingRate(48000)
     , mPlay(false)
+    , mSRCOutBuff(nullptr)
+    , mSRCOutFrameCurrent(0)
+    , mSRCOutFrameLen(0)
+    , mConvertedCurrent(0)
+    , mWaveFileHolder(nullptr)
 {
-    if (!loadWav("M:\\e\\works\\Dev\\test.wav", mWavData)) {
-        std::cout << "failed load wav\n";
-        return;
+    mWaveFileHolder = new Utility::WaveFileHolder("M:\\e\\works\\Dev\\test.wav");
+
+    mSamplingRateConverter.reset();
+    mSamplingRateConverter.setConfig(mWaveFileHolder->mSamplingRate, mWaveFileHolder->mChannels, 48000);
+
+    float*       out;
+    unsigned int outFrameLen;
+
+    mSamplingRateConverter.apply(mWaveFileHolder->getFramePointer(0)
+                               , mWaveFileHolder->mFrameLen
+                               , &out
+                               , &outFrameLen);
+    mConvertedSamples.resize(outFrameLen * mWaveFileHolder->mChannels);
+
+    for (int i = 0; i < outFrameLen * mWaveFileHolder->mChannels; i++) {
+        mConvertedSamples[i] = *out++;
     }
+    mSamplingRateConverter.releaseBuffer();
 };
 
-void MediaCoordinator::test()
+SoundCoordinator::~SoundCoordinator()
+{
+    if (mWaveFileHolder) {
+        delete mWaveFileHolder;
+    }
+}
+
+void SoundCoordinator::test()
 {
     if (!mPlay) {
         mPlay = true;
+        mConvertedCurrent = 0;
+        mConvertedSamples.clear();
+
+        mSRCOutBuff         = nullptr;
+        mSRCOutFrameCurrent = 0;
+        mSRCOutFrameLen     = 0;
+
+        mSamplingRateConverter.reset();
+        mSamplingRateConverter.setConfig(mWaveFileHolder->mSamplingRate
+                                       , mSystemChannels
+                                       , mSystemSamplingRate);
     }
 }
 
-bool MediaCoordinator::loadWav(const char* path, WavData& out)
+/*
+unsigned int MediaCoordinator::requestData(float** buff, unsigned int size, unsigned int chs)
 {
-    std::ifstream waveFile(path, std::ios::binary);
-    if (!waveFile) return false;
+    float* b = *buff;
+    unsigned int ret = 0;
+    unsigned int inFrameLen = mConvertedSamples.size() / chs;
 
-    char riff[4];
-    waveFile.read(riff, 4);
-    char size[4];
-    waveFile.read(size, 4);
-    char wave[4];
-    waveFile.read(wave, 4);
 
-    char chunk[4];
-    int fmtSize;
+    for (ret; ret < size && mConvertedCurrent < inFrameLen; ++ret) {
+        for (int ch = 0; ch < chs; ++ch) {
+            *b++ = mConvertedSamples[(mConvertedCurrent * chs) + ch];
+        }
+        mConvertedCurrent++;
+    }
 
-    // find fmt
-    while (true) {
-        waveFile.read(chunk, 4);
-        waveFile.read((char*)&fmtSize, 4);
-        if (memcmp(chunk, "fmt ", 4) == 0)
+    if (inFrameLen <= mConvertedCurrent) {
+        mConvertedCurrent = 0;
+        mPlay = false;
+    }
+
+    return ret;
+}
+*/
+
+unsigned int SoundCoordinator::requestData(float** buff, unsigned int frameLen)
+{
+    unsigned int ret        = 0;
+    float*       renderBuff = *buff;
+
+    float*       converterOut = nullptr;
+    unsigned int converterOutLen  = 0;
+    unsigned int converterInSize  = 0;
+    unsigned int converterWinSize = 500;
+
+    while (ret < frameLen) {
+        if (!mSRCOutBuff) {
+            if (converterWinSize < mWaveFileHolder->mFrameLen - mWaveFileHolder->mCurrentFrame) {
+                converterInSize = converterWinSize;
+            }
+            else {
+                converterInSize = mWaveFileHolder->mFrameLen - mWaveFileHolder->mCurrentFrame;
+            }
+
+            mSamplingRateConverter.apply(mWaveFileHolder->getFramePointer(mWaveFileHolder->mCurrentFrame)
+                , converterInSize
+                , &converterOut
+                , &converterOutLen);
+
+            mWaveFileHolder->mCurrentFrame += converterInSize;
+
+            mSRCOutBuff = converterOut;
+            mSRCOutFrameCurrent = 0;
+            mSRCOutFrameLen = converterOutLen;
+        }
+
+        for (ret; ret < frameLen && mSRCOutFrameCurrent < mSRCOutFrameLen; ++ret) {
+            for (int ch = 0; ch < mSystemChannels; ++ch) {
+                *renderBuff++ = mSRCOutBuff[(mSRCOutFrameCurrent * mSystemChannels) + ch];
+            }
+            mSRCOutFrameCurrent++;
+        }
+
+        if (mSRCOutFrameLen <= mSRCOutFrameCurrent) {
+            mSamplingRateConverter.releaseBuffer();
+            mSRCOutBuff = nullptr;
+            mSRCOutFrameLen = 0;
+        }
+
+        if (mWaveFileHolder->mFrameLen <= mWaveFileHolder->mCurrentFrame) {
+            mWaveFileHolder->mCurrentFrame = 0;
+            mPlay = false;
             break;
-        waveFile.ignore(fmtSize);
+        }
     }
 
-    short audioFormat;
-    short channels;
-    int sampleRate;
-    waveFile.read((char*)&audioFormat, 2);
-    waveFile.read((char*)&channels, 2);
-    waveFile.read((char*)&sampleRate, 4);
-    waveFile.ignore(6);
-    short bitsPerSample;
-    waveFile.read((char*)&bitsPerSample, 2);
+    Utility::printLog("request:(%d) write:(%d)", frameLen, ret);
 
-    if (fmtSize > 16)
-        waveFile.ignore(fmtSize - 16);
-
-    // find data
-    int dataSize;
-    while (true) {
-        waveFile.read(chunk, 4);
-        waveFile.read((char*)&dataSize, 4);
-        if (memcmp(chunk, "data", 4) == 0)
-            break;
-        waveFile.ignore(dataSize);
-    }
-
-    int sampleCount = dataSize / (bitsPerSample / 8);
-
-    out.samples.resize(sampleCount);
-
-    if (bitsPerSample == 16) {
-        std::vector<short> tmp(sampleCount);
-        waveFile.read((char*)tmp.data(), dataSize);
-
-        for (int i = 0; i < sampleCount; ++i)
-            out.samples[i] = tmp[i] / 32768.0f;
-    }
-    else if (bitsPerSample == 32) {
-        waveFile.read((char*)out.samples.data(), dataSize);
-    }
-    else {
-        return false;
-    }
-
-    out.channels   = channels;
-    out.sampleRate = sampleRate;
-    out.current    = 0;
-    return true;
-
+    return ret;
 }
 
+
+/*
 unsigned int MediaCoordinator::requestData(float** buff, unsigned int size, unsigned int chs)
 {
     float*          b  = *buff;
@@ -330,3 +382,4 @@ unsigned int MediaCoordinator::requestData(float** buff, unsigned int size, unsi
 
     return ret;
 }
+*/

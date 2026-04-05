@@ -167,6 +167,7 @@ kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     <ClCompile Include="test_InputHandler.cpp" />
     <ClCompile Include="test_WorldNavigator.cpp" />
     <ClCompile Include="test_ObjectRepository.cpp" />
+    <ClCompile Include="test_SamplingRateConverter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\rose_aura.vcxproj">

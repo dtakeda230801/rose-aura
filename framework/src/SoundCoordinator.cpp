@@ -89,6 +89,10 @@ SoundCoordinator::SoundCoordinator() :
     , mSRCOutFrameLen(0)
     , mWaveFileHolder(nullptr)
     , mChOffsetMap{0,1}
+
+    , mSystemSRCOutBuff(nullptr)
+    , mSystemSRCOutFrameCurrent(0)
+    , mSystemSRCOutFrameLen(0)
 {
     allocateSystemBuffer();
 
@@ -163,6 +167,10 @@ void SoundCoordinator::renderToDevice()
         mSystemChannels     = mixFormatEx->Format.nChannels;
         mSystemSamplingRate = mixFormat->nSamplesPerSec;
         makeChannelOffsetMap(mixFormatEx->dwChannelMask);
+
+        if (SC_SAMPLING_RATE != mSystemSamplingRate) {
+            mSystemSrc.setConfig(SC_SAMPLING_RATE, SC_CHANNEL, mSystemSamplingRate);
+        }
 
         audioEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
         if (!audioEvent) {
@@ -297,11 +305,14 @@ unsigned int SoundCoordinator::requestDataInternal(float** buff, unsigned int fr
     unsigned int count       = 0;
 
     while (outFrameNum < frameNum) {
+        ////////////////////////////////////////////////////////////
+        // Process for writing to SC Buffer
+        ////////////////////////////////////////////////////////////
         SoundBuffer& writeSB = mSystemBuffer.mBuffer[mSystemBuffer.mWritePointer];
 
         if (mPlay) {
             float* writePoint = &writeSB.mBuffer[writeSB.mWritePointer];
-            unsigned int ret = requestData(&writePoint, (writeSB.mBufferSize - writeSB.mWritePointer)/ SC_CHANNEL);
+            unsigned int ret = requestData(&writePoint, (writeSB.mBufferSize - writeSB.mWritePointer) / SC_CHANNEL);
             writeSB.mWritePointer += ret * SC_CHANNEL;
         }
 
@@ -318,31 +329,82 @@ unsigned int SoundCoordinator::requestDataInternal(float** buff, unsigned int fr
             mSystemBuffer.mWritePointer = (mSystemBuffer.mWritePointer + 1) & 0x1;
         }
 
-        SoundBuffer& readSB = mSystemBuffer.mBuffer[mSystemBuffer.mReadPointer];
+        ////////////////////////////////////////////////////////////
+        // Process for writing to System Buffer
+        ////////////////////////////////////////////////////////////
 
-        count = 0;
-        for (unsigned int readPoint = readSB.mReadPointer
-           ; readPoint < readSB.mWritePointer && outFrameNum < frameNum 
-           ; readPoint += mSystemChannels) {
+        if (mSystemSamplingRate == SC_SAMPLING_RATE) {
+            SoundBuffer& readSB = mSystemBuffer.mBuffer[mSystemBuffer.mReadPointer];
 
-            unsigned int buffCh = 0;
-            for (unsigned int sysCh = 0; sysCh < mSystemChannels; ++sysCh) {
-                if (mChOffsetMap[buffCh] == sysCh) {
-                    *outBuff++ = readSB.mBuffer[readPoint + buffCh];
-                    ++buffCh;
-                    ++count;
-                } else {
-                    *outBuff++ = 0.0f;
+            count = 0;
+            for (unsigned int readPoint = readSB.mReadPointer
+                ; readPoint < readSB.mWritePointer && outFrameNum < frameNum
+                ; readPoint += mSystemChannels) {
+
+                unsigned int buffCh = 0;
+                for (unsigned int sysCh = 0; sysCh < mSystemChannels; ++sysCh) {
+                    if (mChOffsetMap[buffCh] == sysCh) {
+                        *outBuff++ = readSB.mBuffer[readPoint + buffCh];
+                        ++buffCh;
+                        ++count;
+                    }
+                    else {
+                        *outBuff++ = 0.0f;
+                    }
+                }
+                ++outFrameNum;
+            }
+            readSB.mReadPointer += count;
+
+            if (readSB.mBufferSize <= readSB.mReadPointer) {
+                readSB.mReadPointer = 0;
+                readSB.mWritePointer = 0;
+                mSystemBuffer.mReadPointer = (mSystemBuffer.mReadPointer + 1) & 0x1;
+            }
+
+        } else { //mSystemSamplingRate != SC_SAMPLING_RATE
+            SoundBuffer& readSB = mSystemBuffer.mBuffer[mSystemBuffer.mReadPointer];
+
+            unsigned int srcInDataLen = readSB.mWritePointer - readSB.mReadPointer;
+
+            if (!mSystemSRCOutBuff) {
+                mSystemSrc.apply(&readSB.mBuffer[readSB.mReadPointer]
+                    , srcInDataLen / SC_CHANNEL
+                    , &mSystemSRCOutBuff
+                    , &mSystemSRCOutFrameLen);
+            }
+            readSB.mReadPointer += srcInDataLen;
+
+            if (readSB.mBufferSize <= readSB.mReadPointer) {
+                readSB.mReadPointer  = 0;
+                readSB.mWritePointer = 0;
+                mSystemBuffer.mReadPointer = (mSystemBuffer.mReadPointer + 1) & 0x1;
+            }
+
+            for (unsigned int readPoint = mSystemSRCOutFrameCurrent * SC_CHANNEL
+                ; readPoint < mSystemSRCOutFrameLen && outFrameNum < frameNum
+                ; readPoint += mSystemChannels) {
+
+                unsigned int buffCh = 0;
+                for (unsigned int sysCh = 0; sysCh < mSystemChannels; ++sysCh) {
+                    if (mChOffsetMap[buffCh] == sysCh) {
+                        *outBuff++ = mSystemSRCOutBuff[readPoint + buffCh];
+                        ++buffCh;
+                    }
+                    else {
+                        *outBuff++ = 0.0f;
+                    }
+                }
+                ++outFrameNum;
+                mSystemSRCOutFrameCurrent += outFrameNum;
+
+                if (mSystemSRCOutFrameLen <= mSystemSRCOutFrameCurrent) {
+                    mSystemSrc.releaseBuffer();
+                    mSystemSRCOutBuff         = nullptr;
+                    mSystemSRCOutFrameLen     = 0;
+                    mSystemSRCOutFrameCurrent = 0;
                 }
             }
-            ++outFrameNum;
-        }
-        readSB.mReadPointer += count;
-
-        if (readSB.mBufferSize <= readSB.mReadPointer) {
-            readSB.mReadPointer  = 0;
-            readSB.mWritePointer = 0;
-            mSystemBuffer.mReadPointer = (mSystemBuffer.mReadPointer + 1) & 0x1;
         }
     }
     return outFrameNum;

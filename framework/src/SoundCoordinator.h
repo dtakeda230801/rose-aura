@@ -163,4 +163,11 @@ private:
 
     unsigned int   mChOffsetMap[2];
 
+    SamplingRateConverter
+                   mSystemSrc;
+
+    float*         mSystemSRCOutBuff;
+    unsigned int   mSystemSRCOutFrameCurrent;
+    unsigned int   mSystemSRCOutFrameLen;
+
 };

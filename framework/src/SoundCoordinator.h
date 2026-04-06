@@ -130,6 +130,7 @@ private:
     unsigned int requestDataInternal(float** buff, unsigned int frameNum);
     void         allocateSystemBuffer();
     void         releaseSystemBuffer();
+    void         makeChannelOffsetMap(unsigned short mask);
     void         dumpSystemBufferCondition();
 
 
@@ -151,9 +152,15 @@ private:
 	unsigned int    mSRCOutFrameCurrent;
 	unsigned int    mSRCOutFrameLen;
 
-	const unsigned int SYSTEM_BUFFER_DURATION  = 200000; // 20 msec
-    const unsigned int SYSTEM_BUFFER_BASE_SIZE = 480;
+    static constexpr unsigned int SYSTEM_BUFFER_DURATION  = 200000; // 20 msec
+    static constexpr unsigned int SYSTEM_BUFFER_BASE_SIZE = 480;
+
+    static constexpr unsigned int SC_SAMPLING_RATE = 48000;
+    static constexpr unsigned int SC_CHANNEL       = 2;
+
 
     SBHolder       mSystemBuffer;
+
+    unsigned int   mChOffsetMap[2];
 
 };

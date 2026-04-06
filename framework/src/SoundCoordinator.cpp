@@ -88,10 +88,11 @@ SoundCoordinator::SoundCoordinator() :
     , mSRCOutFrameCurrent(0)
     , mSRCOutFrameLen(0)
     , mWaveFileHolder(nullptr)
+    , mChOffsetMap{0,1}
 {
     allocateSystemBuffer();
 
-    mWaveFileHolder = new Utility::WaveFileHolder("M:\\e\\works\\Dev\\test.wav");
+    mWaveFileHolder = new Utility::WaveFileHolder("C:\\works\\Dev\\test.wav");
 };
 
 SoundCoordinator::~SoundCoordinator()
@@ -133,9 +134,10 @@ void SoundCoordinator::renderToDevice()
         std::unique_ptr<SystemNotification> systemNotification
             = std::make_unique<SystemNotification>(*this);
 
-        UINT32          buffFrameCount = 0;
-        WAVEFORMATEX*   mixFormat      = nullptr;
-        REFERENCE_TIME  bufferDuration = SYSTEM_BUFFER_DURATION;
+        UINT32                  buffFrameCount = 0;
+        WAVEFORMATEX*           mixFormat      = nullptr;
+        WAVEFORMATEXTENSIBLE*   mixFormatEx    = nullptr;
+        REFERENCE_TIME          bufferDuration = SYSTEM_BUFFER_DURATION;
 
         CALL_WITH_CONTINUE(CoCreateInstance(
             __uuidof(MMDeviceEnumerator),nullptr,CLSCTX_ALL,IID_PPV_ARGS(&enumerator))
@@ -155,6 +157,12 @@ void SoundCoordinator::renderToDevice()
 
         CALL_WITH_CONTINUE(audioClient->GetMixFormat(&mixFormat)
             , "GetMixFormat fails");
+
+        mixFormatEx = reinterpret_cast<WAVEFORMATEXTENSIBLE*>(mixFormat);
+
+        mSystemChannels     = mixFormatEx->Format.nChannels;
+        mSystemSamplingRate = mixFormat->nSamplesPerSec;
+        makeChannelOffsetMap(mixFormatEx->dwChannelMask);
 
         audioEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
         if (!audioEvent) {
@@ -178,9 +186,6 @@ void SoundCoordinator::renderToDevice()
         CALL_WITH_CONTINUE(audioClient->Start() 
             , "Audio Client Start fails");
 
-        mSystemChannels     = mixFormat->nChannels;
-        mSystemSamplingRate = mixFormat->nSamplesPerSec;
-
         Utility::printLog("Finish initialization");
         while (mStarted && !mRecover)
         {
@@ -195,8 +200,7 @@ void SoundCoordinator::renderToDevice()
                 , "GetCurrentPadding fails");
 
             framesAvailable = buffFrameCount - padding;
-            if (framesAvailable == 0)
-            {
+            if (framesAvailable == 0) {
                 continue;
             }
 
@@ -297,13 +301,13 @@ unsigned int SoundCoordinator::requestDataInternal(float** buff, unsigned int fr
 
         if (mPlay) {
             float* writePoint = &writeSB.mBuffer[writeSB.mWritePointer];
-            unsigned int ret = requestData(&writePoint, (writeSB.mBufferSize - writeSB.mWritePointer)/mSystemChannels);
-            writeSB.mWritePointer += ret * mSystemChannels;
+            unsigned int ret = requestData(&writePoint, (writeSB.mBufferSize - writeSB.mWritePointer)/ SC_CHANNEL);
+            writeSB.mWritePointer += ret * SC_CHANNEL;
         }
 
         count = 0;
-        for (unsigned int writePoint = writeSB.mWritePointer; writePoint < writeSB.mBufferSize; writePoint += mSystemChannels) {
-            for (unsigned int ch = 0; ch < mSystemChannels; ++ch) {
+        for (unsigned int writePoint = writeSB.mWritePointer; writePoint < writeSB.mBufferSize; writePoint += SC_CHANNEL) {
+            for (unsigned int ch = 0; ch < SC_CHANNEL; ++ch) {
                 writeSB.mBuffer[writePoint + ch] = 0.0f;
                 ++count;
             }
@@ -321,11 +325,16 @@ unsigned int SoundCoordinator::requestDataInternal(float** buff, unsigned int fr
            ; readPoint < readSB.mWritePointer && outFrameNum < frameNum 
            ; readPoint += mSystemChannels) {
 
-            for (unsigned int ch = 0; ch < mSystemChannels; ++ch) {
-                *outBuff++ = readSB.mBuffer[readPoint + ch];
-                ++count;
+            unsigned int buffCh = 0;
+            for (unsigned int sysCh = 0; sysCh < mSystemChannels; ++sysCh) {
+                if (mChOffsetMap[buffCh] == sysCh) {
+                    *outBuff++ = readSB.mBuffer[readPoint + buffCh];
+                    ++buffCh;
+                    ++count;
+                } else {
+                    *outBuff++ = 0.0f;
+                }
             }
-
             ++outFrameNum;
         }
         readSB.mReadPointer += count;
@@ -362,6 +371,44 @@ void SoundCoordinator::releaseSystemBuffer()
 {
     delete[] mSystemBuffer.mBuffer[0].mBuffer;
     delete[] mSystemBuffer.mBuffer[1].mBuffer;
+}
+
+void SoundCoordinator::makeChannelOffsetMap(unsigned short mask)
+{
+    unsigned short frontL  = 0x0001;
+    unsigned short frontR  = 0x0002;
+    unsigned short center  = 0x0004;
+    unsigned short lowFreq = 0x0008;
+    unsigned short backL   = 0x0010;
+    unsigned short backR   = 0x0020;
+    unsigned short sideL   = 0x0200;
+    unsigned short sideR   = 0x0400;
+
+    mChOffsetMap[0] = 0;
+    mChOffsetMap[1] = 0;
+
+    if ((mask & frontL) && (mask & frontR)) {
+        mChOffsetMap[0] = 0;
+        mChOffsetMap[1] = 1;
+    } else if (mask & center) {
+        mChOffsetMap[0] = 0;
+        mChOffsetMap[1] = 0;
+    } else if ((mask & backL) && (mask & backR)) {
+        mChOffsetMap[0] = 4;
+        mChOffsetMap[1] = 5;
+    } else {
+        unsigned short pattern[8] = { frontL , frontR , center , lowFreq , backL , backR , sideL , sideR };
+        unsigned int ch     = 0;
+        for (unsigned short i = 0; i < 8; i++) {
+            if (mask & pattern[i]) {
+                mChOffsetMap[ch] = i;
+                ch++;
+                if (ch == 2) {
+                    break;
+                }
+            }
+        }
+    }
 }
 
 void SoundCoordinator::dumpSystemBufferCondition()

@@ -9,6 +9,7 @@
 
 #include "sound/SamplingRateConverter.h"
 #include "Utility.h"
+#include <filesystem>
 
 bool WriteWaveFile16(
     const char* filename,
@@ -88,11 +89,13 @@ TEST(testSamplingRateConverter, APITest)
         unsigned int    outFrameLen;
         Utility::WaveFileHolder* waveFileHolder;
 
-        waveFileHolder = new Utility::WaveFileHolder("M:\\e\\works\\Dev\\test.wav");
+        Utility::printLog("path:%s", std::filesystem::current_path().string().c_str());
+
+        waveFileHolder = new Utility::WaveFileHolder("..\\..\\test\\rose_aura_test\\test.wav");
 
 		SamplingRateConverter* src = new SamplingRateConverter();
 
-        WriteWaveFile16("M:\\e\\works\\Dev\\testOut1.wav"
+        WriteWaveFile16("..\\..\\test\\rose_aura_test\\testResult1.wav"
                       , &waveFileHolder->mSamples[0]
                       , waveFileHolder->mFrameLen
                       , waveFileHolder->mChannels
@@ -108,7 +111,7 @@ TEST(testSamplingRateConverter, APITest)
 
         Utility::printLog("testOut2 : %d samples", outFrameLen);
 
-        WriteWaveFile16("M:\\e\\works\\Dev\\testOut2.wav"
+        WriteWaveFile16("..\\..\\test\\rose_aura_test\\testResult2.wav"
                        , out
                        , outFrameLen
                        , waveFileHolder->mChannels
@@ -155,7 +158,7 @@ TEST(testSamplingRateConverter, APITest)
         }
         ROSE_AURA_MESURMENT_TIME_FIN;
 
-        WriteWaveFile16("M:\\e\\works\\Dev\\testOut3.wav"
+        WriteWaveFile16("..\\..\\test\\rose_aura_test\\testResult3.wav"
                        , &couvertOut[0]
                        , convertOutCount / waveFileHolder->mChannels
                        , waveFileHolder->mChannels

@@ -406,6 +406,7 @@ private:
 ////////////////////////////////////////////
 ////////////////////////////////////////////
 class SoundTester : public IInputHandler::IInputHandlerCallback
+	              , public ISoundCoordinator::ISoundRenderer
 {
 public:
 	//IInputHandlerCallback
@@ -416,7 +417,7 @@ public:
 			InputType  type = event.second;
 
 			if (state == InputState::PUSHED && type == InputType::ACTION2) {
-				mSoundCoordinator.test();
+				mSoundCoordinator.playOneShut(this);
 			}
 		}
 	}
@@ -424,27 +425,49 @@ public:
 	void init()
 	{
 		mInputHandler.registerCallback(this);
+		mWaveFileHolder = new Utility::WaveFileHolder("test.wav");
 	}
 
 	void fin()
 	{
+		delete mWaveFileHolder;
 		mInputHandler.unregisterCallback(this);
 	}
 
-	void loadWaveFile() {
+	RARetCode requestData(unsigned int requestFrameLen, unsigned int* returnFrameLen, ISoundCoordinator::IDataWriter& writer)
+	{
 
+		if (requestFrameLen <= mWaveFileHolder->mFrameLen - mWaveFileHolder->mCurrentFrame) {
+			*returnFrameLen = requestFrameLen;
+		} else {
+			*returnFrameLen = mWaveFileHolder->mFrameLen - mWaveFileHolder->mCurrentFrame;
+		}
+
+		writer.write(mWaveFileHolder->getFramePointer(mWaveFileHolder->mCurrentFrame), *returnFrameLen);
+
+		mWaveFileHolder->mCurrentFrame += *returnFrameLen;
+
+		if (mWaveFileHolder->mFrameLen <= mWaveFileHolder->mCurrentFrame) {
+			mWaveFileHolder->mCurrentFrame = 0;
+			return RARetCode::RET_END_OF_CONTENT;
+		}
+
+		return RARetCode::RET_OK;
 	}
 
+
 	SoundTester(IInputHandler& ih, ISoundCoordinator& mc) :
-		mInputHandler(ih)
+		  mInputHandler(ih)
 		, mSoundCoordinator(mc)
+		, mWaveFileHolder(nullptr)
 	{
 	}
 	virtual ~SoundTester() = default;
 
 private:
-	IInputHandler& mInputHandler;
-	ISoundCoordinator& mSoundCoordinator;
+	IInputHandler&            mInputHandler;
+	ISoundCoordinator&        mSoundCoordinator;
+	Utility::WaveFileHolder*  mWaveFileHolder;
 };
 
 ////////////////////////////////////////////

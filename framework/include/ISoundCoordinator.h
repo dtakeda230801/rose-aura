@@ -9,12 +9,17 @@ public:
 	//////////////////////////////////////////////////////////
 	// Internal Classes
 	//////////////////////////////////////////////////////////
-	using RequestDataHandler = unsigned int(*)(float**, unsigned int);
+	class IDataWriter {
+	public:
+		virtual RARetCode write(float* writeData, unsigned int requestFrameLen) = 0;
+	};
 
-	struct SoundDescriptor {
-		RequestDataHandler mHandler;
-		unsigned int	   mSamplingRate;
-		unsigned int	   mChannels;
+	class ISoundRenderer {
+	public:
+		virtual RARetCode requestData(unsigned int requestFrameLen, unsigned int* returnFrameLen, IDataWriter& writer) = 0;
+
+		ISoundRenderer() = default;
+		virtual ~ISoundRenderer() = default;
 	};
 
 	//////////////////////////////////////////////////////////
@@ -26,7 +31,5 @@ public:
 	virtual unsigned int getSystemSamplingRate() = 0;
 	virtual unsigned int getSystemChannels()     = 0;
 
-	virtual RARetCode playOneShut(SoundDescriptor descriptor) = 0;
-
-	virtual void test() = 0;
+	virtual RARetCode playOneShut(ISoundRenderer* renderer) = 0;
 };

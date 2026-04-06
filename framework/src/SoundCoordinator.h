@@ -14,30 +14,6 @@ public:
 	//////////////////////////////////////////////////////////
 	// Internal Classes
 	//////////////////////////////////////////////////////////
-    class IRenderer {
-    public:
-        void setSystemConf(unsigned int samplingRate, unsigned int channels)
-        {
-            mSystemSamplingRate = samplingRate;
-            mSystemChannels     = channels;
-        }
-
-        virtual unsigned int requestData(float** buff, unsigned int frameLen) = 0;
-
-        IRenderer(SoundDescriptor descriptor) :
-            mDesctiptor(descriptor)
-            , mSystemSamplingRate(0)
-            , mSystemChannels(0)
-        {
-        }
-        virtual ~IRenderer() = default;
-
-    protected:
-        unsigned int mSystemSamplingRate;
-        unsigned int mSystemChannels;
-
-        SoundDescriptor  mDesctiptor;
-    };
 
 	//////////////////////////////////////////////////////////
 	// APIs
@@ -48,11 +24,9 @@ public:
     unsigned int getSystemSamplingRate();
     unsigned int getSystemChannels();
 
-    RARetCode playOneShut(SoundDescriptor func);
+    RARetCode playOneShut(ISoundRenderer* renderer);
 
     void recover();
-
-	void test();
 
 	SoundCoordinator();
 	virtual ~SoundCoordinator();
@@ -125,8 +99,24 @@ private:
         unsigned int    mReadPointer;
     };
 
+    class DataWriter : public IDataWriter {
+    public:
+        virtual RARetCode write(float* buff, unsigned int frameLen);
+
+        void setBuffer(float* buff, unsigned int size);
+        void reset();
+
+        DataWriter();
+        virtual ~DataWriter() = default;
+
+    private:
+        float*          mWriteBuffer;
+        unsigned int    mWriteBufferSize;
+        unsigned int    mWroteFrame;
+    };
+
+
     void         renderToDevice();
-    unsigned int requestData(float** buff,unsigned int frameNum);
     unsigned int requestDataInternal(float** buff, unsigned int frameNum);
     void         allocateSystemBuffer();
     void         releaseSystemBuffer();
@@ -141,23 +131,11 @@ private:
 	unsigned int	mSystemChannels;
 	unsigned int	mSystemSamplingRate;
 
-	bool			mPlay;
-	Utility::WaveFileHolder*
-					mWaveFileHolder;
-
-	SamplingRateConverter
-					mSamplingRateConverter;
-
-	float*          mSRCOutBuff;
-	unsigned int    mSRCOutFrameCurrent;
-	unsigned int    mSRCOutFrameLen;
-
     static constexpr unsigned int SYSTEM_BUFFER_DURATION  = 200000; // 20 msec
     static constexpr unsigned int SYSTEM_BUFFER_BASE_SIZE = 480;
 
     static constexpr unsigned int SC_SAMPLING_RATE = 48000;
     static constexpr unsigned int SC_CHANNEL       = 2;
-
 
     SBHolder       mSystemBuffer;
 
@@ -170,4 +148,9 @@ private:
     unsigned int   mSystemSRCOutFrameCurrent;
     unsigned int   mSystemSRCOutFrameLen;
 
+    std::vector<ISoundRenderer*>
+                   mSoundData;
+
+
+    DataWriter     mDataWriter;
 };

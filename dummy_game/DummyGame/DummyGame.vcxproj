@@ -159,6 +159,9 @@ kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
   <ItemGroup>
     <None Include="input_map.json" />
   </ItemGroup>
+  <ItemGroup>
+    <Media Include="test.wav" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

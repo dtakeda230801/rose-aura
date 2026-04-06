@@ -22,4 +22,9 @@
   <ItemGroup>
     <None Include="input_map.json" />
   </ItemGroup>
+  <ItemGroup>
+    <Media Include="test.wav">
+      <Filter>リソース ファイル</Filter>
+    </Media>
+  </ItemGroup>
 </Project>

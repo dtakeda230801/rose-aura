@@ -94,3 +94,4 @@ output.json
 *.bak
 *.orig
 *.pyc
+testResult*.*

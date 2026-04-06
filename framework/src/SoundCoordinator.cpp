@@ -50,8 +50,9 @@ unsigned int SoundCoordinator::getSystemChannels()
     return mSystemChannels;
 }
 
-RARetCode SoundCoordinator::playOneShut(SoundDescriptor func)
+RARetCode SoundCoordinator::playOneShut(ISoundRenderer* renderer)
 {
+    mSoundData.push_back(renderer);
     return RARetCode::RET_OK;
 }
 
@@ -62,55 +63,69 @@ void SoundCoordinator::recover()
     mRecover = true;
 }
 
-void SoundCoordinator::test()
-{
-    if (!mPlay) {
-        mPlay = true;
-
-        mSRCOutBuff = nullptr;
-        mSRCOutFrameCurrent = 0;
-        mSRCOutFrameLen = 0;
-
-        mSamplingRateConverter.reset();
-        mSamplingRateConverter.setConfig(mWaveFileHolder->mSamplingRate
-            , mSystemChannels
-            , mSystemSamplingRate);
-    }
-}
-
 SoundCoordinator::SoundCoordinator() :
     mStarted(false)
     , mRecover(false)
     , mSystemChannels(2)
     , mSystemSamplingRate(48000)
-    , mPlay(false)
-    , mSRCOutBuff(nullptr)
-    , mSRCOutFrameCurrent(0)
-    , mSRCOutFrameLen(0)
-    , mWaveFileHolder(nullptr)
     , mChOffsetMap{0,1}
-
     , mSystemSRCOutBuff(nullptr)
     , mSystemSRCOutFrameCurrent(0)
     , mSystemSRCOutFrameLen(0)
 {
     allocateSystemBuffer();
-
-    mWaveFileHolder = new Utility::WaveFileHolder("C:\\works\\Dev\\test.wav");
 };
 
 SoundCoordinator::~SoundCoordinator()
 {
     releaseSystemBuffer();
-    if (mWaveFileHolder) {
-        delete mWaveFileHolder;
-    }
 }
 
 
 ////////////////////////////////////
 // Private
 ////////////////////////////////////
+
+RARetCode SoundCoordinator::DataWriter::write(float* buff, unsigned int frameLen)
+{
+    if (!buff || mWriteBufferSize < (mWroteFrame + frameLen) * SC_CHANNEL ) {
+        return RARetCode::RET_ERR_INVALID_ARG;
+    }
+
+    if (!mWriteBuffer) {
+        return RARetCode::RET_ERR_INVALID_STATE;
+    }
+
+    for (unsigned int frame = mWroteFrame; frame < mWroteFrame + frameLen; ++frame) {
+        
+        for (unsigned int ch = 0; ch < SC_CHANNEL; ch++) {
+            *(mWriteBuffer + frame * SC_CHANNEL + ch) += *(buff + frame * SC_CHANNEL + ch);
+        }
+    }
+    mWroteFrame += frameLen;
+}
+
+void SoundCoordinator::DataWriter::setBuffer(float* buff, unsigned int size)
+{
+    mWriteBuffer     = buff;
+    mWriteBufferSize = size;
+}
+
+void SoundCoordinator::DataWriter::reset()
+{
+    mWroteFrame = 0;
+}
+
+
+SoundCoordinator::DataWriter::DataWriter() :
+      mWriteBuffer(nullptr)
+    , mWriteBufferSize(0)
+    , mWroteFrame(0)
+
+{
+}
+
+
 // Helper for COM API
 #define CALL_WITH_RETURN(x,y)   if (S_OK != x){Utility::printLog(y);return;} 
 #define CALL_WITH_CONTINUE(x,y) if (S_OK != x){Utility::printLog(y);continue;} 
@@ -167,6 +182,8 @@ void SoundCoordinator::renderToDevice()
         mSystemChannels     = mixFormatEx->Format.nChannels;
         mSystemSamplingRate = mixFormat->nSamplesPerSec;
         makeChannelOffsetMap(mixFormatEx->dwChannelMask);
+
+        Utility::printLog("Update System Audio Config:fs %d, ch %d", mSystemSamplingRate,mSystemChannels);
 
         if (SC_SAMPLING_RATE != mSystemSamplingRate) {
             mSystemSrc.setConfig(SC_SAMPLING_RATE, SC_CHANNEL, mSystemSamplingRate);
@@ -244,60 +261,6 @@ void SoundCoordinator::renderToDevice()
     Utility::printLog("Stop Sound Rendering Thread");
 }
 
-unsigned int SoundCoordinator::requestData(float** buff, unsigned int frameLen)
-{
-    unsigned int ret        = 0;
-    float*       renderBuff = *buff;
-
-    float*       converterOut = nullptr;
-    unsigned int converterOutLen  = 0;
-    unsigned int converterInSize  = 0;
-    unsigned int converterWinSize = 500;
-
-    while (ret < frameLen) {
-        if (!mSRCOutBuff) {
-            if (converterWinSize < mWaveFileHolder->mFrameLen - mWaveFileHolder->mCurrentFrame) {
-                converterInSize = converterWinSize;
-            }
-            else {
-                converterInSize = mWaveFileHolder->mFrameLen - mWaveFileHolder->mCurrentFrame;
-            }
-
-            mSamplingRateConverter.apply(mWaveFileHolder->getFramePointer(mWaveFileHolder->mCurrentFrame)
-                , converterInSize
-                , &converterOut
-                , &converterOutLen);
-
-            mWaveFileHolder->mCurrentFrame += converterInSize;
-
-            mSRCOutBuff = converterOut;
-            mSRCOutFrameCurrent = 0;
-            mSRCOutFrameLen = converterOutLen;
-        }
-
-        for (ret; ret < frameLen && mSRCOutFrameCurrent < mSRCOutFrameLen; ++ret) {
-            for (int ch = 0; ch < mSystemChannels; ++ch) {
-                *renderBuff++ = mSRCOutBuff[(mSRCOutFrameCurrent * mSystemChannels) + ch];
-            }
-            mSRCOutFrameCurrent++;
-        }
-
-        if (mSRCOutFrameLen <= mSRCOutFrameCurrent) {
-            mSamplingRateConverter.releaseBuffer();
-            mSRCOutBuff = nullptr;
-            mSRCOutFrameLen = 0;
-        }
-
-        if (mWaveFileHolder->mFrameLen <= mWaveFileHolder->mCurrentFrame) {
-            mWaveFileHolder->mCurrentFrame = 0;
-            mPlay = false;
-            break;
-        }
-    }
-
-    return ret;
-}
-
 unsigned int SoundCoordinator::requestDataInternal(float** buff, unsigned int frameNum)
 {
     unsigned int outFrameNum = 0;
@@ -310,10 +273,38 @@ unsigned int SoundCoordinator::requestDataInternal(float** buff, unsigned int fr
         ////////////////////////////////////////////////////////////
         SoundBuffer& writeSB = mSystemBuffer.mBuffer[mSystemBuffer.mWritePointer];
 
-        if (mPlay) {
+        if (!mSoundData.empty()) {
             float* writePoint = &writeSB.mBuffer[writeSB.mWritePointer];
-            unsigned int ret = requestData(&writePoint, (writeSB.mBufferSize - writeSB.mWritePointer) / SC_CHANNEL);
-            writeSB.mWritePointer += ret * SC_CHANNEL;
+            std::fill(writePoint, writePoint + (writeSB.mBufferSize - writeSB.mWritePointer), 0.0f);
+
+            mDataWriter.setBuffer(writePoint, writeSB.mBufferSize - writeSB.mWritePointer);
+
+            unsigned int retFrameMax = 0;
+
+            for (auto ite = mSoundData.begin(); ite != mSoundData.end(); )
+            {
+                ISoundRenderer* sound = *ite;
+                unsigned int    retFrameLen     = 0;
+                unsigned int    requestFrameLen = 0;
+                RARetCode       ret;
+
+                mDataWriter.reset();
+                requestFrameLen = (writeSB.mBufferSize - writeSB.mWritePointer) / SC_CHANNEL;
+                ret = sound->requestData(requestFrameLen, &retFrameLen, mDataWriter);
+
+                if (retFrameMax < retFrameLen) {
+                    retFrameMax = retFrameLen;
+                }
+
+                if (ret == RARetCode::RET_END_OF_CONTENT) {
+                    ite = mSoundData.erase(ite);
+                }
+                else {
+                    ++ite;
+                }
+            }
+//            unsigned int ret = requestData(&writePoint, (writeSB.mBufferSize - writeSB.mWritePointer) / SC_CHANNEL);
+            writeSB.mWritePointer += retFrameMax * SC_CHANNEL;
         }
 
         count = 0;
@@ -409,7 +400,6 @@ unsigned int SoundCoordinator::requestDataInternal(float** buff, unsigned int fr
     }
     return outFrameNum;
 }
-
 
 void SoundCoordinator::allocateSystemBuffer()
 {

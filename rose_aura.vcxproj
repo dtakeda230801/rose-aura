@@ -34,8 +34,6 @@
     <ClCompile Include="framework\src\ObjectRepository.cpp" />
     <ClCompile Include="framework\src\RoseAura.cpp" />
     <ClCompile Include="framework\src\sound\SamplingRateConverter.cpp" />
-    <ClCompile Include="framework\src\sound\SimpleRenderer.cpp" />
-    <ClCompile Include="framework\src\sound\SRCRenderer.cpp" />
     <ClCompile Include="framework\src\Utility.cpp" />
     <ClCompile Include="framework\src\WorldNavigator.cpp" />
   </ItemGroup>
@@ -55,8 +53,6 @@
     <ClInclude Include="framework\src\ObjectRepository.h" />
     <ClInclude Include="framework\src\RoseAuraImpl.h" />
     <ClInclude Include="framework\src\sound\SamplingRateConverter.h" />
-    <ClInclude Include="framework\src\sound\SimpleRenderer.h" />
-    <ClInclude Include="framework\src\sound\SRCRenderer.h" />
     <ClInclude Include="framework\src\Utility.h" />
     <ClInclude Include="framework\src\WorldNavigator.h" />
   </ItemGroup>

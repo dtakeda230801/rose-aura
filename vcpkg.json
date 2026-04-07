@@ -1,7 +1,9 @@
 {
   "name": "myapp",
-  "version-string": "1.0.0",
+  "version": "1.0.0",
   "dependencies": [
-    "nlohmann-json"
+    "nlohmann-json",
+    "opus",
+    "opusfile"
   ]
 }

@@ -21,10 +21,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="input_map.json" />
+    <None Include="Seeker.opus" />
   </ItemGroup>
   <ItemGroup>
-    <Media Include="test.wav">
-      <Filter>リソース ファイル</Filter>
-    </Media>
+    <Media Include="test.wav" />
   </ItemGroup>
 </Project>

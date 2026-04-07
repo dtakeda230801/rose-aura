@@ -24,27 +24,4 @@ public:
 
 		return ret;
 	}
-
-	/////////////////////////////////////////////
-	class WaveFileHolder {
-	public:
-		WaveFileHolder(const char* path);
-
-		float* getFramePointer(unsigned int frame);
-
-		unsigned int mChannels;
-		unsigned int mSamplingRate;
-		unsigned int mFrameLen;
-		unsigned int mCurrentFrame;
-		std::vector<float> 
-					 mSamples;
-
-		virtual ~WaveFileHolder() = default;
-	};
-
-private:
-
-	Utility() {};
-	~Utility() {};
-
 };

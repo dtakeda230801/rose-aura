@@ -6,13 +6,18 @@
 #include <sstream>
 #include <string>
 #include <cmath>
+#include <thread>
+#include <condition_variable>
 
 #include "RoseAura.h"
 #include "RoseAuraReturnCode.h"
+#include "MediaUtility.h"
 
 #include "Utility.h"
 #include "raylib.h"
 
+
+using namespace RoseAuraMediaUtility;
 using namespace RoseAuraReturnCode;
 
 #define WIN_SIZE_W 800
@@ -425,7 +430,7 @@ public:
 	void init()
 	{
 		mInputHandler.registerCallback(this);
-		mWaveFileHolder = new Utility::WaveFileHolder("test.wav");
+		mWaveFileHolder = new WaveFileHolder("test.wav");
 	}
 
 	void fin()
@@ -437,18 +442,18 @@ public:
 	RARetCode requestData(unsigned int requestFrameLen, unsigned int* returnFrameLen, ISoundCoordinator::IDataWriter& writer)
 	{
 
-		if (requestFrameLen <= mWaveFileHolder->mFrameLen - mWaveFileHolder->mCurrentFrame) {
+		if (requestFrameLen <= mWaveFileHolder->getRemainFrameLen()) {
 			*returnFrameLen = requestFrameLen;
 		} else {
-			*returnFrameLen = mWaveFileHolder->mFrameLen - mWaveFileHolder->mCurrentFrame;
+			*returnFrameLen = mWaveFileHolder->getRemainFrameLen();
 		}
 
-		writer.write(mWaveFileHolder->getFramePointer(mWaveFileHolder->mCurrentFrame), *returnFrameLen);
+		writer.write(mWaveFileHolder->getCurrentFramePointer(), *returnFrameLen);
 
-		mWaveFileHolder->mCurrentFrame += *returnFrameLen;
+		mWaveFileHolder->moveCurrentFramePointer(*returnFrameLen);
 
-		if (mWaveFileHolder->mFrameLen <= mWaveFileHolder->mCurrentFrame) {
-			mWaveFileHolder->mCurrentFrame = 0;
+		if (mWaveFileHolder->getRemainFrameLen() == 0) {
+			mWaveFileHolder->reset();
 			return RARetCode::RET_END_OF_CONTENT;
 		}
 
@@ -467,7 +472,135 @@ public:
 private:
 	IInputHandler&            mInputHandler;
 	ISoundCoordinator&        mSoundCoordinator;
-	Utility::WaveFileHolder*  mWaveFileHolder;
+	WaveFileHolder*			  mWaveFileHolder;
+};
+
+class BGMTester : public IInputHandler::IInputHandlerCallback
+	, public ISoundCoordinator::ISoundRenderer
+{
+public:
+	//IInputHandlerCallback
+	void onEvent(std::vector<std::pair<InputState, InputType>>& events)
+	{
+		for (auto event : events) {
+			InputState state = event.first;
+			InputType  type = event.second;
+
+			if (state == InputState::PUSHED && type == InputType::ACTION3) {
+
+				if (!mPlay) {
+					mPlay   = true;
+
+					if (!mOpusFileHolder->decode()) {
+						mFinish = true;
+					}
+
+					mThread = std::thread(&BGMTester::decodeThread, this);
+
+					mSoundCoordinator.playOneShut(this);
+				} else {
+					mPlay   = false;
+					mFinish = true;
+					mOpusFileHolder->reset();
+					if (mThread.joinable()) {
+						mThread.join();
+					}
+
+				}
+
+			}
+		}
+	}
+
+	void init()
+	{
+		mInputHandler.registerCallback(this);
+		mOpusFileHolder = new OpusFileHolder("Seeker.opus");
+	}
+
+	void fin()
+	{
+		delete mOpusFileHolder;
+		mInputHandler.unregisterCallback(this);
+	}
+
+	void decodeThread() {
+
+		std::unique_lock<std::mutex> lock(mMutex);
+
+		while (mPlay && !mFinish) {
+
+			mCond.wait(lock, [] { return true;});
+
+			if (!mOpusFileHolder->decode()) {
+				mFinish = true;
+			}
+		}
+	}
+
+	RARetCode requestData(unsigned int requestFrameLen, unsigned int* returnFrameLen, ISoundCoordinator::IDataWriter& writer)
+	{
+		Utility::printLog("Opus requestData");
+
+		RARetCode ret = RARetCode::RET_OK;
+
+		unsigned int writeFrameLen = 0;
+
+		while (writeFrameLen < requestFrameLen) {
+
+			float* decoded;
+			unsigned int	decodedFrameLen;
+
+			mOpusFileHolder->getCurrentPointer(decoded, &decodedFrameLen);
+
+			if (decodedFrameLen > 0) {
+				if (decodedFrameLen >= requestFrameLen) {
+					writeFrameLen = requestFrameLen;
+				}
+				else {
+					writeFrameLen = decodedFrameLen;
+				}
+
+				writer.write(decoded, writeFrameLen);
+
+				mOpusFileHolder->moveReadPointer(writeFrameLen);
+			} else if (!mFinish) {
+				mCond.notify_one();
+			}
+
+			if (!mPlay || (mFinish && decodedFrameLen == 0)) {
+				ret = RARetCode::RET_END_OF_CONTENT;
+				break;
+			}
+		}
+		Utility::printLog("Opus requestData out(%d)", writeFrameLen);
+		return ret;
+	}
+
+
+	BGMTester(IInputHandler& ih, ISoundCoordinator& mc) :
+		  mInputHandler(ih)
+		, mSoundCoordinator(mc)
+		, mOpusFileHolder(nullptr)
+		, mPlay(false)
+		, mFinish(false)
+	{
+	}
+	virtual ~BGMTester() = default;
+
+private:
+	IInputHandler&		mInputHandler;
+	ISoundCoordinator&  mSoundCoordinator;
+	OpusFileHolder*     mOpusFileHolder;
+
+	bool                mPlay;
+	bool                mFinish;
+
+	std::thread		    mThread;
+	std::mutex			mMutex;
+	std::condition_variable
+						mCond;
+
 };
 
 ////////////////////////////////////////////
@@ -561,6 +694,14 @@ int main()
 		id = objectRepository.registerObject(
 			objectRepository.makeObjectBinder<SoundTester, IInputHandler&, ISoundCoordinator&>(
 				&SoundTester::init, &SoundTester::fin
+				, inputHandler, mediaCoordinator)
+			, tags
+		);
+		ids.push_back(id);
+
+		id = objectRepository.registerObject(
+			objectRepository.makeObjectBinder<BGMTester, IInputHandler&, ISoundCoordinator&>(
+				&BGMTester::init, &BGMTester::fin
 				, inputHandler, mediaCoordinator)
 			, tags
 		);

@@ -6,10 +6,13 @@
 #include <vector>
 #include <cstdint>
 #include <algorithm>
+#include <filesystem>
 
 #include "sound/SamplingRateConverter.h"
-#include "Utility.h"
-#include <filesystem>
+#include "MediaUtility.h"
+
+using namespace RoseAuraMediaUtility;
+
 
 bool WriteWaveFile16(
     const char* filename,
@@ -87,35 +90,37 @@ TEST(testSamplingRateConverter, APITest)
 	{
         float*          out;
         unsigned int    outFrameLen;
-        Utility::WaveFileHolder* waveFileHolder;
+        WaveFileHolder* waveFileHolder;
 
         Utility::printLog("path:%s", std::filesystem::current_path().string().c_str());
 
-        waveFileHolder = new Utility::WaveFileHolder("..\\..\\test\\rose_aura_test\\test.wav");
+        waveFileHolder = new WaveFileHolder("..\\..\\test\\rose_aura_test\\test.wav");
 
 		SamplingRateConverter* src = new SamplingRateConverter();
 
         WriteWaveFile16("..\\..\\test\\rose_aura_test\\testResult1.wav"
-                      , &waveFileHolder->mSamples[0]
-                      , waveFileHolder->mFrameLen
-                      , waveFileHolder->mChannels
-                      , waveFileHolder->mSamplingRate);
+                      , waveFileHolder->getCurrentFramePointer()
+                      , waveFileHolder->getFrameLen()
+                      , waveFileHolder->getChannelNum()
+                      , waveFileHolder->getSamplingRate() );
 
         //////////////////////////////////////////
-        src->setConfig(waveFileHolder->mSamplingRate, waveFileHolder->mChannels, 48000);
+        waveFileHolder->reset();
 
-        src->apply(&waveFileHolder->mSamples[0]
-                 , waveFileHolder->mFrameLen
+        src->setConfig(waveFileHolder->getSamplingRate(), waveFileHolder->getChannelNum(), 44100);
+
+        src->apply(waveFileHolder->getCurrentFramePointer()
+                 , waveFileHolder->getFrameLen()
                  , &out
                  , &outFrameLen);
 
         Utility::printLog("testOut2 : %d samples", outFrameLen);
 
         WriteWaveFile16("..\\..\\test\\rose_aura_test\\testResult2.wav"
-                       , out
-                       , outFrameLen
-                       , waveFileHolder->mChannels
-                       , 48000);
+                        , out
+                        , outFrameLen
+                        , waveFileHolder->getChannelNum()
+                        , 44100);
 
         src->releaseBuffer();
 
@@ -125,33 +130,33 @@ TEST(testSamplingRateConverter, APITest)
 
         unsigned int        convertWinSize = 500;
 
-        waveFileHolder->mCurrentFrame = 0;
+        waveFileHolder->reset();
 
         src->reset();
-        src->setConfig(waveFileHolder->mSamplingRate, waveFileHolder->mChannels, 48000);
+        src->setConfig(waveFileHolder->getSamplingRate(), waveFileHolder->getChannelNum(), 44100);
 
         ROSE_AURA_MESURMENT_TIME_BEGIN;
         while (true) {
             int win;
 
-            if (waveFileHolder->mCurrentFrame + convertWinSize < waveFileHolder->mFrameLen) {
+            if (convertWinSize < waveFileHolder->getRemainFrameLen()) {
                 win = convertWinSize;
             }
             else {
-                win = waveFileHolder->mFrameLen - waveFileHolder->mCurrentFrame;
+                win = waveFileHolder->getRemainFrameLen();
             }
 
-            src->apply(waveFileHolder->getFramePointer(waveFileHolder->mCurrentFrame), win, &out, &outFrameLen);
-            waveFileHolder->mCurrentFrame += win;
-            couvertOut.resize(couvertOut.size() + (outFrameLen * waveFileHolder->mChannels));
-            for (unsigned int i = 0; i < outFrameLen * waveFileHolder->mChannels; i++) {
+            src->apply(waveFileHolder->getCurrentFramePointer(), win, &out, &outFrameLen);
+            waveFileHolder->moveCurrentFramePointer(win);
+            couvertOut.resize(couvertOut.size() + (outFrameLen * waveFileHolder->getChannelNum()));
+            for (unsigned int i = 0; i < outFrameLen * waveFileHolder->getChannelNum(); i++) {
                 couvertOut[convertOutCount + i] = *out++;
             }
-            convertOutCount += outFrameLen * waveFileHolder->mChannels;
+            convertOutCount += outFrameLen * waveFileHolder->getChannelNum();
 
             src->releaseBuffer();
 
-            if (waveFileHolder->mFrameLen <= waveFileHolder->mCurrentFrame) {
+            if (waveFileHolder->getRemainFrameLen() == 0) {
                 break;
             }
 
@@ -160,10 +165,10 @@ TEST(testSamplingRateConverter, APITest)
 
         WriteWaveFile16("..\\..\\test\\rose_aura_test\\testResult3.wav"
                        , &couvertOut[0]
-                       , convertOutCount / waveFileHolder->mChannels
-                       , waveFileHolder->mChannels
-                       , 48000);
-        Utility::printLog("testOut3 : %d samples", convertOutCount / waveFileHolder->mChannels);
+                       , convertOutCount / waveFileHolder->getChannelNum()
+                       , waveFileHolder->getChannelNum()
+                       , 44100);
+        Utility::printLog("testOut3 : %d samples", convertOutCount / waveFileHolder->getChannelNum());
 
         delete src;
         delete waveFileHolder;

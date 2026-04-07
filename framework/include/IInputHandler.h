@@ -31,9 +31,9 @@ public:
 
 		virtual void onEvent(std::vector<std::pair<InputState,InputType>>& events) = 0;
 
+		virtual ~IInputHandlerCallback() = default;
 	protected:
 		IInputHandlerCallback() = default;
-		virtual ~IInputHandlerCallback() = default;
 	};
 
 	//////////////////////////////////////////////////////////

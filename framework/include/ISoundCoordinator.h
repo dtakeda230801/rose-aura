@@ -18,8 +18,9 @@ public:
 	public:
 		virtual RARetCode requestData(unsigned int requestFrameLen, unsigned int* returnFrameLen, IDataWriter& writer) = 0;
 
-		ISoundRenderer() = default;
 		virtual ~ISoundRenderer() = default;
+	protected:
+		ISoundRenderer() = default;
 	};
 
 	//////////////////////////////////////////////////////////

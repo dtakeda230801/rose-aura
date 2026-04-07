@@ -144,7 +144,7 @@ TEST(testSamplingRateConverter, APITest)
             src->apply(waveFileHolder->getFramePointer(waveFileHolder->mCurrentFrame), win, &out, &outFrameLen);
             waveFileHolder->mCurrentFrame += win;
             couvertOut.resize(couvertOut.size() + (outFrameLen * waveFileHolder->mChannels));
-            for (int i = 0; i < outFrameLen * waveFileHolder->mChannels; i++) {
+            for (unsigned int i = 0; i < outFrameLen * waveFileHolder->mChannels; i++) {
                 couvertOut[convertOutCount + i] = *out++;
             }
             convertOutCount += outFrameLen * waveFileHolder->mChannels;

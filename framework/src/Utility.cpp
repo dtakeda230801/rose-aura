@@ -95,7 +95,7 @@ Utility::WaveFileHolder::WaveFileHolder(const char* path) :
 
     mChannels     = channels;
     mSamplingRate = sampleRate;
-    mFrameLen     = mSamples.size() / channels;
+    mFrameLen     = static_cast<unsigned int>(mSamples.size()) / channels;
     mCurrentFrame = 0;
 }
 

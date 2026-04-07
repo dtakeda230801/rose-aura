@@ -120,7 +120,7 @@ private:
     unsigned int requestDataInternal(float** buff, unsigned int frameNum);
     void         allocateSystemBuffer();
     void         releaseSystemBuffer();
-    void         makeChannelOffsetMap(unsigned short mask);
+    void         makeChannelOffsetMap(unsigned int mask);
     void         dumpSystemBufferCondition();
 
 

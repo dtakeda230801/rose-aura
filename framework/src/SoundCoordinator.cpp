@@ -103,6 +103,7 @@ RARetCode SoundCoordinator::DataWriter::write(float* buff, unsigned int frameLen
         }
     }
     mWroteFrame += frameLen;
+    return RARetCode::RET_OK;
 }
 
 void SoundCoordinator::DataWriter::setBuffer(float* buff, unsigned int size)
@@ -425,16 +426,16 @@ void SoundCoordinator::releaseSystemBuffer()
     delete[] mSystemBuffer.mBuffer[1].mBuffer;
 }
 
-void SoundCoordinator::makeChannelOffsetMap(unsigned short mask)
+void SoundCoordinator::makeChannelOffsetMap(unsigned int mask)
 {
-    unsigned short frontL  = 0x0001;
-    unsigned short frontR  = 0x0002;
-    unsigned short center  = 0x0004;
-    unsigned short lowFreq = 0x0008;
-    unsigned short backL   = 0x0010;
-    unsigned short backR   = 0x0020;
-    unsigned short sideL   = 0x0200;
-    unsigned short sideR   = 0x0400;
+    unsigned int frontL  = 0x00000001;
+    unsigned int frontR  = 0x00000002;
+    unsigned int center  = 0x00000004;
+    unsigned int lowFreq = 0x00000008;
+    unsigned int backL   = 0x00000010;
+    unsigned int backR   = 0x00000020;
+    unsigned int sideL   = 0x00000200;
+    unsigned int sideR   = 0x00000400;
 
     mChOffsetMap[0] = 0;
     mChOffsetMap[1] = 0;
@@ -449,9 +450,9 @@ void SoundCoordinator::makeChannelOffsetMap(unsigned short mask)
         mChOffsetMap[0] = 4;
         mChOffsetMap[1] = 5;
     } else {
-        unsigned short pattern[8] = { frontL , frontR , center , lowFreq , backL , backR , sideL , sideR };
+        unsigned int pattern[8] = { frontL , frontR , center , lowFreq , backL , backR , sideL , sideR };
         unsigned int ch     = 0;
-        for (unsigned short i = 0; i < 8; i++) {
+        for (unsigned int i = 0; i < 8; i++) {
             if (mask & pattern[i]) {
                 mChOffsetMap[ch] = i;
                 ch++;

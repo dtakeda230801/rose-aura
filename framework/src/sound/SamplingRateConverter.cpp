@@ -11,7 +11,7 @@ void SamplingRateConverter::reset()
 		delete mOverwrap;
 	}
 	mOverwrap  = new float[mSrcCh];
-	for (int i = 0; i < mSrcCh; i++) {
+	for (unsigned int i = 0; i < mSrcCh; i++) {
 		mOverwrap[i] = 0;
 	}
 
@@ -35,14 +35,14 @@ void SamplingRateConverter::apply(float*        src
 	float* src_plus_one = src;
 	float* dst_current  = *dst;
 
-	for (int i = 0; i < srcFrameLen; i++) {
+	for (unsigned int i = 0; i < srcFrameLen; i++) {
 		float t_src          = (float)mSrcTimePointer       * mSrePeriod;
 		float t_src_plus_one = (float)(mSrcTimePointer + 1) * mSrePeriod;
 
 		while (true) {
 			float t_dst = (float)mDstTimePointer * mDstPeriod;
 			if (t_src <= t_dst && t_dst < t_src_plus_one) {
-				for (int ch = 0; ch < mSrcCh; ch++) {
+				for (unsigned int ch = 0; ch < mSrcCh; ch++) {
 					*dst_current++ = (*(src_plus_one + ch) - *(src_current + ch)) * (t_dst - t_src) + *(src_current + ch);
 				}
 				(*dstFrameLen)++;
@@ -58,7 +58,7 @@ void SamplingRateConverter::apply(float*        src
 		src_plus_one += mSrcCh;
 	}
 
-	for (int i = 0; i < mSrcCh; i++){
+	for (unsigned int i = 0; i < mSrcCh; i++){
 		mOverwrap[i] = *(src_current + i);
 	}
 }
@@ -88,7 +88,7 @@ SamplingRateConverter::SamplingRateConverter() :
 	, mDstTimePointer(0)
 {
 	mOverwrap = new float[mSrcCh];
-	for (int i = 0; i < mSrcCh; i++) {
+	for (unsigned int i = 0; i < mSrcCh; i++) {
 		mOverwrap[i] = 0;
 	}
 }

@@ -24,7 +24,7 @@ public:
     unsigned int getSystemSamplingRate();
     unsigned int getSystemChannels();
 
-    RARetCode playOneShut(ISoundRenderer* renderer);
+    RARetCode registerRenderer(ISoundRenderer* renderer);
 
     void recover();
 

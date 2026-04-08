@@ -1,9 +1,10 @@
 #include <iostream>
 #include <fstream>
-
+#include <opus/opusfile.h>
 
 #include "Utility.h"
 #include "MediaUtility.h"
+
 
 using namespace RoseAuraMediaUtility;
 
@@ -149,42 +150,45 @@ OpusFileHolder::OpusFileHolder(const char* path) :
     , mBuffer(nullptr)
     , mFrameLen(0)
     , mReadPointer(0)
-
+    , mNoFinish(true)
 {
     int ret;
-    mFile = op_open_file(path, &ret);
-    if (!mFile) {
+    OggOpusFile* file;
+
+    file = op_open_file(path, &ret);
+    if (!file) {
         Utility::printLog("op_open_file returns error(%d)", ret);
         return;
     }
     
-    ret = op_channel_count(mFile, -1);
+    ret = op_channel_count(file, -1);
     if (ret == OP_EINVAL) {
         Utility::printLog("op_channel_count returns error(%d)", ret);
         return;
     }
-    mChannels = static_cast<unsigned int>(ret);
 
-    mBuffer = new float[BUFF_FRAME_LEN * mChannels];
+    mFile     = static_cast<void*>(file);
+    mChannels = static_cast<unsigned int>(ret);
+    mBuffer   = new float[BUFF_FRAME_LEN * mChannels];
 }
 
 bool OpusFileHolder::decode()
 {
-    bool ret = true;
+    OggOpusFile* file = static_cast<OggOpusFile*>(mFile);
 
     if (mFrameLen == 0) {
         int ret;
-        ret = op_read_float(mFile, mBuffer, BUFF_FRAME_LEN * mChannels, nullptr);
+        ret = op_read_float(file, mBuffer, BUFF_FRAME_LEN * mChannels, nullptr);
         if (ret > 0) {
             mFrameLen = ret;
         }
 
         if (ret == 0) {
-            ret = false;
+            mNoFinish = false;
         }
     }
 
-    return ret;
+    return mNoFinish;
 }
 
 void OpusFileHolder::getCurrentPointer(float*& data, unsigned int* frameLen)
@@ -210,18 +214,90 @@ unsigned int OpusFileHolder::getChannels()
 
 void OpusFileHolder::reset()
 {
-    op_pcm_seek(mFile, 0);
+    OggOpusFile* file = static_cast<OggOpusFile*>(mFile);
+
+    op_pcm_seek(file, 0);
     mFrameLen    = 0;
     mReadPointer = 0;
+    mNoFinish    = true;
 }
 
 OpusFileHolder::~OpusFileHolder()
 {
     if (mFile) {
-        op_free(mFile);
+        OggOpusFile* file = static_cast<OggOpusFile*>(mFile);
+        op_free(file);
+        mFile = nullptr;
     }
 
     if (mBuffer) {
         delete[] mBuffer;
     }
+}
+
+
+////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+bool PreRenderThread::start()
+{
+    Utility::printLog("start");
+    if (mStarted) {
+        return false;
+    }
+    mStarted = true;
+    mThread = std::thread(&PreRenderThread::threadFunc, this);
+    return true;
+}
+
+void PreRenderThread::wakeUp()
+{
+    Utility::printLog("wakeUp");
+
+    while (true)
+    {
+        {
+            std::lock_guard<std::mutex> lock(mMutex);
+
+            if (!mWaitCondition) {
+                mWaitCondition = true;
+                mCond.notify_one();
+                break;
+            }
+        }
+        std::this_thread::yield();
+    }
+}
+
+void PreRenderThread::finish()
+{
+    Utility::printLog("finish");
+    mStarted = false;
+
+    wakeUp();
+
+    if (mThread.joinable()) {
+        mThread.join();
+    }
+}
+
+PreRenderThread::PreRenderThread() :
+      mStarted(false)
+    , mWaitCondition(false)
+{
+}
+
+void PreRenderThread::threadFunc()
+{
+    Utility::printLog("threadFunc in");
+    while (mStarted) {
+
+        doWork();
+
+        std::unique_lock<std::mutex> lock(mMutex);
+
+        mCond.wait(lock, [this] {return mWaitCondition;});
+        mWaitCondition = false;
+        lock.unlock();
+    };
+    Utility::printLog("threadFunc out");
 }

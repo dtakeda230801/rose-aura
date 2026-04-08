@@ -32,5 +32,5 @@ public:
 	virtual unsigned int getSystemSamplingRate() = 0;
 	virtual unsigned int getSystemChannels()     = 0;
 
-	virtual RARetCode playOneShut(ISoundRenderer* renderer) = 0;
+	virtual RARetCode registerRenderer(ISoundRenderer* renderer) = 0;
 };

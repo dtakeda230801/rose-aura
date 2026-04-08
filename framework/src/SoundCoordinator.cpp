@@ -50,7 +50,7 @@ unsigned int SoundCoordinator::getSystemChannels()
     return mSystemChannels;
 }
 
-RARetCode SoundCoordinator::playOneShut(ISoundRenderer* renderer)
+RARetCode SoundCoordinator::registerRenderer(ISoundRenderer* renderer)
 {
     mSoundData.push_back(renderer);
     return RARetCode::RET_OK;

@@ -90,14 +90,8 @@ kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>rose_aura.lib;raylib.lib;
-winmm.lib;
-gdi32.lib
-;opengl32.lib;
-shell32.lib;
-user32.lib;
-kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\ho;..\..\external\raylib-5.5_win64_msvc16\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>rose_aura.lib;raylib.lib;winmm.lib;gdi32.lib;opengl32.lib;shell32.lib;user32.lib;kernel32.lib;opus.lib;opusfile.lib;ogg.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\vcpkg_installed\x64-windows\x64-windows\lib;..\..\ho;..\..\external\raylib-5.5_win64_msvc16\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -167,7 +161,8 @@ kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     <ClCompile Include="test_InputHandler.cpp" />
     <ClCompile Include="test_WorldNavigator.cpp" />
     <ClCompile Include="test_ObjectRepository.cpp" />
-    <ClCompile Include="test_SamplingRateConverter.cpp" />
+    <ClCompile Include="test_SoundCoordinator.cpp" />
+    <ClCompile Include="test_MediaUtility.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\rose_aura.vcxproj">
@@ -176,6 +171,7 @@ kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Seeker.opus" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="test.wav" />

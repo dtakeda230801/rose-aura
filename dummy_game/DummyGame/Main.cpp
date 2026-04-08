@@ -422,7 +422,7 @@ public:
 			InputType  type = event.second;
 
 			if (state == InputState::PUSHED && type == InputType::ACTION2) {
-				mSoundCoordinator.playOneShut(this);
+				mSoundCoordinator.registerRenderer(this);
 			}
 		}
 	}
@@ -475,6 +475,8 @@ private:
 	WaveFileHolder*			  mWaveFileHolder;
 };
 
+////////////////////////////////////////////
+////////////////////////////////////////////
 class BGMTester : public IInputHandler::IInputHandlerCallback
 	, public ISoundCoordinator::ISoundRenderer
 {
@@ -484,30 +486,21 @@ public:
 	{
 		for (auto event : events) {
 			InputState state = event.first;
-			InputType  type = event.second;
+			InputType  type  = event.second;
 
 			if (state == InputState::PUSHED && type == InputType::ACTION3) {
 
 				if (!mPlay) {
 					mPlay   = true;
 
-					if (!mOpusFileHolder->decode()) {
-						mFinish = true;
-					}
+					mNoFinish = mOpusFileHolder->decode();
 
 					mThread = std::thread(&BGMTester::decodeThread, this);
 
-					mSoundCoordinator.playOneShut(this);
+					mSoundCoordinator.registerRenderer(this);
 				} else {
-					mPlay   = false;
-					mFinish = true;
-					mOpusFileHolder->reset();
-					if (mThread.joinable()) {
-						mThread.join();
-					}
-
+					termDecodeThread();
 				}
-
 			}
 		}
 	}
@@ -520,6 +513,7 @@ public:
 
 	void fin()
 	{
+		termDecodeThread();
 		delete mOpusFileHolder;
 		mInputHandler.unregisterCallback(this);
 	}
@@ -528,28 +522,34 @@ public:
 
 		std::unique_lock<std::mutex> lock(mMutex);
 
-		while (mPlay && !mFinish) {
+		while (mPlay && mNoFinish) {
 
 			mCond.wait(lock, [] { return true;});
 
-			if (!mOpusFileHolder->decode()) {
-				mFinish = true;
-			}
+			mNoFinish = mOpusFileHolder->decode();
+		}
+	}
+
+	void termDecodeThread() {
+		mPlay     = false;
+		mNoFinish = false;
+		mOpusFileHolder->reset();
+		if (mThread.joinable()) {
+			mThread.join();
 		}
 	}
 
 	RARetCode requestData(unsigned int requestFrameLen, unsigned int* returnFrameLen, ISoundCoordinator::IDataWriter& writer)
 	{
-		Utility::printLog("Opus requestData");
-
 		RARetCode ret = RARetCode::RET_OK;
 
-		unsigned int writeFrameLen = 0;
+		*returnFrameLen = 0;
 
-		while (writeFrameLen < requestFrameLen) {
+		while (*returnFrameLen < requestFrameLen) {
 
-			float* decoded;
+			float*			decoded;
 			unsigned int	decodedFrameLen;
+			unsigned int    writeFrameLen = 0;
 
 			mOpusFileHolder->getCurrentPointer(decoded, &decodedFrameLen);
 
@@ -564,16 +564,18 @@ public:
 				writer.write(decoded, writeFrameLen);
 
 				mOpusFileHolder->moveReadPointer(writeFrameLen);
-			} else if (!mFinish) {
+
+				*returnFrameLen += writeFrameLen;
+
+			} else if (mNoFinish) {
 				mCond.notify_one();
 			}
 
-			if (!mPlay || (mFinish && decodedFrameLen == 0)) {
+			if (!mPlay || (!mNoFinish && decodedFrameLen == 0)) {
 				ret = RARetCode::RET_END_OF_CONTENT;
 				break;
 			}
 		}
-		Utility::printLog("Opus requestData out(%d)", writeFrameLen);
 		return ret;
 	}
 
@@ -583,7 +585,7 @@ public:
 		, mSoundCoordinator(mc)
 		, mOpusFileHolder(nullptr)
 		, mPlay(false)
-		, mFinish(false)
+		, mNoFinish(true)
 	{
 	}
 	virtual ~BGMTester() = default;
@@ -594,7 +596,7 @@ private:
 	OpusFileHolder*     mOpusFileHolder;
 
 	bool                mPlay;
-	bool                mFinish;
+	bool                mNoFinish;
 
 	std::thread		    mThread;
 	std::mutex			mMutex;

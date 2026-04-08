@@ -478,7 +478,8 @@ private:
 ////////////////////////////////////////////
 ////////////////////////////////////////////
 class BGMTester : public IInputHandler::IInputHandlerCallback
-	, public ISoundCoordinator::ISoundRenderer
+			    , public ISoundCoordinator::ISoundRenderer
+				, public PreRenderThread
 {
 public:
 	//IInputHandlerCallback
@@ -491,24 +492,27 @@ public:
 			if (state == InputState::PUSHED && type == InputType::ACTION3) {
 
 				if (!mPlay) {
-					mPlay   = true;
-
+					mPlay     = true;
 					mNoFinish = mOpusFileHolder->decode();
-
-					mThread = std::thread(&BGMTester::decodeThread, this);
-
+					start();
 					mSoundCoordinator.registerRenderer(this);
 				} else {
+					mPlay = false;
 					termDecodeThread();
 				}
 			}
 		}
 	}
 
+	void doWork() {
+		mNoFinish = mOpusFileHolder->decode();
+	}
+
 	void init()
 	{
 		mInputHandler.registerCallback(this);
 		mOpusFileHolder = new OpusFileHolder("Seeker.opus");
+		mOpusFileHolder->setLoop(2391323, 5606036);
 	}
 
 	void fin()
@@ -518,25 +522,12 @@ public:
 		mInputHandler.unregisterCallback(this);
 	}
 
-	void decodeThread() {
-
-		std::unique_lock<std::mutex> lock(mMutex);
-
-		while (mPlay && mNoFinish) {
-
-			mCond.wait(lock, [] { return true;});
-
-			mNoFinish = mOpusFileHolder->decode();
-		}
-	}
 
 	void termDecodeThread() {
 		mPlay     = false;
 		mNoFinish = false;
 		mOpusFileHolder->reset();
-		if (mThread.joinable()) {
-			mThread.join();
-		}
+		finish();
 	}
 
 	RARetCode requestData(unsigned int requestFrameLen, unsigned int* returnFrameLen, ISoundCoordinator::IDataWriter& writer)
@@ -554,8 +545,8 @@ public:
 			mOpusFileHolder->getCurrentPointer(decoded, &decodedFrameLen);
 
 			if (decodedFrameLen > 0) {
-				if (decodedFrameLen >= requestFrameLen) {
-					writeFrameLen = requestFrameLen;
+				if (decodedFrameLen >= requestFrameLen - *returnFrameLen) {
+					writeFrameLen = requestFrameLen - *returnFrameLen;
 				}
 				else {
 					writeFrameLen = decodedFrameLen;
@@ -568,7 +559,7 @@ public:
 				*returnFrameLen += writeFrameLen;
 
 			} else if (mNoFinish) {
-				mCond.notify_one();
+				wakeUp();
 			}
 
 			if (!mPlay || (!mNoFinish && decodedFrameLen == 0)) {
@@ -597,12 +588,6 @@ private:
 
 	bool                mPlay;
 	bool                mNoFinish;
-
-	std::thread		    mThread;
-	std::mutex			mMutex;
-	std::condition_variable
-						mCond;
-
 };
 
 ////////////////////////////////////////////

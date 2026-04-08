@@ -80,33 +80,28 @@ TEST(testPreRenderThread, BehaviourTest)
         bool         ret;
         unsigned int count;
 
-        TestPreRenderThread* preRenderThread;
-
-        preRenderThread = new TestPreRenderThread();
+        std::unique_ptr<TestPreRenderThread> preRenderThread = std::make_unique<TestPreRenderThread>();
 
         ret = preRenderThread->start();
         EXPECT_TRUE(ret);
 
         ret = preRenderThread->start();
         EXPECT_FALSE(ret);
-        
+
         count = preRenderThread->getCount();
 
-        Utility::printLog("count:(%d)",count);
-
-        EXPECT_EQ(count,1);
+        EXPECT_EQ(count, 1);
 
         preRenderThread->wakeUp();
 
-        count = preRenderThread->getCount();
+        Sleep(100);
 
-        Utility::printLog("count:(%d)", count);
+        count = preRenderThread->getCount();
 
         EXPECT_EQ(count, 2);
 
         preRenderThread->finish();
 
-        delete preRenderThread;
     }
     ROSE_AURA_TEST_FIN;
-}
+};

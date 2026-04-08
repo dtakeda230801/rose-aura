@@ -4,6 +4,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <semaphore>
 
 namespace RoseAuraMediaUtility {
 
@@ -37,6 +38,7 @@ namespace RoseAuraMediaUtility {
 		void		 getCurrentPointer(float*& data, unsigned int* frameLen);
 		void		 moveReadPointer(unsigned int frameLen);
 		unsigned int getChannels();
+		void		 setLoop(unsigned long start, unsigned long end);
 		void		 reset();
 
 		virtual ~OpusFileHolder();
@@ -50,6 +52,10 @@ namespace RoseAuraMediaUtility {
 		unsigned int	mFrameLen;
 		unsigned int    mReadPointer;
 		bool            mNoFinish;
+		bool			mLoop;
+		unsigned long   mLoopStart;
+		unsigned long   mLoopEnd;
+		unsigned long   mFrameCounter;
 	};
 
 	/////////////////////////////////////////////
@@ -58,6 +64,7 @@ namespace RoseAuraMediaUtility {
 		bool start();
 		void wakeUp();
 		void finish();
+		void finishSelf();
 
 		virtual void doWork() = 0;
 
@@ -68,11 +75,8 @@ namespace RoseAuraMediaUtility {
 		void threadFunc();
 
 		std::thread		   mThread;
-		std::mutex         mMutex;
-		std::condition_variable
-						   mCond;
+		std::binary_semaphore mSem;
 
-		bool               mWaitCondition;
-		bool			   mStarted;
+		std::atomic<bool>	mStarted;
 	};
 }

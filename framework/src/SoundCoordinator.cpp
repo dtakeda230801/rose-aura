@@ -304,7 +304,6 @@ unsigned int SoundCoordinator::requestDataInternal(float** buff, unsigned int fr
                     ++ite;
                 }
             }
-//            unsigned int ret = requestData(&writePoint, (writeSB.mBufferSize - writeSB.mWritePointer) / SC_CHANNEL);
             writeSB.mWritePointer += retFrameMax * SC_CHANNEL;
         }
 

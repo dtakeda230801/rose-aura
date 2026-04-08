@@ -151,6 +151,10 @@ OpusFileHolder::OpusFileHolder(const char* path) :
     , mFrameLen(0)
     , mReadPointer(0)
     , mNoFinish(true)
+    , mLoop(false)
+    , mLoopStart(0)
+    , mLoopEnd(0)
+    , mFrameCounter(0)
 {
     int ret;
     OggOpusFile* file;
@@ -181,6 +185,15 @@ bool OpusFileHolder::decode()
         ret = op_read_float(file, mBuffer, BUFF_FRAME_LEN * mChannels, nullptr);
         if (ret > 0) {
             mFrameLen = ret;
+
+            if (mLoop) {
+                mFrameCounter += ret;
+                if (mLoopEnd <= mFrameCounter) {
+                    mFrameLen = mFrameCounter - mLoopEnd;
+                    op_pcm_seek(file, mLoopStart);
+                    mFrameCounter = mLoopStart;
+                }
+            }
         }
 
         if (ret == 0) {
@@ -212,14 +225,26 @@ unsigned int OpusFileHolder::getChannels()
     return mChannels;
 }
 
+void OpusFileHolder::setLoop(unsigned long start, unsigned long end)
+{
+    mLoop      = true;
+    mLoopStart = start;
+    mLoopEnd   = end;
+}
+
+
 void OpusFileHolder::reset()
 {
     OggOpusFile* file = static_cast<OggOpusFile*>(mFile);
 
     op_pcm_seek(file, 0);
-    mFrameLen    = 0;
-    mReadPointer = 0;
-    mNoFinish    = true;
+    mFrameLen     = 0;
+    mReadPointer  = 0;
+    mNoFinish     = true;
+    mLoop         = false;
+    mLoopStart    = 0;
+    mLoopEnd      = 0;
+    mFrameCounter = 0;
 }
 
 OpusFileHolder::~OpusFileHolder()
@@ -240,64 +265,48 @@ OpusFileHolder::~OpusFileHolder()
 ////////////////////////////////////////////////////
 bool PreRenderThread::start()
 {
-    Utility::printLog("start");
-    if (mStarted) {
+    if (mStarted.load(std::memory_order_acquire)) {
         return false;
     }
-    mStarted = true;
     mThread = std::thread(&PreRenderThread::threadFunc, this);
+    mStarted.wait(false);
     return true;
 }
 
 void PreRenderThread::wakeUp()
 {
-    Utility::printLog("wakeUp");
-
-    while (true)
-    {
-        {
-            std::lock_guard<std::mutex> lock(mMutex);
-
-            if (!mWaitCondition) {
-                mWaitCondition = true;
-                mCond.notify_one();
-                break;
-            }
-        }
-        std::this_thread::yield();
-    }
+    mSem.release();
 }
 
 void PreRenderThread::finish()
 {
-    Utility::printLog("finish");
-    mStarted = false;
-
-    wakeUp();
+    mStarted.store(false, std::memory_order_release);
+    mSem.release();
 
     if (mThread.joinable()) {
         mThread.join();
     }
 }
 
+void PreRenderThread::finishSelf()
+{
+    mStarted.store(false, std::memory_order_release);
+}
+
+
 PreRenderThread::PreRenderThread() :
       mStarted(false)
-    , mWaitCondition(false)
+    , mSem(0)
 {
 }
 
 void PreRenderThread::threadFunc()
 {
-    Utility::printLog("threadFunc in");
-    while (mStarted) {
+    mStarted.store(true, std::memory_order_release);
+    mStarted.notify_one();
 
+    while (mStarted.load(std::memory_order_acquire)) {
         doWork();
-
-        std::unique_lock<std::mutex> lock(mMutex);
-
-        mCond.wait(lock, [this] {return mWaitCondition;});
-        mWaitCondition = false;
-        lock.unlock();
-    };
-    Utility::printLog("threadFunc out");
+        mSem.acquire(); 
+    }
 }

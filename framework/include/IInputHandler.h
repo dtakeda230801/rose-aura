@@ -39,8 +39,8 @@ public:
 	//////////////////////////////////////////////////////////
 	// APIs
 	//////////////////////////////////////////////////////////
-	virtual void      update() = 0;
-	virtual RARetCode setConf(std::string conf) = 0;
-	virtual RARetCode registerCallback(IInputHandlerCallback* cb) = 0;
+	virtual void      update()                                      = 0;
+	virtual RARetCode setConf(std::string conf)                     = 0;
+	virtual RARetCode registerCallback(IInputHandlerCallback* cb)   = 0;
 	virtual RARetCode unregisterCallback(IInputHandlerCallback* cb) = 0;
 };

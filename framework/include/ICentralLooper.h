@@ -12,8 +12,8 @@ public:
 	//////////////////////////////////////////////////////////
 	class ITask {
 	public:
-		virtual void doTask() = 0;
-		virtual void finish() = 0;
+		virtual void		doTask()      = 0;
+		virtual void		finish()      = 0;
 		virtual std::string getTaskName() = 0;
 
 		virtual ~ITask() = default;
@@ -33,9 +33,9 @@ public:
 	//////////////////////////////////////////////////////////
 	// APIs
 	//////////////////////////////////////////////////////////
-	virtual RARetCode start(unsigned int timeOfFrame) = 0;
-	virtual RARetCode stop() = 0;
-	virtual RARetCode enqueueTask(ITask* task) = 0;
-	virtual RARetCode registerFrameSyncCallback(IFrameSyncCallback* cb) = 0;
+	virtual RARetCode start(unsigned int timeOfFrame)                     = 0;
+	virtual RARetCode stop()                                              = 0;
+	virtual RARetCode enqueueTask(ITask* task)                            = 0;
+	virtual RARetCode registerFrameSyncCallback(IFrameSyncCallback* cb)   = 0;
 	virtual RARetCode unregisterFrameSyncCallback(IFrameSyncCallback* cb) = 0;
 };

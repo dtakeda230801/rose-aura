@@ -90,7 +90,7 @@ RARetCode WorldNavigator::movePosition(Vec3& pos)
 	Vec3 previous = world.mPosition;
 
 	if (!fitWithin(world.mWorldSpace, pos)) {
-		world.mPosition	= adjustPosition(world.mWorldSpace, world.mPosition, pos);
+		world.mPosition	= adjustPosition(world.mWorldSpace, pos);
 		ret = RARetCode::RET_ADJUSTED;
 	}
 	else {
@@ -186,24 +186,55 @@ RARetCode WorldNavigator::removeTrigger(TRIGGER_ID id)
 	return ret;
 }
 
-RARetCode	 WorldNavigator::updateTrigger(TRIGGER_ID id, Vec3& location, float distance) {
-	RARetCode ret = RARetCode::RET_ERR_INVALID_ARG;
+RARetCode	 WorldNavigator::moveTrigger(TRIGGER_ID id, Vec3& location) {
 	std::lock_guard<std::mutex> lock(mMutex);
-	std::vector<Trigger>& triggers = mWorlds[mCurrentWorldIndex].mTriggers;
 
-	if (!fitWithin(mWorlds[mCurrentWorldIndex].mWorldSpace, location)) {
-		return RARetCode::RET_ERR_INVALID_PARAMS;
+	RARetCode ret = RARetCode::RET_OK;
+
+	Trigger* targetTrigger = findTrigger(id);
+
+	if (targetTrigger == nullptr) {
+		return RARetCode::RET_ERR_INVALID_ARG;
 	}
 
-	for (auto trigger : triggers) {
-		if (trigger.mId == id) {
-			trigger.mLocation = location;
-			trigger.mDistance = distance;
-			ret = RARetCode::RET_OK;
+	World& currentWorld = mWorlds[mCurrentWorldIndex];
+	std::vector<Trigger>& triggers = currentWorld.mTriggers;
+
+	if (!fitWithin(currentWorld.mWorldSpace, location)) {
+		targetTrigger->mLocation = adjustPosition(currentWorld.mWorldSpace, location);
+		ret = RARetCode::RET_ADJUSTED;
+	} else {
+		targetTrigger->mLocation = location;
+	}
+
+	for (Trigger t : triggers) {
+		if (t.mDistance >= calcDistance(t.mLocation, currentWorld.mPosition)) {
+			if (t.mCb->onApproaching(currentWorld.mId, t.mId, currentWorld.mPosition, t.mLocation)) {
+				t.mCb->onTrigger(currentWorld.mId, t.mId);
+			}
 		}
 	}
 
 	return ret;
+}
+
+RARetCode WorldNavigator::getTriggerLocation(TRIGGER_ID	id, Vec3* location)
+{
+	std::lock_guard<std::mutex> lock(mMutex);
+
+	if (location == nullptr) {
+		return RARetCode::RET_ERR_INVALID_ARG;
+	}
+
+	Trigger* targetTrigger = findTrigger(id);
+
+	if (targetTrigger == nullptr) {
+		return RARetCode::RET_ERR_INVALID_ARG;
+	}
+
+	*location = targetTrigger->mLocation;
+
+	return RARetCode::RET_OK;
 }
 
 
@@ -316,19 +347,29 @@ bool WorldNavigator::fitWithin(Bounds& base, Vec3& target)
 }
 
 WorldNavigator::Vec3 WorldNavigator::adjustPosition(Bounds& base
-	                                              , Vec3& current
-	                                              , Vec3& next)
+	                                              , Vec3&   pos)
 {
 	Vec3 ret;
-	ret.mX = checkCrossing(base.mMin.mX, base.mMax.mX, current.mX, next.mX);
-	ret.mY = checkCrossing(base.mMin.mY, base.mMax.mY, current.mY, next.mY);
-	ret.mZ = checkCrossing(base.mMin.mZ, base.mMax.mZ, current.mZ, next.mZ);
+	ret.mX = checkCrossing(base.mMin.mX, base.mMax.mX, pos.mX);
+	ret.mY = checkCrossing(base.mMin.mY, base.mMax.mY, pos.mY);
+	ret.mZ = checkCrossing(base.mMin.mZ, base.mMax.mZ, pos.mZ);
 
 	return ret;
 }
 
-int WorldNavigator::checkCrossing(int min, int max, int current, int next)
+int WorldNavigator::checkCrossing(int min, int max, int val)
 {
+	if (val < min) {
+		return min;
+	}
+
+	if (max < val) {
+		return max;
+	}
+
+	return val;
+
+	/*
 	int		ret;
 	float	tmin, tmax;
 
@@ -345,4 +386,21 @@ int WorldNavigator::checkCrossing(int min, int max, int current, int next)
 		ret= next;
 	}
 	return ret;
+	*/
+}
+
+WorldNavigator::Trigger* WorldNavigator::findTrigger(TRIGGER_ID id)
+{
+	World& currentWorld = mWorlds[mCurrentWorldIndex];
+	std::vector<Trigger>& triggers = currentWorld.mTriggers;
+
+	Trigger* targetTrigger = nullptr;
+
+	for (auto& trigger : triggers) {
+		if (trigger.mId == id) {
+			targetTrigger = &trigger;
+		}
+	}
+
+	return targetTrigger;
 }

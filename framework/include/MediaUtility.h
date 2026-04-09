@@ -74,9 +74,8 @@ namespace RoseAuraMediaUtility {
 	private:
 		void threadFunc();
 
-		std::thread		   mThread;
-		std::binary_semaphore mSem;
-
-		std::atomic<bool>	mStarted;
+		std::thread				mThread;
+		std::binary_semaphore	mSem;
+		std::atomic<bool>		mStarted;
 	};
 }

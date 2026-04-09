@@ -76,6 +76,8 @@ TEST(testWorldNavigator, APITest)
 		IWorldNavigator::WORLD_ID w1, w2;
 		IWorldNavigator::Bounds   b;
 		IWorldNavigator::Vec3	  v;
+		IWorldNavigator::Vec3	  vResult;
+
 
 		///////////////////////////////////////////
 		std::unique_ptr<RoseAura> ra = RoseAura::create();
@@ -160,12 +162,26 @@ TEST(testWorldNavigator, APITest)
 		EXPECT_EQ(wn.registerTrigger(0x0001, v, 30.0f, trCb)   , RARetCode::RET_OK);
 		EXPECT_EQ(wn.registerTrigger(0x0001, v, 30.0f, trCb)   , RARetCode::RET_ERR_INVALID_PARAMS);
 
-		v.mX = 200;
-		v.mY = 200;
-		v.mZ = 200;
+		v.mX = 150;
+		v.mY = 150;
+		v.mZ = 150;
 
-		EXPECT_EQ(wn.updateTrigger(0x0001, v, 10.0f), RARetCode::RET_OK);
-		EXPECT_EQ(wn.updateTrigger(0x0002, v, 10.0f), RARetCode::RET_ERR_INVALID_ARG);
+		EXPECT_EQ(wn.moveTrigger(0x0001, v), RARetCode::RET_OK);
+		EXPECT_EQ(wn.moveTrigger(0x0002, v), RARetCode::RET_ERR_INVALID_ARG);
+
+		EXPECT_EQ(wn.getTriggerLocation(0x0001, &vResult), RARetCode::RET_OK);
+		EXPECT_EQ(vResult.mX, 150);
+		EXPECT_EQ(vResult.mY, 150);
+		EXPECT_EQ(vResult.mZ, 150);
+
+		v.mX = 300;
+		v.mY = 300;
+		v.mZ = 300;
+
+		EXPECT_EQ(wn.moveTrigger(0x0001, v), RARetCode::RET_ADJUSTED);
+
+		EXPECT_EQ(wn.getTriggerLocation(0x0002, &vResult), RARetCode::RET_ERR_INVALID_ARG);
+		EXPECT_EQ(wn.getTriggerLocation(0x0001, nullptr) , RARetCode::RET_ERR_INVALID_ARG);
 
 		EXPECT_EQ(wn.removeTrigger(0x0001), RARetCode::RET_OK);
 		EXPECT_EQ(wn.removeTrigger(0x0001), RARetCode::RET_ERR_INVALID_ARG);

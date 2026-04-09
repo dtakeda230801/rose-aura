@@ -69,11 +69,17 @@ public:
 	virtual RARetCode movePosition(Vec3& pos)			 = 0;
 	virtual Vec3	  getPosition()						 = 0;
 
-	virtual RARetCode registerTrigger(TRIGGER_ID id, Vec3& location, float distance, ITriggerCallback* cb) = 0;
-	virtual RARetCode removeTrigger(TRIGGER_ID id)	= 0;
-	virtual RARetCode updateTrigger(TRIGGER_ID id, Vec3& location, float distance) = 0;
+	virtual RARetCode registerTrigger(TRIGGER_ID		id
+		                            , Vec3&				location
+		                            , float				distance
+		                            , ITriggerCallback* cb)			    = 0;
+	virtual RARetCode removeTrigger(TRIGGER_ID id)					    = 0;
+	virtual RARetCode moveTrigger(TRIGGER_ID id, Vec3& location)	    = 0;
+	virtual RARetCode getTriggerLocation(TRIGGER_ID	id, Vec3* location)	= 0;
 
-	virtual RARetCode registerActiveSpaceCallback(IActiveSpaceCallback* cb)   = 0;
-	virtual RARetCode unregisterActiveSpaceCallback() = 0;
+
+
+	virtual RARetCode registerActiveSpaceCallback(IActiveSpaceCallback* cb) = 0;
+	virtual RARetCode unregisterActiveSpaceCallback()						= 0;
 };
 

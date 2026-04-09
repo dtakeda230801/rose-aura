@@ -268,7 +268,6 @@ class DotRenderer :
 	, public IInputHandler::IInputHandlerCallback
 {
 public:
-
 	void render()
 	{
 		IWorldNavigator::Vec3 pos = mWorldNavigator.getPosition();
@@ -333,10 +332,60 @@ private:
 
 ////////////////////////////////////////////
 ////////////////////////////////////////////
-class DotTrigger :public IGraphicsManager::IObjectRenderer
-			    , public IWorldNavigator::ITriggerCallback
+class DotTrigger : public ICentralLooper::ITask
+				 , public ICentralLooper::IFrameSyncCallback
+	             , public IGraphicsManager::IObjectRenderer
+			     , public IWorldNavigator::ITriggerCallback
 {
 public:
+	//ITask
+	void doTask()
+	{
+		RARetCode ret;
+
+		IWorldNavigator::Vec3 newPos = { mPosition.mX + mXDelta
+			                           , mPosition.mY + mYDelta
+			                           , mPosition.mZ};
+
+		ret = mWorldNavigator.moveTrigger(mId, newPos);
+
+		if (RARetCode::RET_OK == ret) {
+			mPosition = newPos;
+		} else if (RARetCode::RET_ADJUSTED == ret){
+
+			if (RARetCode::RET_OK != mWorldNavigator.getTriggerLocation(mId, &mPosition)) {
+				Utility::printLog("getTriggerLocation fails");
+				return;
+			}
+
+			if (mPosition.mX != newPos.mX) {
+				mXDelta *= -1;
+			}
+
+			if (mPosition.mY != newPos.mY) {
+				mYDelta *= -1;
+			}
+
+		} else {
+			Utility::printLog("moveTrigger fails");
+		}
+	};
+
+	void finish()
+	{
+	};
+
+	std::string getTaskName()
+	{
+		return "Test DotTrigger";
+	}
+
+	//IFrameSyncCallback
+	void sync()
+	{
+		mCentralLooper.enqueueTask(this);
+	}
+
 	//IObjectRenderer
 	void render()
 	{
@@ -374,16 +423,22 @@ public:
 	{
 		mGraphicsManager.setRenderer(this);
 		mWorldNavigator.registerTrigger(mId, mPosition, mDistance, this);
+		mCentralLooper.registerFrameSyncCallback(this);
+		mCentralLooper.enqueueTask(this);
 	}
 
 	void fin()
 	{
+		mCentralLooper.unregisterFrameSyncCallback(this);
 		mWorldNavigator.removeTrigger(mId);
 		mGraphicsManager.removeRenderer(this);
 	}
 
-	DotTrigger(IGraphicsManager& gm, IWorldNavigator& wn) :
-		  mGraphicsManager(gm)
+
+
+	DotTrigger(ICentralLooper& cl, IGraphicsManager& gm, IWorldNavigator& wn) :
+		  mCentralLooper(cl)
+		, mGraphicsManager(gm)
 		, mWorldNavigator(wn)
 	{
 	};
@@ -398,12 +453,15 @@ private:
 			+ (static_cast<double>(b.mZ - a.mZ) * static_cast<double>(b.mZ - a.mZ))));
 	}
 	
+	ICentralLooper&   mCentralLooper;
 	IGraphicsManager& mGraphicsManager;
 	IWorldNavigator&  mWorldNavigator;
 
 	std::mutex					mMutex;
 	IWorldNavigator::TRIGGER_ID mId		  = 1;
 	IWorldNavigator::Vec3		mPosition = { 200,200, 0 };
+	int							mXDelta   = -5;
+	int							mYDelta   = -5;
 	float						mDistance = 30.f;
 	Color						mColor    = RED;
 
@@ -644,9 +702,9 @@ int main()
 		ids.push_back(id);
 
 		id = objectRepository.registerObject(
-			objectRepository.makeObjectBinder<DotTrigger, IGraphicsManager&, IWorldNavigator&>(
+			objectRepository.makeObjectBinder<DotTrigger, ICentralLooper&, IGraphicsManager&, IWorldNavigator&>(
 				  &DotTrigger::init	, &DotTrigger::fin
-				, graphicsManager , worldNavigator)
+				, centralLooper, graphicsManager , worldNavigator)
 			, tags
 		);
 		ids.push_back(id);

@@ -19,9 +19,9 @@ public:
     struct ObjectBinder
     {
         std::function<void* (void*)>create;
-        std::function<void (void*)>destroy;
+        std::function<void  (void*)>destroy;
         void*  params;
-        std::function<void (void*)>destroyParams;
+        std::function<void  (void*)>destroyParams;
     };
 
 	//////////////////////////////////////////////////////////

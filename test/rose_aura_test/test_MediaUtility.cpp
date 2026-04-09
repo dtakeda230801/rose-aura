@@ -44,10 +44,14 @@ TEST(testOpusFileHolder, BehaviourTest)
 	ROSE_AURA_TEST_BEGIN;
 	{
         OpusFileHolder* opus   = new OpusFileHolder("..\\..\\test\\rose_aura_test\\Seeker.opus");
-        WavWriter* writer      = new WavWriter();
-        writer->Open("..\\..\\test\\rose_aura_test\\testResultSeeker.wav",48000,2);
+        bool noFinish;
+        WavWriter* writer;
 
-        bool noFinish = true;
+        ///////////////////////////////////
+        writer = new WavWriter();
+        writer->Open("..\\..\\test\\rose_aura_test\\testResultSeeker.wav", 48000, 2);
+
+        noFinish = true;
 
         while (true) {
             float*       data;
@@ -68,6 +72,46 @@ TEST(testOpusFileHolder, BehaviourTest)
             }
         }
         delete writer;
+
+        ///////////////////////////////////
+        writer = new WavWriter();
+        writer->Open("..\\..\\test\\rose_aura_test\\testResultSeeker_withSeek.wav", 48000, 2);
+        
+        unsigned long frames = 0;
+
+        noFinish = true;
+
+        opus->reset();
+        opus->setJumpPoint(6101808, 2602800);
+
+        while (true) {
+            float* data;
+            unsigned int dataFrameLen;
+
+            if (noFinish) {
+                noFinish = opus->decode();
+            }
+
+            opus->getCurrentPointer(data, &dataFrameLen);
+
+            if (dataFrameLen > 0) {
+                writer->Write(data, dataFrameLen);
+                opus->moveReadPointer(dataFrameLen);
+                frames += dataFrameLen;
+            }
+            else if (!noFinish) {
+                writer->Close();
+                break;
+            }
+
+            if (frames >= 180 * 48000) {
+                writer->Close();
+                break;
+            }
+        }
+
+        delete writer;
+        ///////////////////////////////////
         delete opus;
 	}
 	ROSE_AURA_TEST_FIN;

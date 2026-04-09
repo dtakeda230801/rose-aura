@@ -38,7 +38,7 @@ namespace RoseAuraMediaUtility {
 		void		 getCurrentPointer(float*& data, unsigned int* frameLen);
 		void		 moveReadPointer(unsigned int frameLen);
 		unsigned int getChannels();
-		void		 setLoop(unsigned long start, unsigned long end);
+		void		 setJumpPoint(unsigned long point, unsigned long to);
 		void		 reset();
 
 		virtual ~OpusFileHolder();
@@ -52,9 +52,9 @@ namespace RoseAuraMediaUtility {
 		unsigned int	mFrameLen;
 		unsigned int    mReadPointer;
 		bool            mNoFinish;
-		bool			mLoop;
-		unsigned long   mLoopStart;
-		unsigned long   mLoopEnd;
+		bool			mJump;
+		unsigned long   mJumpTo;
+		unsigned long   mJumpPoint;
 		unsigned long   mFrameCounter;
 	};
 

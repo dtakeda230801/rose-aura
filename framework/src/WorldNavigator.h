@@ -23,6 +23,7 @@ public:
 
 	RARetCode	 registerTrigger(TRIGGER_ID id, Vec3& location, float distance, ITriggerCallback* cb);
 	RARetCode	 removeTrigger(TRIGGER_ID id);
+	RARetCode	 updateTrigger(TRIGGER_ID id, Vec3& location, float distance);
 
 	RARetCode	 registerActiveSpaceCallback(IActiveSpaceCallback* cb);
 	RARetCode	 unregisterActiveSpaceCallback();

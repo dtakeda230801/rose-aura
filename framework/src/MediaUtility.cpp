@@ -151,9 +151,9 @@ OpusFileHolder::OpusFileHolder(const char* path) :
     , mFrameLen(0)
     , mReadPointer(0)
     , mNoFinish(true)
-    , mLoop(false)
-    , mLoopStart(0)
-    , mLoopEnd(0)
+    , mJump(false)
+    , mJumpTo(0)
+    , mJumpPoint(0)
     , mFrameCounter(0)
 {
     int ret;
@@ -182,16 +182,34 @@ bool OpusFileHolder::decode()
 
     if (mFrameLen == 0) {
         int ret;
+
         ret = op_read_float(file, mBuffer, BUFF_FRAME_LEN * mChannels, nullptr);
         if (ret > 0) {
             mFrameLen = ret;
 
-            if (mLoop) {
+            if (mJump) {
                 mFrameCounter += ret;
-                if (mLoopEnd <= mFrameCounter) {
-                    mFrameLen = mFrameCounter - mLoopEnd;
-                    op_pcm_seek(file, mLoopStart);
-                    mFrameCounter = mLoopStart;
+                if (mJumpPoint <= mFrameCounter) {
+                    mFrameLen -= (mFrameCounter - mJumpPoint);
+
+                    unsigned int seekPoint;
+                    unsigned int preDecodeLen;
+                    if (mJumpTo < BUFF_FRAME_LEN) {
+                        seekPoint    = 0;
+                        preDecodeLen = mJumpTo;
+                    } else {
+                        seekPoint    = mJumpTo - BUFF_FRAME_LEN;
+                        preDecodeLen = BUFF_FRAME_LEN;
+                    }
+                    op_pcm_seek(file, seekPoint);
+
+                    unsigned int preDecodeOut = 0;
+                    float* preDecodeBuffer = new float[preDecodeLen*mChannels];
+                    while (preDecodeOut < preDecodeLen) {
+                        preDecodeOut += op_read_float(file, preDecodeBuffer, preDecodeLen, nullptr);
+                    }
+                    delete[] preDecodeBuffer;
+                    mFrameCounter = mJumpTo;
                 }
             }
         }
@@ -225,11 +243,11 @@ unsigned int OpusFileHolder::getChannels()
     return mChannels;
 }
 
-void OpusFileHolder::setLoop(unsigned long start, unsigned long end)
+void OpusFileHolder::setJumpPoint(unsigned long point, unsigned long to)
 {
-    mLoop      = true;
-    mLoopStart = start;
-    mLoopEnd   = end;
+    mJump      = true;
+    mJumpPoint = point;
+    mJumpTo = to;
 }
 
 
@@ -241,9 +259,9 @@ void OpusFileHolder::reset()
     mFrameLen     = 0;
     mReadPointer  = 0;
     mNoFinish     = true;
-    mLoop         = false;
-    mLoopStart    = 0;
-    mLoopEnd      = 0;
+    mJump         = false;
+    mJumpTo    = 0;
+    mJumpPoint      = 0;
     mFrameCounter = 0;
 }
 

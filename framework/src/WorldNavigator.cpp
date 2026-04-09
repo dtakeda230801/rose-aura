@@ -176,6 +176,7 @@ RARetCode WorldNavigator::removeTrigger(TRIGGER_ID id)
 			return trigger.mId == id;
 		});
 	if (newEnd != triggers.end()) {
+
 		triggers.erase(newEnd, triggers.end());
 	}
 	else {
@@ -184,6 +185,27 @@ RARetCode WorldNavigator::removeTrigger(TRIGGER_ID id)
 
 	return ret;
 }
+
+RARetCode	 WorldNavigator::updateTrigger(TRIGGER_ID id, Vec3& location, float distance) {
+	RARetCode ret = RARetCode::RET_ERR_INVALID_ARG;
+	std::lock_guard<std::mutex> lock(mMutex);
+	std::vector<Trigger>& triggers = mWorlds[mCurrentWorldIndex].mTriggers;
+
+	if (!fitWithin(mWorlds[mCurrentWorldIndex].mWorldSpace, location)) {
+		return RARetCode::RET_ERR_INVALID_PARAMS;
+	}
+
+	for (auto trigger : triggers) {
+		if (trigger.mId == id) {
+			trigger.mLocation = location;
+			trigger.mDistance = distance;
+			ret = RARetCode::RET_OK;
+		}
+	}
+
+	return ret;
+}
+
 
 RARetCode WorldNavigator::registerActiveSpaceCallback(IActiveSpaceCallback* cb)
 {

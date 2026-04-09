@@ -492,9 +492,7 @@ public:
 			if (state == InputState::PUSHED && type == InputType::ACTION3) {
 
 				if (!mPlay) {
-					mPlay     = true;
-					mNoFinish = mOpusFileHolder->decode();
-					start();
+					startDecodeThread();
 					mSoundCoordinator.registerRenderer(this);
 				} else {
 					mPlay = false;
@@ -512,7 +510,6 @@ public:
 	{
 		mInputHandler.registerCallback(this);
 		mOpusFileHolder = new OpusFileHolder("Seeker.opus");
-		mOpusFileHolder->setLoop(2391323, 5606036);
 	}
 
 	void fin()
@@ -522,8 +519,16 @@ public:
 		mInputHandler.unregisterCallback(this);
 	}
 
+	void startDecodeThread()
+	{
+		mPlay = true;
+		mOpusFileHolder->setJumpPoint(6101808, 2602800);
+		mNoFinish = mOpusFileHolder->decode();
+		start();
+	}
 
-	void termDecodeThread() {
+	void termDecodeThread()
+	{
 		mPlay     = false;
 		mNoFinish = false;
 		mOpusFileHolder->reset();

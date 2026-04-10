@@ -27,6 +27,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="external\libwebm\common\file_util.cc" />
+    <ClCompile Include="external\libwebm\mkvparser\mkvparser.cc" />
+    <ClCompile Include="external\libwebm\mkvparser\mkvreader.cc" />
     <ClCompile Include="framework\src\CentralLooper.cpp" />
     <ClCompile Include="framework\src\GraphicsManager.cpp" />
     <ClCompile Include="framework\src\InputHandler.cpp" />
@@ -163,7 +166,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>framework\include;framework\src;external\raylib-5.5_win64_msvc16\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>framework\include;framework\src;external\raylib-5.5_win64_msvc16\include;external/libwebm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>

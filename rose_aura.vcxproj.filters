@@ -16,6 +16,9 @@
     <Filter Include="RoseAura Interface">
       <UniqueIdentifier>{162150b2-d62e-4c31-897a-22208cdc693f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="external">
+      <UniqueIdentifier>{81b91088-031e-4384-9e8e-bbc08844701a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="framework\src\CentralLooper.cpp">
@@ -47,6 +50,15 @@
     </ClCompile>
     <ClCompile Include="framework\src\MediaUtility.cpp">
       <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="external\libwebm\common\file_util.cc">
+      <Filter>external</Filter>
+    </ClCompile>
+    <ClCompile Include="external\libwebm\mkvparser\mkvparser.cc">
+      <Filter>external</Filter>
+    </ClCompile>
+    <ClCompile Include="external\libwebm\mkvparser\mkvreader.cc">
+      <Filter>external</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

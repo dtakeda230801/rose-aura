@@ -4,6 +4,7 @@
   "dependencies": [
     "nlohmann-json",
     "opus",
-    "opusfile"
+    "opusfile",
+    "dav1d"
   ]
 }

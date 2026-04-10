@@ -1,10 +1,19 @@
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include <cassert>
+
 #include <opus/opusfile.h>
+#include "mkvparser/mkvparser.h"
+#include "mkvparser/mkvreader.h"
+
+extern "C" {
+#include <dav1d/dav1d.h>
+#include <opus/opus.h>
+}
 
 #include "Utility.h"
 #include "MediaUtility.h"
-
 
 using namespace RoseAuraMediaUtility;
 
@@ -276,6 +285,156 @@ OpusFileHolder::~OpusFileHolder()
     if (mBuffer) {
         delete[] mBuffer;
     }
+}
+
+////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+struct VideoFileHolderInstance {
+    mkvparser::MkvReader        mReader;
+    OpusDecoder*                mOpusDecoder;
+    mkvparser::Segment*         mSegment;
+    const mkvparser::Cluster*   mCluster;
+    const mkvparser::Track*     mVideoTrack;
+    const mkvparser::Track*     mAudioTrack;
+    Dav1dContext*               mDav1dContext;
+
+
+};
+
+
+VideoFileHolder::VideoFileHolder(const char* path) :
+    mInstance(static_cast<void*>(new VideoFileHolderInstance()))
+{
+    VideoFileHolderInstance* ins = static_cast<VideoFileHolderInstance*>(mInstance);
+
+    long long pos = 0;
+
+    if (ins->mReader.Open(path)) {
+        Utility::printLog("open failed");
+        return;
+    }
+
+    mkvparser::EBMLHeader ebml;
+    if (ebml.Parse(&ins->mReader, pos)) {
+        Utility::printLog("EBML parse failed");
+        return;
+    }
+
+    ins->mSegment = nullptr;
+    if (mkvparser::Segment::CreateInstance(&ins->mReader, pos, ins->mSegment)) {
+        Utility::printLog("segment create failed");
+        return;
+    }
+
+    if (ins->mSegment->Load()) {
+        Utility::printLog("segment load failed");
+        return;
+    }
+
+    const mkvparser::Tracks* tracks = ins->mSegment->GetTracks();
+
+    const mkvparser::Track* video_track = nullptr;
+    const mkvparser::Track* audio_track = nullptr;
+
+    for (unsigned i = 0; i < tracks->GetTracksCount(); ++i) {
+        const mkvparser::Track* t = tracks->GetTrackByIndex(i);
+        if (t->GetType() == mkvparser::Track::kVideo) ins->mVideoTrack = t;
+        if (t->GetType() == mkvparser::Track::kAudio) ins->mAudioTrack = t;
+    }
+
+    Dav1dSettings dav1d_settings;
+    dav1d_default_settings(&dav1d_settings);
+
+    ins->mDav1dContext = nullptr;
+    if (dav1d_open(&ins->mDav1dContext, &dav1d_settings) < 0) {
+        Utility::printLog("dav1d init failed");
+        return;
+    }
+
+    int opus_err = 0;
+    ins->mOpusDecoder = opus_decoder_create(48000, 2, &opus_err);
+    if (opus_err != OPUS_OK) {
+        Utility::printLog("opus init failed\n");
+        return;
+    }
+
+    ins->mCluster = ins->mSegment->GetFirst();
+
+}
+
+bool VideoFileHolder::decode()
+{
+    VideoFileHolderInstance* ins = static_cast<VideoFileHolderInstance*>(mInstance);
+
+    while (ins->mCluster && !ins->mCluster->EOS()) {
+
+        const mkvparser::BlockEntry* block_entry;
+        if (ins->mCluster->GetFirst(block_entry)) break;
+
+        while (block_entry && !block_entry->EOS()) {
+
+            const mkvparser::Block* block = block_entry->GetBlock();
+
+            uint64_t track_num = block->GetTrackNumber();
+            const mkvparser::Track* track = ins->mSegment->GetTracks()->GetTrackByNumber(track_num);
+
+            for (int i = 0; i < block->GetFrameCount(); ++i) {
+
+                const mkvparser::Block::Frame& frame = block->GetFrame(i);
+
+                std::vector<uint8_t> buf(frame.len);
+                if (ins->mReader.Read(frame.pos, frame.len, buf.data())) continue;
+
+                //////////////////////////////////////
+                if (track == ins->mVideoTrack) {
+
+                    Dav1dData data;
+                    dav1d_data_wrap(&data, buf.data(), buf.size(), nullptr, nullptr);
+
+                    if (dav1d_send_data(ins->mDav1dContext, &data) == 0) {
+                        Dav1dPicture pic;
+                        if (dav1d_get_picture(ins->mDav1dContext, &pic) == 0) {
+                            Utility::printLog("video frame: (%d) x (%d)",pic.p.w ,pic.p.h);
+                            dav1d_picture_unref(&pic);
+                        }
+                    }
+                }
+
+                //////////////////////////////////////
+                if (track == ins->mAudioTrack) {
+
+                    std::vector<int16_t> pcm(960 * 2);
+                    int samples = opus_decode(ins->mOpusDecoder,
+                        buf.data(),
+                        buf.size(),
+                        pcm.data(),
+                        960,
+                        0);
+
+                    if (samples > 0) {
+                        Utility::printLog("audio samples: %d", samples);
+                    }
+                }
+            }
+
+            if (ins->mCluster->GetNext(block_entry, block_entry)) break;
+        }
+
+        ins->mCluster = ins->mSegment->GetNext(ins->mCluster);
+    }
+
+    return true;
+}
+
+VideoFileHolder::~VideoFileHolder()
+{
+    VideoFileHolderInstance* ins = static_cast<VideoFileHolderInstance*>(mInstance);
+
+    opus_decoder_destroy(ins->mOpusDecoder);
+    dav1d_close(&ins->mDav1dContext);
+    ins->mReader.Close();
+
+    delete ins;
 }
 
 

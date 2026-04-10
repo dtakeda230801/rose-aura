@@ -59,6 +59,19 @@ namespace RoseAuraMediaUtility {
 	};
 
 	/////////////////////////////////////////////
+	class VideoFileHolder {
+	public:
+		VideoFileHolder(const char* path);
+		bool		 decode();
+
+		virtual ~VideoFileHolder();
+
+	private:
+		void*		mInstance;
+	};
+
+
+	/////////////////////////////////////////////
 	class PreRenderThread {
 	public:
 		bool start();

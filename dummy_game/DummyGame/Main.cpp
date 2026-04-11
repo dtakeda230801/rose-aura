@@ -343,6 +343,12 @@ public:
 	{
 		RARetCode ret;
 
+		if (0 < mAfterHit) {
+			if (--mAfterHit == 0) {
+				mColor = RED;
+			}
+		}
+
 		IWorldNavigator::Vec3 newPos = { mPosition.mX + mXDelta
 			                           , mPosition.mY + mYDelta
 			                           , mPosition.mZ};
@@ -404,10 +410,7 @@ public:
 		bool ret = false;
 		if (CIRCLE_SIZE > calcDistance(trigerLocation, position)) {
 			ret = true;
-		}
-		else {
-			std::lock_guard<std::mutex> lock(mMutex);
-			mColor = RED;
+			mAfterHit = 3;
 		}
 		return ret;
 	};
@@ -416,7 +419,7 @@ public:
 		         , IWorldNavigator::TRIGGER_ID	eventId)
 	{
 		std::lock_guard<std::mutex> lock(mMutex);
-		mColor = PINK;
+		mColor = YELLOW;
 	};
 
 	void init()
@@ -464,6 +467,7 @@ private:
 	int							mYDelta   = -5;
 	float						mDistance = 30.f;
 	Color						mColor    = RED;
+	int							mAfterHit = 0;
 
 };
 ////////////////////////////////////////////

@@ -116,6 +116,9 @@
     <ClInclude Include="framework\include\MediaUtility.h">
       <Filter>RoseAura Interface</Filter>
     </ClInclude>
+    <ClInclude Include="framework\src\MediaUtilityImpl.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />

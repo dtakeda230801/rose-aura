@@ -37,8 +37,6 @@ private:
     unsigned int   mCount;
 };
 
-
-
 TEST(testOpusFileHolder, BehaviourTest)
 {
 	ROSE_AURA_TEST_BEGIN;
@@ -117,6 +115,47 @@ TEST(testOpusFileHolder, BehaviourTest)
 	ROSE_AURA_TEST_FIN;
 }
 
+TEST(testVideoFileHolder, BehaviourTest)
+{
+    ROSE_AURA_TEST_BEGIN;
+    {
+        float* dummyBuffer = new float[480 * 2];
+        unsigned int  videoFrameCount = 0;
+
+        std::unique_ptr<VideoFileHolder> vfh = std::make_unique<VideoFileHolder>("..\\..\\test\\rose_aura_test\\test.webm");
+
+        VideoFileHolder::DecoderReturnCode decRet = VideoFileHolder::DecoderReturnCode::CONTINUE;
+
+        while (decRet != VideoFileHolder::DecoderReturnCode::FINISH) {
+            decRet = vfh->decode();
+
+            if (decRet == VideoFileHolder::DecoderReturnCode::VIDEO) {
+                bool vFrameRet = true;
+                VideoFileHolder::VideoFrame  frame;
+                while (vFrameRet) {
+                    vFrameRet = vfh->getVideoFrame(frame);
+                    if (vFrameRet) {
+                        vfh->releaseVideoFrame(frame);
+                        videoFrameCount++;
+                    }
+                }
+                Utility::printLog("OUT VIDEO FRAME (%d)", videoFrameCount);
+            }
+
+            if (decRet == VideoFileHolder::DecoderReturnCode::AUDIO) {
+                bool            aFrameRet   = true;
+                unsigned int    returnFrameLen;
+
+                while (aFrameRet) {
+                    returnFrameLen = 0;
+                    aFrameRet = vfh->getAudioFrame(&dummyBuffer, &returnFrameLen, 480);
+                }
+            }
+        }
+        delete[] dummyBuffer;
+    }
+    ROSE_AURA_TEST_FIN;
+};
 TEST(testPreRenderThread, BehaviourTest)
 {
     ROSE_AURA_TEST_BEGIN;

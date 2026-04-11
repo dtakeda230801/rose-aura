@@ -54,6 +54,7 @@
     <ClInclude Include="framework\src\CentralLooper.h" />
     <ClInclude Include="framework\src\GraphicsManager.h" />
     <ClInclude Include="framework\src\InputHandler.h" />
+    <ClInclude Include="framework\src\MediaUtilityImpl.h" />
     <ClInclude Include="framework\src\SoundCoordinator.h" />
     <ClInclude Include="framework\src\ObjectRepository.h" />
     <ClInclude Include="framework\src\RoseAuraImpl.h" />
@@ -181,7 +182,12 @@ user32.lib
 ;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "external\raylib-5.5_win64_msvc16\lib\raylib.dll" "$(OutDir)"</Command>
+      <Command>copy /Y "$(SolutionDir)external\raylib-5.5_win64_msvc16\lib\raylib.dll" "$(OutDir)" 
+copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\x64-windows\bin\*.dll" "$(OutDir)" 
+
+
+
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -209,7 +215,12 @@ user32.lib
 ;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "external\raylib-5.5_win64_msvc16\lib\raylib.dll" "$(OutDir)"</Command>
+      <Command>copy /Y "$(SolutionDir)external\raylib-5.5_win64_msvc16\lib\raylib.dll" "$(OutDir)" 
+copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\x64-windows\bin\*.dll" "$(OutDir)" 
+
+
+
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dev Debug|x64'">
@@ -217,7 +228,12 @@ user32.lib
       <AdditionalIncludeDirectories>framework\include;framework\src;external\raylib-5.5_win64_msvc16\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <PostBuildEvent>
-      <Command>copy /Y "external\raylib-5.5_win64_msvc16\lib\raylib.dll" "$(OutDir)"</Command>
+      <Command>copy /Y "$(SolutionDir)external\raylib-5.5_win64_msvc16\lib\raylib.dll" "$(OutDir)" 
+copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\x64-windows\bin\*.dll" "$(OutDir)" 
+
+
+
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

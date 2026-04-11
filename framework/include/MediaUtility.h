@@ -61,13 +61,40 @@ namespace RoseAuraMediaUtility {
 	/////////////////////////////////////////////
 	class VideoFileHolder {
 	public:
+
+		struct VideoFrame {
+			unsigned int mWidth;
+			unsigned int mHeight;
+
+			unsigned char* mY;
+			unsigned char* mU;
+			unsigned char* mV;
+
+			int mStrideY;
+			int mStrideU;
+			int mStrideV;
+		};
+
+		enum class DecoderReturnCode {
+			  AUDIO
+			, VIDEO
+			, CONTINUE
+			, FINISH
+		};
+
 		VideoFileHolder(const char* path);
-		bool		 decode();
 
-		virtual ~VideoFileHolder();
+		DecoderReturnCode decode();
 
+		bool getAudioFrame(float** buff, unsigned int* returnFrameLen, unsigned int requestFrameLen);
+		bool getVideoFrame(VideoFrame& videoFrame);
+
+		void releaseVideoFrame(VideoFrame& frame);
+
+		virtual ~VideoFileHolder() = default;
 	private:
-		void*		mInstance;
+		class VideoFileHolderImpl;
+		std::unique_ptr<VideoFileHolderImpl> mImpl;
 	};
 
 

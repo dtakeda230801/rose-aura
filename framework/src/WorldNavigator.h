@@ -48,7 +48,7 @@ private:
 	bool     fitWithin(Bounds& base, Bounds& target);
 	bool     fitWithin(Bounds& base, Vec3& target);
 	Vec3     adjustPosition(Bounds& base, Vec3& pos);
-	int      checkCrossing(int max, int min, int val);
+	int      selectBoundaryPosition(int max, int min, int val);
 	Trigger* findTrigger(TRIGGER_ID id);
 
 
@@ -73,6 +73,7 @@ private:
 
 	std::mutex      mMutex;
 
-	std::vector<World>		mWorlds;
-	int 					mCurrentWorldIndex;
+	std::vector<World>
+					mWorlds;
+	int 			mCurrentWorldIndex;
 };

@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <cassert>
+#include <algorithm>
 
 #include <opus/opusfile.h>
 #include "mkvparser/mkvparser.h"
@@ -14,6 +15,8 @@ extern "C" {
 
 #include "Utility.h"
 #include "MediaUtility.h"
+
+#include "MediaUtilityImpl.h"
 
 using namespace RoseAuraMediaUtility;
 
@@ -289,152 +292,377 @@ OpusFileHolder::~OpusFileHolder()
 
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////
-struct VideoFileHolderInstance {
-    mkvparser::MkvReader        mReader;
-    OpusDecoder*                mOpusDecoder;
-    mkvparser::Segment*         mSegment;
-    const mkvparser::Cluster*   mCluster;
-    const mkvparser::Track*     mVideoTrack;
-    const mkvparser::Track*     mAudioTrack;
-    Dav1dContext*               mDav1dContext;
-
-
-};
-
-
 VideoFileHolder::VideoFileHolder(const char* path) :
-    mInstance(static_cast<void*>(new VideoFileHolderInstance()))
+    mImpl(std::make_unique<VideoFileHolder::VideoFileHolderImpl>(path))
 {
-    VideoFileHolderInstance* ins = static_cast<VideoFileHolderInstance*>(mInstance);
+}
 
+VideoFileHolder::DecoderReturnCode VideoFileHolder::decode()
+{
+    return mImpl->decode();
+}
+
+bool VideoFileHolder::getAudioFrame(float** buff, unsigned int* returnFrameLen, unsigned int requestFrameLen)
+{
+    return mImpl->getAudioFrame(buff, returnFrameLen, requestFrameLen);
+}
+
+bool VideoFileHolder::getVideoFrame(VideoFrame& videoFrame)
+{
+    return mImpl->getVideoFrame(videoFrame);
+}
+
+void VideoFileHolder::releaseVideoFrame(VideoFrame& frame)
+{
+    mImpl->releaseVideoFrame(frame);
+}
+
+////////////////////////////////////////////////////
+
+VideoFileHolder::VideoFileHolderImpl::VideoFileHolderImpl(const char* path) :
+      mOpusDecoder(nullptr)
+    , mSegment(nullptr)
+    , mCluster(nullptr)
+    , mVideoTrack(nullptr)
+    , mAudioTrack(nullptr)
+    , mDav1dContext(nullptr)
+    , mBlockEntry(nullptr)
+    , mFrameCount(0)
+    , mPicture{}
+    , mPictureReady(false)
+    , mAudioBuffer(nullptr)
+    , mSamplingRate(0)
+    , mChannels(0)
+    , mAudioReady(false)
+    , mAudioFrameLen(0)
+    , mAudioReadPointer(0)
+{
     long long pos = 0;
 
-    if (ins->mReader.Open(path)) {
+    if (mReader.Open(path)) {
         Utility::printLog("open failed");
         return;
     }
 
     mkvparser::EBMLHeader ebml;
-    if (ebml.Parse(&ins->mReader, pos)) {
+    if (ebml.Parse(&mReader, pos)) {
         Utility::printLog("EBML parse failed");
         return;
     }
 
-    ins->mSegment = nullptr;
-    if (mkvparser::Segment::CreateInstance(&ins->mReader, pos, ins->mSegment)) {
+    if (mkvparser::Segment::CreateInstance(&mReader, pos, mSegment)) {
         Utility::printLog("segment create failed");
         return;
     }
 
-    if (ins->mSegment->Load()) {
+    if (mSegment->Load()) {
         Utility::printLog("segment load failed");
         return;
     }
 
-    const mkvparser::Tracks* tracks = ins->mSegment->GetTracks();
-
-    const mkvparser::Track* video_track = nullptr;
-    const mkvparser::Track* audio_track = nullptr;
+    const mkvparser::Tracks* tracks = mSegment->GetTracks();
 
     for (unsigned i = 0; i < tracks->GetTracksCount(); ++i) {
-        const mkvparser::Track* t = tracks->GetTrackByIndex(i);
-        if (t->GetType() == mkvparser::Track::kVideo) ins->mVideoTrack = t;
-        if (t->GetType() == mkvparser::Track::kAudio) ins->mAudioTrack = t;
+        const mkvparser::Track* track = tracks->GetTrackByIndex(i);
+        if (track->GetType() == mkvparser::Track::kVideo) {
+            mVideoTrack = track;
+        }
+        if (track->GetType() == mkvparser::Track::kAudio) {
+            mAudioTrack = track;
+        }
+    }
+
+    if (!mVideoTrack || !mAudioTrack) {
+        Utility::printLog("Can not find suitable track.");
+        return;
     }
 
     Dav1dSettings dav1d_settings;
     dav1d_default_settings(&dav1d_settings);
 
-    ins->mDav1dContext = nullptr;
-    if (dav1d_open(&ins->mDav1dContext, &dav1d_settings) < 0) {
+    if (dav1d_open(&mDav1dContext, &dav1d_settings) < 0) {
         Utility::printLog("dav1d init failed");
         return;
     }
 
+    unsigned long long   priv_size;
+    const unsigned char* priv = mVideoTrack->GetCodecPrivate(priv_size);
+
+    std::vector<unsigned char> out;
+    out = extractSequenceHeaderOBU(priv, static_cast<unsigned int>(priv_size));
+    sendToDav1d(out.data(), static_cast<unsigned int>(priv_size));
+
+    mCluster = mSegment->GetFirst();
+    if (!mCluster) {
+        Utility::printLog("Can not get first cluster");
+        return;
+    }
+
+
+    if (mCluster->GetFirst(mBlockEntry)) {
+        Utility::printLog("Can not get first block entry");
+        return;
+    }
+
+    ///////////////////////////////////////////////
+    const mkvparser::AudioTrack* audioTrack =
+        static_cast<const mkvparser::AudioTrack*>(mAudioTrack);
+
+    mSamplingRate = static_cast<unsigned int>(audioTrack->GetSamplingRate());
+    mChannels     = static_cast<unsigned int>(audioTrack->GetChannels());
+
     int opus_err = 0;
-    ins->mOpusDecoder = opus_decoder_create(48000, 2, &opus_err);
+    mOpusDecoder = opus_decoder_create(mSamplingRate, mChannels, &opus_err);
     if (opus_err != OPUS_OK) {
         Utility::printLog("opus init failed\n");
         return;
     }
 
-    ins->mCluster = ins->mSegment->GetFirst();
+    mAudioBuffer = new float[AUDIO_BUFFER_FRAME_LEN * mChannels];
 
 }
 
-bool VideoFileHolder::decode()
+VideoFileHolder::DecoderReturnCode VideoFileHolder::VideoFileHolderImpl::decode()
 {
-    VideoFileHolderInstance* ins = static_cast<VideoFileHolderInstance*>(mInstance);
+    DecoderReturnCode ret = DecoderReturnCode::CONTINUE;
 
-    while (ins->mCluster && !ins->mCluster->EOS()) {
-
-        const mkvparser::BlockEntry* block_entry;
-        if (ins->mCluster->GetFirst(block_entry)) break;
-
-        while (block_entry && !block_entry->EOS()) {
-
-            const mkvparser::Block* block = block_entry->GetBlock();
-
-            uint64_t track_num = block->GetTrackNumber();
-            const mkvparser::Track* track = ins->mSegment->GetTracks()->GetTrackByNumber(track_num);
-
-            for (int i = 0; i < block->GetFrameCount(); ++i) {
-
-                const mkvparser::Block::Frame& frame = block->GetFrame(i);
-
-                std::vector<uint8_t> buf(frame.len);
-                if (ins->mReader.Read(frame.pos, frame.len, buf.data())) continue;
-
-                //////////////////////////////////////
-                if (track == ins->mVideoTrack) {
-
-                    Dav1dData data;
-                    dav1d_data_wrap(&data, buf.data(), buf.size(), nullptr, nullptr);
-
-                    if (dav1d_send_data(ins->mDav1dContext, &data) == 0) {
-                        Dav1dPicture pic;
-                        if (dav1d_get_picture(ins->mDav1dContext, &pic) == 0) {
-                            Utility::printLog("video frame: (%d) x (%d)",pic.p.w ,pic.p.h);
-                            dav1d_picture_unref(&pic);
-                        }
-                    }
-                }
-
-                //////////////////////////////////////
-                if (track == ins->mAudioTrack) {
-
-                    std::vector<int16_t> pcm(960 * 2);
-                    int samples = opus_decode(ins->mOpusDecoder,
-                        buf.data(),
-                        buf.size(),
-                        pcm.data(),
-                        960,
-                        0);
-
-                    if (samples > 0) {
-                        Utility::printLog("audio samples: %d", samples);
-                    }
-                }
-            }
-
-            if (ins->mCluster->GetNext(block_entry, block_entry)) break;
-        }
-
-        ins->mCluster = ins->mSegment->GetNext(ins->mCluster);
+    if (mPictureReady || mAudioReady) {
+        return DecoderReturnCode::CONTINUE;
     }
 
-    return true;
+    if (!mCluster || mCluster->EOS()) {
+        return DecoderReturnCode::FINISH;
+    }
+
+    if (!mBlockEntry) {
+        if (mCluster->GetFirst(mBlockEntry)) {
+            return DecoderReturnCode::CONTINUE;
+        }
+        /*
+        if (!mBlockEntry || mBlockEntry->EOS()) {
+            mCluster = mSegment->GetNext(mCluster);
+            return DecoderReturnCode::CONTINUE;
+        }
+        */
+    }
+
+    const mkvparser::Block* block = mBlockEntry->GetBlock();
+    const mkvparser::Track* track = mSegment->GetTracks()->GetTrackByNumber(static_cast<long>(block->GetTrackNumber()));
+
+    unsigned int frameLen = block->GetFrameCount();
+
+    for (mFrameCount; mFrameCount < frameLen; ++mFrameCount) {
+
+        const mkvparser::Block::Frame& frame = block->GetFrame(mFrameCount);
+
+        std::vector<uint8_t> buf(frame.len);
+        if (mReader.Read(frame.pos, frame.len, buf.data())) continue;
+
+        //////////////////////////////////////
+        if (track == mVideoTrack) {
+            sendToDav1d(buf.data(), static_cast<unsigned int>(buf.size()));
+
+            if (getPicture()) {
+                //Utility::printLog("video frame: %d x %d", mPicture.p.w, mPicture.p.h);
+                mPictureReady = true;
+                ret = DecoderReturnCode::VIDEO;
+                mFrameCount++;
+                break;
+            }
+        }
+
+        //////////////////////////////////////
+        if (track == mAudioTrack) {
+            mAudioFrameLen = opus_decode_float(
+                mOpusDecoder
+                , buf.data()
+                , static_cast<opus_int32>(buf.size())
+                , mAudioBuffer
+                , AUDIO_BUFFER_FRAME_LEN
+                , 0);
+
+            if (mAudioFrameLen > 0) {
+                //Utility::printLog("audio frame: %d frame", mAudioFrameLen);
+                mAudioReady = true;
+                mFrameCount++;
+                ret = DecoderReturnCode::AUDIO;
+                break;
+            }
+        }
+    }
+
+    if (mFrameCount == frameLen) {
+        if (mCluster->GetNext(mBlockEntry, mBlockEntry) || !mBlockEntry || mBlockEntry->EOS()) {
+            mBlockEntry = nullptr;
+            mCluster    = mSegment->GetNext(mCluster);
+        }
+        mFrameCount = 0;
+    }
+
+    return ret;
 }
 
-VideoFileHolder::~VideoFileHolder()
+bool VideoFileHolder::VideoFileHolderImpl::getAudioFrame(float** buff, unsigned int* returnFrameLen, unsigned int requestFrameLen)
 {
-    VideoFileHolderInstance* ins = static_cast<VideoFileHolderInstance*>(mInstance);
+    bool ret = false;
 
-    opus_decoder_destroy(ins->mOpusDecoder);
-    dav1d_close(&ins->mDav1dContext);
-    ins->mReader.Close();
+    if (mAudioReady) {
+        float*          srcBuff  = mAudioBuffer + (mAudioReadPointer * mChannels);
+        float*          outBuff  = *buff;
+        unsigned int    outCount = 0;
 
-    delete ins;
+        *returnFrameLen = 0;
+
+        if (mAudioFrameLen - mAudioReadPointer < requestFrameLen) {
+            outCount = mAudioFrameLen - mAudioReadPointer;
+        } else {
+            outCount = requestFrameLen;
+        }
+        for (unsigned int i = 0; i < outCount; ++i) {
+            for (unsigned int ch = 0; ch < mChannels; ++ch) {
+                *outBuff++ = *srcBuff++;
+            }
+            ++(*returnFrameLen);
+        }
+
+        mAudioReadPointer += *returnFrameLen;
+
+        if (mAudioReadPointer >= mAudioFrameLen) {
+            mAudioReadPointer = 0;
+            mAudioFrameLen    = 0;
+            mAudioReady       = 0;
+        }
+        ret = true;
+    }
+
+    return ret;
+}
+
+bool VideoFileHolder::VideoFileHolderImpl::getVideoFrame(VideoFrame& videoFrame)
+{
+    if (mPictureReady) {
+        videoFrame = convertPictureFormat(mPicture);
+        dav1d_picture_unref(&mPicture);
+        mPictureReady = false;
+        return true;
+    } else {
+        if (getPicture()) {
+            //Utility::printLog("video frame: %d x %d", mPicture.p.w, mPicture.p.h);
+            videoFrame = convertPictureFormat(mPicture);
+            dav1d_picture_unref(&mPicture);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void VideoFileHolder::VideoFileHolderImpl::releaseVideoFrame(VideoFrame& frame) {
+    delete[] frame.mY;
+    delete[] frame.mU;
+    delete[] frame.mV;
+    frame.mY = nullptr;
+    frame.mU = nullptr;
+    frame.mY = nullptr;
+}
+
+
+VideoFileHolder::VideoFileHolderImpl::~VideoFileHolderImpl()
+{
+    opus_decoder_destroy(mOpusDecoder);
+    dav1d_close(&mDav1dContext);
+    delete mSegment;
+    mReader.Close();
+
+    delete[] mAudioBuffer;
+}
+
+std::vector<unsigned char>
+VideoFileHolder::VideoFileHolderImpl::extractSequenceHeaderOBU(const unsigned char* priv, unsigned int size)
+{
+    std::vector<unsigned char> out;
+
+    if (!priv || size < 4)
+        return out;
+
+    unsigned int pos = 4;
+
+    while (pos < size)
+    {
+        out.push_back(priv[pos++]);
+    }
+
+    return out;
+}
+
+void VideoFileHolder::VideoFileHolderImpl::sendToDav1d(const unsigned char* data, unsigned int size)
+{
+    Dav1dData d = { 0 };
+
+    unsigned char* heap = new unsigned char[size];
+    memcpy(heap, data, size);
+
+    dav1d_data_wrap(
+        &d,
+        heap,
+        size,
+        [](const unsigned char* data, void*) {
+            delete[] data;
+        },
+        nullptr
+    );
+
+    int res = dav1d_send_data(mDav1dContext, &d);
+    if (res < 0)
+    {
+        Utility::printLog("send error: (%d)", res);
+    }
+}
+
+VideoFileHolder::VideoFrame
+VideoFileHolder::VideoFileHolderImpl::convertPictureFormat(const Dav1dPicture& pic)
+{
+    VideoFileHolder::VideoFrame frame;
+
+    frame.mWidth  = pic.p.w;
+    frame.mHeight = pic.p.h;
+
+    unsigned int ySize = static_cast<unsigned int>( pic.p.h      * pic.stride[0]);
+    unsigned int uSize = static_cast<unsigned int>((pic.p.h / 2) * pic.stride[1]);
+    unsigned int vSize = static_cast<unsigned int>((pic.p.h / 2) * pic.stride[1]);
+
+    frame.mY = new unsigned char[ySize];
+    frame.mU = new unsigned char[uSize];
+    frame.mV = new unsigned char[vSize];
+    
+    unsigned char* srcStart; 
+    unsigned char* srcEnd;
+
+    srcStart = static_cast<unsigned char*>(pic.data[0]);
+    srcEnd   = static_cast<unsigned char*>(pic.data[0]) + ySize;
+    std::copy(srcStart, srcEnd, frame.mY);
+
+    srcStart = static_cast<unsigned char*>(pic.data[1]);
+    srcEnd   = static_cast<unsigned char*>(pic.data[1]) + uSize;
+    std::copy(srcStart, srcEnd, frame.mU);
+
+    srcStart = static_cast<unsigned char*>(pic.data[2]);
+    srcEnd   = static_cast<unsigned char*>(pic.data[2]) + vSize;
+    std::copy(srcStart, srcEnd, frame.mV);
+
+    frame.mStrideY = static_cast<unsigned int>(pic.stride[0]);
+    frame.mStrideU = static_cast<unsigned int>(pic.stride[1]);
+    frame.mStrideV = static_cast<unsigned int>(pic.stride[1]);
+
+    return frame;
+}
+
+bool VideoFileHolder::VideoFileHolderImpl::getPicture()
+{   
+    if (dav1d_get_picture(mDav1dContext, &mPicture) == 0) {
+        return true;
+    }
+    return false;
 }
 
 

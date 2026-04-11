@@ -102,7 +102,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\vcpkg_installed\x64-windows\x64-windows\include;..\..\framework\src;..\..\framework\include;..\..\external\raylib-5.5_win64_msvc16\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)framework\src;$(SolutionDir)framework\include;$(SolutionDir)external\raylib-5.5_win64_msvc16\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -114,13 +114,12 @@ gdi32.lib
 ;opengl32.lib;
 shell32.lib;
 user32.lib;
-kernel32.lib;opus.lib;opusfile.lib;ogg.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\vcpkg_installed\x64-windows\x64-windows\lib;..\..\external\raylib-5.5_win64_msvc16\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+kernel32.lib;opus.lib;opusfile.lib;ogg.lib;dav1d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)vcpkg_installed\x64-windows\x64-windows\lib;$(SolutionDir)external\raylib-5.5_win64_msvc16\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "..\..\external\raylib-5.5_win64_msvc16\lib\raylib.dll" "$(OutDir)"
-copy /Y "..\..\vcpkg_installed\x64-windows\x64-windows\bin\opus.dll" "$(OutDir)"
-copy /Y "..\..\vcpkg_installed\x64-windows\x64-windows\bin\ogg.dll" "$(OutDir)"
+      <Command>copy /Y "$(SolutionDir)ho\*.dll" "$(OutDir)"
+
 
 </Command>
     </PostBuildEvent>
@@ -133,7 +132,7 @@ copy /Y "..\..\vcpkg_installed\x64-windows\x64-windows\bin\ogg.dll" "$(OutDir)"
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\vcpkg_installed\x64-windows\x64-windows\include;..\..\framework\src;..\..\framework\include;..\..\external\raylib-5.5_win64_msvc16\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)framework\src;$(SolutionDir)framework\include;$(SolutionDir)external\raylib-5.5_win64_msvc16\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -145,13 +144,12 @@ gdi32.lib
 ;opengl32.lib;
 shell32.lib;
 user32.lib;
-kernel32.lib;opus.lib;opusfile.lib;ogg.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\vcpkg_installed\x64-windows\x64-windows\lib;..\..\external\raylib-5.5_win64_msvc16\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+kernel32.lib;opus.lib;opusfile.lib;ogg.lib;dav1d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)vcpkg_installed\x64-windows\x64-windows\lib;$(SolutionDir)external\raylib-5.5_win64_msvc16\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "..\..\external\raylib-5.5_win64_msvc16\lib\raylib.dll" "$(OutDir)"
-copy /Y "..\..\vcpkg_installed\x64-windows\x64-windows\bin\opus.dll" "$(OutDir)"
-copy /Y "..\..\vcpkg_installed\x64-windows\x64-windows\bin\ogg.dll" "$(OutDir)"
+      <Command>copy /Y "$(SolutionDir)ho\*.dll" "$(OutDir)"
+
 
 </Command>
     </PostBuildEvent>

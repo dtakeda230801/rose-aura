@@ -34,6 +34,7 @@ WorldNavigator::WORLD_ID WorldNavigator::createWorld(WorldConfig& conf)
 
 WorldNavigator::WORLD_ID WorldNavigator::getCurrentWorld()
 {
+	std::lock_guard<std::mutex> lock(mMutex);
 	return mWorlds[mCurrentWorldIndex].mId;
 }
 
@@ -52,11 +53,13 @@ RARetCode WorldNavigator::changeWorld(WORLD_ID id)
 
 WorldNavigator::Bounds WorldNavigator::getActiveSpace()
 {
+	std::lock_guard<std::mutex> lock(mMutex);
 	return mWorlds[mCurrentWorldIndex].mActiveSpace;
 }
 
 WorldNavigator::Vec3 WorldNavigator::getActiveSpacePosition()
 {
+	std::lock_guard<std::mutex> lock(mMutex);
 	return calcCenter(mWorlds[mCurrentWorldIndex].mActiveSpace);
 }
 
@@ -138,6 +141,7 @@ RARetCode WorldNavigator::movePosition(Vec3& pos)
 
 WorldNavigator::Vec3 WorldNavigator::getPosition()
 {
+	std::lock_guard<std::mutex> lock(mMutex);
 	return mWorlds[mCurrentWorldIndex].mPosition;
 }
 
@@ -166,9 +170,9 @@ RARetCode WorldNavigator::registerTrigger(TRIGGER_ID id, Vec3& location, float d
 
 RARetCode WorldNavigator::removeTrigger(TRIGGER_ID id)
 {
-	RARetCode ret = RARetCode::RET_OK;
-
 	std::lock_guard<std::mutex> lock(mMutex);
+
+	RARetCode ret                  = RARetCode::RET_OK;
 	std::vector<Trigger>& triggers = mWorlds[mCurrentWorldIndex].mTriggers;
 
 	auto newEnd = std::remove_if(triggers.begin(), triggers.end(),
@@ -189,8 +193,7 @@ RARetCode WorldNavigator::removeTrigger(TRIGGER_ID id)
 RARetCode	 WorldNavigator::moveTrigger(TRIGGER_ID id, Vec3& location) {
 	std::lock_guard<std::mutex> lock(mMutex);
 
-	RARetCode ret = RARetCode::RET_OK;
-
+	RARetCode ret          = RARetCode::RET_OK;
 	Trigger* targetTrigger = findTrigger(id);
 
 	if (targetTrigger == nullptr) {
@@ -240,13 +243,13 @@ RARetCode WorldNavigator::getTriggerLocation(TRIGGER_ID	id, Vec3* location)
 
 RARetCode WorldNavigator::registerActiveSpaceCallback(IActiveSpaceCallback* cb)
 {
+	std::lock_guard<std::mutex> lock(mMutex);
 	World& currentWorld = mWorlds[mCurrentWorldIndex];
 
 	if (currentWorld.mActiveSpaceCb) {
 		return RARetCode::RET_ERR_INVALID_STATE;
 	}
 
-	std::lock_guard<std::mutex> lock(mMutex);
 	currentWorld.mActiveSpaceCb = cb;
 
 	return RARetCode::RET_OK;
@@ -254,13 +257,13 @@ RARetCode WorldNavigator::registerActiveSpaceCallback(IActiveSpaceCallback* cb)
 
 RARetCode	 WorldNavigator::unregisterActiveSpaceCallback()
 {
+	std::lock_guard<std::mutex> lock(mMutex);
 	World& currentWorld = mWorlds[mCurrentWorldIndex];
 
 	if (!currentWorld.mActiveSpaceCb) {
 		return RARetCode::RET_ERR_INVALID_STATE;
 	}
 
-	std::lock_guard<std::mutex> lock(mMutex);
 	currentWorld.mActiveSpaceCb = nullptr;
 
 	return RARetCode::RET_OK;
@@ -350,14 +353,14 @@ WorldNavigator::Vec3 WorldNavigator::adjustPosition(Bounds& base
 	                                              , Vec3&   pos)
 {
 	Vec3 ret;
-	ret.mX = checkCrossing(base.mMin.mX, base.mMax.mX, pos.mX);
-	ret.mY = checkCrossing(base.mMin.mY, base.mMax.mY, pos.mY);
-	ret.mZ = checkCrossing(base.mMin.mZ, base.mMax.mZ, pos.mZ);
+	ret.mX = selectBoundaryPosition(base.mMin.mX, base.mMax.mX, pos.mX);
+	ret.mY = selectBoundaryPosition(base.mMin.mY, base.mMax.mY, pos.mY);
+	ret.mZ = selectBoundaryPosition(base.mMin.mZ, base.mMax.mZ, pos.mZ);
 
 	return ret;
 }
 
-int WorldNavigator::checkCrossing(int min, int max, int val)
+int WorldNavigator::selectBoundaryPosition(int min, int max, int val)
 {
 	if (val < min) {
 		return min;
@@ -368,25 +371,6 @@ int WorldNavigator::checkCrossing(int min, int max, int val)
 	}
 
 	return val;
-
-	/*
-	int		ret;
-	float	tmin, tmax;
-
-	tmin = static_cast<float>(min - current) / static_cast<float>(next - current);
-	tmax = static_cast<float>(max - current) / static_cast<float>(next - current);
-
-	if (0.0f <= tmin && tmin < 1.0f) {
-		ret = min;
-	}
-	else if (0.0f <= tmax && tmax < 1.0f) {
-		ret = max;
-	}
-	else {
-		ret= next;
-	}
-	return ret;
-	*/
 }
 
 WorldNavigator::Trigger* WorldNavigator::findTrigger(TRIGGER_ID id)

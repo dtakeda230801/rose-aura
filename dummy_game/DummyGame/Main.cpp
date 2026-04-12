@@ -484,6 +484,7 @@ public:
 			InputType  type = event.second;
 
 			if (state == InputState::PUSHED && type == InputType::ACTION2) {
+				Utility::printLog("Buffer Delay:%d",mSoundCoordinator.getDelayTime());
 				mSoundCoordinator.registerRenderer(this);
 			}
 		}

@@ -6,6 +6,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <chrono>
 
 
 #define FLUORITE_LOG_BUFF_SIZE 1024
@@ -21,5 +22,11 @@ void Utility::printLog(const char* format, ...) {
     OutputDebugStringA("[ROSE_AURA DEBUG]");
     OutputDebugStringA(buffer);
     OutputDebugStringA("\n");
+}
+
+uint64_t Utility::getCurrentTime()
+{
+    return std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 

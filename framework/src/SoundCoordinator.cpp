@@ -1,6 +1,7 @@
 #include "SoundCoordinator.h"
 #include "Utility.h"
 
+#include <cstdint>
 #include <memory>
 #include <mmdeviceapi.h>
 #include <combaseapi.h>
@@ -40,19 +41,24 @@ RARetCode SoundCoordinator::stop()
     return RARetCode::RET_OK;
 }
 
-unsigned int SoundCoordinator::getSystemSamplingRate()
+uint32_t SoundCoordinator::getSystemSamplingRate()
 {
     return mSystemSamplingRate;
 }
 
-unsigned int SoundCoordinator::getSystemChannels()
+uint32_t SoundCoordinator::getSystemChannels()
 {
     return mSystemChannels;
 }
 
+uint32_t SoundCoordinator::getDelayTime()
+{
+    return static_cast<uint32_t>(mAverageDelayTime) + (SYSTEM_BUFFER_DURATION/10);
+}
+
 RARetCode SoundCoordinator::registerRenderer(ISoundRenderer* renderer)
 {
-    mSoundData.push_back(renderer);
+    mRenderers.push_back(renderer);
     return RARetCode::RET_OK;
 }
 
@@ -64,7 +70,7 @@ void SoundCoordinator::recover()
 }
 
 SoundCoordinator::SoundCoordinator() :
-    mStarted(false)
+      mStarted(false)
     , mRecover(false)
     , mSystemChannels(2)
     , mSystemSamplingRate(48000)
@@ -72,6 +78,7 @@ SoundCoordinator::SoundCoordinator() :
     , mSystemSRCOutBuff(nullptr)
     , mSystemSRCOutFrameCurrent(0)
     , mSystemSRCOutFrameLen(0)
+    , mAverageDelayTime(0.0f)
 {
     allocateSystemBuffer();
 };
@@ -86,31 +93,34 @@ SoundCoordinator::~SoundCoordinator()
 // Private
 ////////////////////////////////////
 
-RARetCode SoundCoordinator::DataWriter::write(float* buff, unsigned int frameLen)
+RARetCode SoundCoordinator::DataWriter::write(float* buff, uint32_t frameLen)
 {
-    if (!buff || mWriteBufferSize < (mWroteFrame + frameLen) * SC_CHANNEL ) {
+    float*   writeBuffer     = &mSoundBuffer->mBuffer[mSoundBuffer->mWritePointer];
+    uint32_t writeBufferSize = mSoundBuffer->mBufferSize - mSoundBuffer->mWritePointer;
+
+    if (!buff || writeBufferSize < (mWroteFrame + frameLen) * SC_CHANNEL ) {
         return RARetCode::RET_ERR_INVALID_ARG;
     }
 
-    if (!mWriteBuffer) {
+    if (!writeBuffer) {
         return RARetCode::RET_ERR_INVALID_STATE;
     }
 
-    for (unsigned int frame = mWroteFrame; frame < mWroteFrame + frameLen; ++frame) {
-        
-        for (unsigned int ch = 0; ch < SC_CHANNEL; ch++) {
-            *(mWriteBuffer + frame * SC_CHANNEL + ch) += *(buff + frame * SC_CHANNEL + ch);
+    for (uint32_t frame = mWroteFrame; frame < mWroteFrame + frameLen; ++frame) {
+        for (uint32_t ch = 0; ch < SC_CHANNEL; ch++) {
+            *(writeBuffer + frame * SC_CHANNEL + ch) += *(buff + frame * SC_CHANNEL + ch);
         }
     }
     mWroteFrame += frameLen;
+
     return RARetCode::RET_OK;
 }
 
-void SoundCoordinator::DataWriter::setBuffer(float* buff, unsigned int size)
+void SoundCoordinator::DataWriter::setBuffer(SoundBuffer* soundBuffer)
 {
-    mWriteBuffer     = buff;
-    mWriteBufferSize = size;
+    mSoundBuffer = soundBuffer;
 }
+
 
 void SoundCoordinator::DataWriter::reset()
 {
@@ -119,10 +129,8 @@ void SoundCoordinator::DataWriter::reset()
 
 
 SoundCoordinator::DataWriter::DataWriter() :
-      mWriteBuffer(nullptr)
-    , mWriteBufferSize(0)
-    , mWroteFrame(0)
-
+      mWroteFrame(0)
+    , mSoundBuffer(nullptr)
 {
 }
 
@@ -234,7 +242,7 @@ void SoundCoordinator::renderToDevice()
                 ,"GetBuffer fails");
 
             out = (float*)data;
-            unsigned int frame = 0;
+            uint32_t frame = 0;
             while (frame < framesAvailable) {
                 frame = requestDataInternal(&out, framesAvailable);
                 out += frame;
@@ -262,11 +270,11 @@ void SoundCoordinator::renderToDevice()
     Utility::printLog("Stop Sound Rendering Thread");
 }
 
-unsigned int SoundCoordinator::requestDataInternal(float** buff, unsigned int frameNum)
+uint32_t SoundCoordinator::requestDataInternal(float** buff, uint32_t frameNum)
 {
-    unsigned int outFrameNum = 0;
+    uint32_t outFrameNum = 0;
     float*       outBuff     = *buff;
-    unsigned int count       = 0;
+    uint32_t count       = 0;
 
     while (outFrameNum < frameNum) {
         ////////////////////////////////////////////////////////////
@@ -274,20 +282,20 @@ unsigned int SoundCoordinator::requestDataInternal(float** buff, unsigned int fr
         ////////////////////////////////////////////////////////////
         SoundBuffer& writeSB = mSystemBuffer.mBuffer[mSystemBuffer.mWritePointer];
 
-        if (!mSoundData.empty()) {
+        if (!mRenderers.empty()) {
             float* writePoint = &writeSB.mBuffer[writeSB.mWritePointer];
             std::fill(writePoint, writePoint + (writeSB.mBufferSize - writeSB.mWritePointer), 0.0f);
 
-            mDataWriter.setBuffer(writePoint, writeSB.mBufferSize - writeSB.mWritePointer);
+            mDataWriter.setBuffer(&writeSB);
 
-            unsigned int retFrameMax = 0;
+            uint32_t retFrameMax = 0;
 
-            for (auto ite = mSoundData.begin(); ite != mSoundData.end(); )
+            for (auto ite = mRenderers.begin(); ite != mRenderers.end(); )
             {
-                ISoundRenderer* sound = *ite;
-                unsigned int    retFrameLen     = 0;
-                unsigned int    requestFrameLen = 0;
                 RARetCode       ret;
+                ISoundRenderer* sound           = *ite;
+                uint32_t        retFrameLen     = 0;
+                uint32_t        requestFrameLen = 0;
 
                 mDataWriter.reset();
                 requestFrameLen = (writeSB.mBufferSize - writeSB.mWritePointer) / SC_CHANNEL;
@@ -298,7 +306,7 @@ unsigned int SoundCoordinator::requestDataInternal(float** buff, unsigned int fr
                 }
 
                 if (ret == RARetCode::RET_END_OF_CONTENT) {
-                    ite = mSoundData.erase(ite);
+                    ite = mRenderers.erase(ite);
                 }
                 else {
                     ++ite;
@@ -308,13 +316,14 @@ unsigned int SoundCoordinator::requestDataInternal(float** buff, unsigned int fr
         }
 
         count = 0;
-        for (unsigned int writePoint = writeSB.mWritePointer; writePoint < writeSB.mBufferSize; writePoint += SC_CHANNEL) {
-            for (unsigned int ch = 0; ch < SC_CHANNEL; ++ch) {
+        for (uint32_t writePoint = writeSB.mWritePointer; writePoint < writeSB.mBufferSize; writePoint += SC_CHANNEL) {
+            for (uint32_t ch = 0; ch < SC_CHANNEL; ++ch) {
                 writeSB.mBuffer[writePoint + ch] = 0.0f;
                 ++count;
             }
         }
         writeSB.mWritePointer += count;
+        writeSB.mWriteTime = Utility::getCurrentTime();
 
         if (writeSB.mBufferSize <= writeSB.mWritePointer) {
             mSystemBuffer.mWritePointer = (mSystemBuffer.mWritePointer + 1) & 0x1;
@@ -328,12 +337,12 @@ unsigned int SoundCoordinator::requestDataInternal(float** buff, unsigned int fr
             SoundBuffer& readSB = mSystemBuffer.mBuffer[mSystemBuffer.mReadPointer];
 
             count = 0;
-            for (unsigned int readPoint = readSB.mReadPointer
+            for (uint32_t readPoint = readSB.mReadPointer
                 ; readPoint < readSB.mWritePointer && outFrameNum < frameNum
                 ; readPoint += mSystemChannels) {
 
-                unsigned int buffCh = 0;
-                for (unsigned int sysCh = 0; sysCh < mSystemChannels; ++sysCh) {
+                uint32_t buffCh = 0;
+                for (uint32_t sysCh = 0; sysCh < mSystemChannels; ++sysCh) {
                     if (mChOffsetMap[buffCh] == sysCh) {
                         *outBuff++ = readSB.mBuffer[readPoint + buffCh];
                         ++buffCh;
@@ -348,15 +357,16 @@ unsigned int SoundCoordinator::requestDataInternal(float** buff, unsigned int fr
             readSB.mReadPointer += count;
 
             if (readSB.mBufferSize <= readSB.mReadPointer) {
-                readSB.mReadPointer = 0;
+                readSB.mReadPointer  = 0;
                 readSB.mWritePointer = 0;
                 mSystemBuffer.mReadPointer = (mSystemBuffer.mReadPointer + 1) & 0x1;
+                calcAverageDelayTime(Utility::getCurrentTime() - readSB.mWriteTime);
             }
 
         } else { //mSystemSamplingRate != SC_SAMPLING_RATE
             SoundBuffer& readSB = mSystemBuffer.mBuffer[mSystemBuffer.mReadPointer];
 
-            unsigned int srcInDataLen = readSB.mWritePointer - readSB.mReadPointer;
+            uint32_t srcInDataLen = readSB.mWritePointer - readSB.mReadPointer;
 
             if (!mSystemSRCOutBuff) {
                 mSystemSrc.apply(&readSB.mBuffer[readSB.mReadPointer]
@@ -370,14 +380,15 @@ unsigned int SoundCoordinator::requestDataInternal(float** buff, unsigned int fr
                 readSB.mReadPointer  = 0;
                 readSB.mWritePointer = 0;
                 mSystemBuffer.mReadPointer = (mSystemBuffer.mReadPointer + 1) & 0x1;
+                calcAverageDelayTime(Utility::getCurrentTime() - readSB.mWriteTime);
             }
 
-            for (unsigned int readPoint = mSystemSRCOutFrameCurrent * SC_CHANNEL
+            for (uint32_t readPoint = mSystemSRCOutFrameCurrent * SC_CHANNEL
                 ; readPoint < mSystemSRCOutFrameLen && outFrameNum < frameNum
                 ; readPoint += mSystemChannels) {
 
-                unsigned int buffCh = 0;
-                for (unsigned int sysCh = 0; sysCh < mSystemChannels; ++sysCh) {
+                uint32_t buffCh = 0;
+                for (uint32_t sysCh = 0; sysCh < mSystemChannels; ++sysCh) {
                     if (mChOffsetMap[buffCh] == sysCh) {
                         *outBuff++ = mSystemSRCOutBuff[readPoint + buffCh];
                         ++buffCh;
@@ -425,16 +436,16 @@ void SoundCoordinator::releaseSystemBuffer()
     delete[] mSystemBuffer.mBuffer[1].mBuffer;
 }
 
-void SoundCoordinator::makeChannelOffsetMap(unsigned int mask)
+void SoundCoordinator::makeChannelOffsetMap(uint32_t mask)
 {
-    unsigned int frontL  = 0x00000001;
-    unsigned int frontR  = 0x00000002;
-    unsigned int center  = 0x00000004;
-    unsigned int lowFreq = 0x00000008;
-    unsigned int backL   = 0x00000010;
-    unsigned int backR   = 0x00000020;
-    unsigned int sideL   = 0x00000200;
-    unsigned int sideR   = 0x00000400;
+    uint32_t frontL  = 0x00000001;
+    uint32_t frontR  = 0x00000002;
+    uint32_t center  = 0x00000004;
+    uint32_t lowFreq = 0x00000008;
+    uint32_t backL   = 0x00000010;
+    uint32_t backR   = 0x00000020;
+    uint32_t sideL   = 0x00000200;
+    uint32_t sideR   = 0x00000400;
 
     mChOffsetMap[0] = 0;
     mChOffsetMap[1] = 0;
@@ -449,9 +460,9 @@ void SoundCoordinator::makeChannelOffsetMap(unsigned int mask)
         mChOffsetMap[0] = 4;
         mChOffsetMap[1] = 5;
     } else {
-        unsigned int pattern[8] = { frontL , frontR , center , lowFreq , backL , backR , sideL , sideR };
-        unsigned int ch     = 0;
-        for (unsigned int i = 0; i < 8; i++) {
+        uint32_t pattern[8] = { frontL , frontR , center , lowFreq , backL , backR , sideL , sideR };
+        uint32_t ch     = 0;
+        for (uint32_t i = 0; i < 8; i++) {
             if (mask & pattern[i]) {
                 mChOffsetMap[ch] = i;
                 ch++;
@@ -462,6 +473,13 @@ void SoundCoordinator::makeChannelOffsetMap(unsigned int mask)
         }
     }
 }
+
+void SoundCoordinator::calcAverageDelayTime(uint64_t sample)
+{
+    mAverageDelayTime += ((float)sample - mAverageDelayTime) * 0.3f;
+}
+
+
 
 void SoundCoordinator::dumpSystemBufferCondition()
 {

@@ -44,7 +44,7 @@ namespace RoseAuraMediaUtility {
 		const mkvparser::Track*		 mAudioTrack;
 		Dav1dContext*				 mDav1dContext;
 		const mkvparser::BlockEntry* mBlockEntry;
-		int							 mFrameCount;
+		unsigned int     			 mFrameCount;
 
 		Dav1dPicture				 mPicture;
 		bool						 mPictureReady;

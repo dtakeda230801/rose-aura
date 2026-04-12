@@ -1,12 +1,14 @@
 #pragma once
 
 #include <vector>
+#include <cstdint>
 
 class Utility {
 public:
 
 	/////////////////////////////////////////////
-	static void printLog(const char* format, ...);
+	static void		printLog(const char* format, ...);
+	static uint64_t getCurrentTime();
 
 	/////////////////////////////////////////////
 	template<class T>

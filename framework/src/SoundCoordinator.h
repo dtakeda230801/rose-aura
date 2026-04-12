@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <vector>
 #include <thread>
 
@@ -21,8 +22,9 @@ public:
 	RARetCode start();
 	RARetCode stop();
 
-    unsigned int getSystemSamplingRate();
-    unsigned int getSystemChannels();
+    uint32_t getSystemSamplingRate();
+    uint32_t getSystemChannels();
+    uint32_t getDelayTime();
 
     RARetCode registerRenderer(ISoundRenderer* renderer);
 
@@ -32,7 +34,10 @@ public:
 	virtual ~SoundCoordinator();
 
 private:
-	class SystemNotification :public IMMNotificationClient {
+    //////////////////////////////////////////////////////////
+    // Private Classes
+    //////////////////////////////////////////////////////////
+    class SystemNotification :public IMMNotificationClient {
 	public:
 
         ULONG STDMETHODCALLTYPE AddRef() override
@@ -87,70 +92,77 @@ private:
 	};
 
     struct SoundBuffer {
-        float*         mBuffer;
-        unsigned int   mBufferSize;
-        unsigned int   mWritePointer;
-        unsigned int   mReadPointer;
+        float*     mBuffer;
+        uint32_t   mBufferSize;
+        uint32_t   mWritePointer;
+        uint32_t   mReadPointer;
+        uint64_t   mWriteTime;
     };
 
     struct SBHolder {
-        SoundBuffer     mBuffer[2];
-        unsigned int    mWritePointer;
-        unsigned int    mReadPointer;
+        SoundBuffer mBuffer[2];
+        uint32_t    mWritePointer;
+        uint32_t    mReadPointer;
     };
 
+    //////////////////////////////////////////////////////////
     class DataWriter : public IDataWriter {
     public:
-        virtual RARetCode write(float* buff, unsigned int frameLen);
+        virtual RARetCode write(float* buff, uint32_t frameLen);
 
-        void setBuffer(float* buff, unsigned int size);
+        void setBuffer(SoundBuffer* soundBuffer);
         void reset();
 
         DataWriter();
         virtual ~DataWriter() = default;
 
     private:
-        float*          mWriteBuffer;
-        unsigned int    mWriteBufferSize;
-        unsigned int    mWroteFrame;
+        uint32_t        mWroteFrame;
+        SoundBuffer*    mSoundBuffer;
     };
 
+    //////////////////////////////////////////////////////////
+    // Private Methods
+    //////////////////////////////////////////////////////////
+    void     renderToDevice();
+    uint32_t requestDataInternal(float** buff, uint32_t frameNum);
+    void     allocateSystemBuffer();
+    void     releaseSystemBuffer();
+    void     makeChannelOffsetMap(uint32_t mask);
+    void     calcAverageDelayTime(uint64_t sample);
+    void     dumpSystemBufferCondition();
 
-    void         renderToDevice();
-    unsigned int requestDataInternal(float** buff, unsigned int frameNum);
-    void         allocateSystemBuffer();
-    void         releaseSystemBuffer();
-    void         makeChannelOffsetMap(unsigned int mask);
-    void         dumpSystemBufferCondition();
+    //////////////////////////////////////////////////////////
+    // Private Members
+    //////////////////////////////////////////////////////////
+    static constexpr uint32_t SYSTEM_BUFFER_DURATION = 200000; // 20 msec
+    static constexpr uint32_t SYSTEM_BUFFER_BASE_SIZE = 480;
 
+    static constexpr uint32_t SC_SAMPLING_RATE = 48000;
+    static constexpr uint32_t SC_CHANNEL = 2;
 
-	std::thread		mThread;
+    std::thread		mThread;
 	bool			mStarted;
     bool			mRecover;
 
-	unsigned int	mSystemChannels;
-	unsigned int	mSystemSamplingRate;
+	uint32_t	    mSystemChannels;
+	uint32_t	    mSystemSamplingRate;
+    float           mAverageDelayTime;
 
-    static constexpr unsigned int SYSTEM_BUFFER_DURATION  = 200000; // 20 msec
-    static constexpr unsigned int SYSTEM_BUFFER_BASE_SIZE = 480;
+    SBHolder        mSystemBuffer;
 
-    static constexpr unsigned int SC_SAMPLING_RATE = 48000;
-    static constexpr unsigned int SC_CHANNEL       = 2;
-
-    SBHolder       mSystemBuffer;
-
-    unsigned int   mChOffsetMap[2];
-
-    SamplingRateConverter
-                   mSystemSrc;
-
-    float*         mSystemSRCOutBuff;
-    unsigned int   mSystemSRCOutFrameCurrent;
-    unsigned int   mSystemSRCOutFrameLen;
+    uint32_t        mChOffsetMap[2];
 
     std::vector<ISoundRenderer*>
-                   mSoundData;
+        mRenderers;
 
+    DataWriter      mDataWriter;
 
-    DataWriter     mDataWriter;
+    SamplingRateConverter
+                    mSystemSrc;
+
+    float*          mSystemSRCOutBuff;
+    uint32_t        mSystemSRCOutFrameCurrent;
+    uint32_t        mSystemSRCOutFrameLen;
+
 };

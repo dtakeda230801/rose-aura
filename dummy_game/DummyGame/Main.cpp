@@ -18,6 +18,7 @@
 
 #include "CommonObjects.h"
 #include "GameObjects.h"
+#include "OpeningObjects.h"
 
 using namespace RoseAuraMediaUtility;
 using namespace RoseAuraReturnCode;
@@ -67,8 +68,12 @@ int main()
 		std::vector<IObjectRepository::OBJECT_ID> gameObjIDs
 			= GameObjects::registerObjects(*rose_aura);
 
+		std::vector<IObjectRepository::OBJECT_ID> OpeningObjIDs
+			= OpeningObjects::registerObjects(*rose_aura);
+
 		inputHandler.setConf(readInputConf());
 
+		graphicsManager.setShaderFile(OpeningObjects::CONVERT_PICTURE_SHADER);
 
 		////////////////////////////////////////////
 

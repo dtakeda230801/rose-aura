@@ -4,6 +4,7 @@
 #include "RoseAuraReturnCode.h"
 
 #include "GameObjects.h"
+#include "OpeningObjects.h"
 
 using namespace RoseAuraReturnCode;
 
@@ -72,9 +73,11 @@ namespace CommonObjects {
 			if (mActivated) {
 				mActivated = false;
 				mObjectRepository.deactivateByTag(GameObjects::TAG_GAME_OBJECT);
+				mObjectRepository.activateByTag(OpeningObjects::TAG_OPENING_OBJECT);
 			}
 			else {
 				mActivated = true;
+				mObjectRepository.deactivateByTag(OpeningObjects::TAG_OPENING_OBJECT);
 				mObjectRepository.activateByTag(GameObjects::TAG_GAME_OBJECT);
 			}
 		};
@@ -131,6 +134,10 @@ namespace CommonObjects {
 	class Background : public IGraphicsManager::IObjectRenderer
 	{
 	public:
+		void doPreprocess()
+		{
+		}
+
 		void render()
 		{
 			ClearBackground(RAYWHITE);

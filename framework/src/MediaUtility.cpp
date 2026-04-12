@@ -317,6 +317,17 @@ void VideoFileHolder::releaseVideoFrame(VideoFrame& frame)
     mImpl->releaseVideoFrame(frame);
 }
 
+uint32_t VideoFileHolder::getSamplingRate()
+{
+    return mImpl->getSamplingRate();
+
+}
+uint32_t VideoFileHolder::getChannels()
+{
+    return mImpl->getChannels();
+}
+
+
 ////////////////////////////////////////////////////
 
 VideoFileHolder::VideoFileHolderImpl::VideoFileHolderImpl(const char* path) :
@@ -566,6 +577,16 @@ void VideoFileHolder::VideoFileHolderImpl::releaseVideoFrame(VideoFrame& frame) 
     frame.mY = nullptr;
 }
 
+uint32_t VideoFileHolder::VideoFileHolderImpl::getSamplingRate()
+{
+    return mSamplingRate;
+
+}
+uint32_t VideoFileHolder::VideoFileHolderImpl::getChannels()
+{
+    return mChannels;
+}
+
 
 VideoFileHolder::VideoFileHolderImpl::~VideoFileHolderImpl()
 {
@@ -627,32 +648,54 @@ VideoFileHolder::VideoFileHolderImpl::convertPictureFormat(const Dav1dPicture& p
     frame.mWidth  = pic.p.w;
     frame.mHeight = pic.p.h;
 
-    unsigned int ySize = static_cast<unsigned int>( pic.p.h      * pic.stride[0]);
-    unsigned int uSize = static_cast<unsigned int>((pic.p.h / 2) * pic.stride[1]);
-    unsigned int vSize = static_cast<unsigned int>((pic.p.h / 2) * pic.stride[1]);
+    frame.mY = new uint8_t[frame.mWidth * frame.mHeight];
 
-    frame.mY = new unsigned char[ySize];
-    frame.mU = new unsigned char[uSize];
-    frame.mV = new unsigned char[vSize];
+    for (uint32_t y = 0; y < frame.mHeight; y++) {
+        memcpy(frame.mY + y * frame.mWidth
+             , static_cast<uint8_t*>(pic.data[0]) + y * pic.stride[0]
+             , frame.mWidth);
+    }
+
+    uint32_t uw = frame.mWidth / 2;
+    uint32_t uh = frame.mHeight;
+
+    frame.mU = new uint8_t[uw * uh];
+    frame.mV = new uint8_t[uw * uh];
+
+    for (uint32_t y = 0; y < uh; y++)
+    {
+        memcpy(frame.mU + y * uw, static_cast<uint8_t*>(pic.data[1]) + y * pic.stride[1], uw);
+        memcpy(frame.mV + y * uw, static_cast<uint8_t*>(pic.data[2]) + y * pic.stride[1], uw);
+    }
+/*
+    uint32_t ySize = static_cast<uint32_t>( pic.p.h      * pic.stride[0]);
+    uint32_t uSize = static_cast<uint32_t>((pic.p.h / 2) * pic.stride[1]);
+    uint32_t vSize = static_cast<uint32_t>((pic.p.h / 2) * pic.stride[1]);
+
+    frame.mY = new uint8_t[ySize];
+    frame.mU = new uint8_t[uSize];
+    frame.mV = new uint8_t[vSize];
     
-    unsigned char* srcStart; 
-    unsigned char* srcEnd;
+    uint8_t* srcStart;
+    uint8_t* srcEnd;
 
-    srcStart = static_cast<unsigned char*>(pic.data[0]);
-    srcEnd   = static_cast<unsigned char*>(pic.data[0]) + ySize;
+    srcStart = static_cast<uint8_t*>(pic.data[0]);
+    srcEnd   = static_cast<uint8_t*>(pic.data[0]) + ySize;
     std::copy(srcStart, srcEnd, frame.mY);
 
-    srcStart = static_cast<unsigned char*>(pic.data[1]);
-    srcEnd   = static_cast<unsigned char*>(pic.data[1]) + uSize;
+    srcStart = static_cast<uint8_t*>(pic.data[1]);
+    srcEnd   = static_cast<uint8_t*>(pic.data[1]) + uSize;
     std::copy(srcStart, srcEnd, frame.mU);
 
-    srcStart = static_cast<unsigned char*>(pic.data[2]);
-    srcEnd   = static_cast<unsigned char*>(pic.data[2]) + vSize;
+    srcStart = static_cast<uint8_t*>(pic.data[2]);
+    srcEnd   = static_cast<uint8_t*>(pic.data[2]) + vSize;
     std::copy(srcStart, srcEnd, frame.mV);
+*/
+    frame.mStrideY = static_cast<uint32_t>(pic.stride[0]);
+    frame.mStrideU = static_cast<uint32_t>(pic.stride[1]);
+    frame.mStrideV = static_cast<uint32_t>(pic.stride[1]);
 
-    frame.mStrideY = static_cast<unsigned int>(pic.stride[0]);
-    frame.mStrideU = static_cast<unsigned int>(pic.stride[1]);
-    frame.mStrideV = static_cast<unsigned int>(pic.stride[1]);
+    frame.mTimestamp = pic.m.timestamp;
 
     return frame;
 }

@@ -50,6 +50,10 @@ namespace GameObjects {
 	class GameWorld : public IGraphicsManager::IObjectRenderer
 	{
 	public:
+		void doPreprocess()
+		{
+		}
+
 		void render()
 		{
 			Rectangle rect = { static_cast<float>(gWorldConf.mWorldSpace.mMin.mX)
@@ -85,6 +89,10 @@ namespace GameObjects {
 		              , public IWorldNavigator::IActiveSpaceCallback
 	{
 	public:
+		void doPreprocess()
+		{
+		}
+
 		void render()
 		{
 			std::lock_guard<std::mutex> lock(mMutex);
@@ -142,6 +150,10 @@ namespace GameObjects {
 	{
 	public:
 		//IObjectRenderer
+		void doPreprocess()
+		{
+		}
+
 		void render()
 		{
 			std::lock_guard<std::mutex> lock(mMutex);
@@ -202,6 +214,10 @@ namespace GameObjects {
 		, public IInputHandler::IInputHandlerCallback
 	{
 	public:
+		void doPreprocess()
+		{
+		}
+
 		void render()
 		{
 			IWorldNavigator::Vec3 pos = mWorldNavigator.getPosition();
@@ -328,6 +344,10 @@ namespace GameObjects {
 		}
 
 		//IObjectRenderer
+		void doPreprocess()
+		{
+		}
+
 		void render()
 		{
 			std::lock_guard<std::mutex> lock(mMutex);
@@ -597,6 +617,8 @@ namespace GameObjects {
 		bool               mNoFinish;
 	};
 
+	//////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////
 	std::vector<IObjectRepository::OBJECT_ID> registerObjects(RoseAura& ra)
 	{
 		std::vector<IObjectRepository::OBJECT_ID> ids;

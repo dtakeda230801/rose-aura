@@ -20,10 +20,14 @@ namespace RoseAuraMediaUtility {
 
 		DecoderReturnCode decode();
 
-		bool getAudioFrame(float** buff, unsigned int* returnFrameLen, unsigned int requestFrameLen);
-		bool getVideoFrame(VideoFileHolder::VideoFrame& videoFrame);
+		bool     getAudioFrame(float** buff, unsigned int* returnFrameLen, unsigned int requestFrameLen);
+		bool     getVideoFrame(VideoFileHolder::VideoFrame& videoFrame);
 
-		void releaseVideoFrame(VideoFrame& frame);
+		void     releaseVideoFrame(VideoFrame& frame);
+
+		uint32_t getSamplingRate();
+		uint32_t getChannels();
+
 
 		virtual ~VideoFileHolderImpl();
 	private:

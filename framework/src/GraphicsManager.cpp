@@ -1,8 +1,9 @@
+#include "raylib.h"
+
 #include "GraphicsManager.h"
 #include "Utility.h"
 
-#include "raylib.h"
- 
+
 ////////////////////////////////////
 // APIs
 ////////////////////////////////////
@@ -11,13 +12,23 @@ void GraphicsManager::runUntilClosed()
 	InitWindow(800, 600, "Rose Aura");
 	SetTargetFPS(60);
 
+	for (auto& holder : mShaderHolders) {
+		Shader* shader = static_cast<Shader*>(holder.mShader);
+		*(shader)      = LoadShader(0, holder.mFileName.c_str());
+	}
+
 	while (!WindowShouldClose())
 	{
-		BeginDrawing();
-
 		mMutex.lock();
 		std::vector<IObjectRenderer*> renderers = mRenderers;
 		mMutex.unlock();
+
+		for (IObjectRenderer* renderer : renderers)
+		{
+			renderer->doPreprocess();
+		}
+
+		BeginDrawing();
 
 		for (IObjectRenderer* renderer : renderers)
 		{
@@ -26,6 +37,14 @@ void GraphicsManager::runUntilClosed()
 
 		EndDrawing();
 	}
+
+	for (auto& holder : mShaderHolders) {
+		Shader* shader = static_cast<Shader*>(holder.mShader);
+		UnloadShader(*shader);
+		delete shader;
+	}
+
+
 
 	CloseWindow();
 }
@@ -59,6 +78,24 @@ RARetCode GraphicsManager::removeRenderer(IObjectRenderer* renderer)
 
 	return ret;
 }
+
+RARetCode GraphicsManager::setShaderFile(std::string file)
+{
+	mShaderHolders.emplace_back(ShaderHolder{ static_cast<void*>(new Shader()), file });
+	return RARetCode::RET_OK;
+}
+
+void* GraphicsManager::getShader(std::string file)
+{
+	for (auto& shaderHolder : mShaderHolders) {
+		if (shaderHolder.mFileName == file) {
+			return shaderHolder.mShader;
+		}
+	}
+	return nullptr;
+}
+
+
 
 ////////////////////////////////////
 // Private

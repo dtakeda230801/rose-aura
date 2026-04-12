@@ -163,6 +163,7 @@ kernel32.lib;opus.lib;opusfile.lib;ogg.lib;dav1d.lib;%(AdditionalDependencies)</
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="ConvertPicture.fs" />
     <None Include="input_map.json" />
     <None Include="Seeker.opus" />
   </ItemGroup>

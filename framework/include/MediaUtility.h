@@ -63,16 +63,18 @@ namespace RoseAuraMediaUtility {
 	public:
 
 		struct VideoFrame {
-			unsigned int mWidth;
-			unsigned int mHeight;
+			uint32_t mWidth;
+			uint32_t mHeight;
 
-			unsigned char* mY;
-			unsigned char* mU;
-			unsigned char* mV;
+			uint8_t* mY;
+			uint8_t* mU;
+			uint8_t* mV;
 
-			int mStrideY;
-			int mStrideU;
-			int mStrideV;
+			uint32_t mStrideY;
+			uint32_t mStrideU;
+			uint32_t mStrideV;
+
+			uint64_t mTimestamp;
 		};
 
 		enum class DecoderReturnCode {
@@ -86,10 +88,13 @@ namespace RoseAuraMediaUtility {
 
 		DecoderReturnCode decode();
 
-		bool getAudioFrame(float** buff, unsigned int* returnFrameLen, unsigned int requestFrameLen);
-		bool getVideoFrame(VideoFrame& videoFrame);
+		bool     getAudioFrame(float** buff, unsigned int* returnFrameLen, unsigned int requestFrameLen);
+		bool     getVideoFrame(VideoFrame& videoFrame);
 
-		void releaseVideoFrame(VideoFrame& frame);
+		void     releaseVideoFrame(VideoFrame& frame);
+
+		uint32_t getSamplingRate();
+		uint32_t getChannels();
 
 		virtual ~VideoFileHolder() = default;
 	private:

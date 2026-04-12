@@ -26,4 +26,15 @@
   <ItemGroup>
     <Media Include="test.wav" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CommonObjects.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="GameObjects.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="OpeningObjects.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>

@@ -169,6 +169,11 @@ kernel32.lib;opus.lib;opusfile.lib;ogg.lib;dav1d.lib;%(AdditionalDependencies)</
   <ItemGroup>
     <Media Include="test.wav" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CommonObjects.h" />
+    <ClInclude Include="GameObjects.h" />
+    <ClInclude Include="OpeningObjects.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

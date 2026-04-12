@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include <thread>
+#include <mutex>
 
 #include "ISoundCoordinator.h"
 #include "sound/SamplingRateConverter.h"
@@ -27,6 +28,7 @@ public:
     uint32_t getDelayTime();
 
     RARetCode registerRenderer(ISoundRenderer* renderer);
+    RARetCode unregisterRenderer(ISoundRenderer* renderer);
 
     void recover();
 
@@ -144,6 +146,7 @@ private:
     std::thread		mThread;
 	bool			mStarted;
     bool			mRecover;
+    std::mutex      mMutex;
 
 	uint32_t	    mSystemChannels;
 	uint32_t	    mSystemSamplingRate;

@@ -19,7 +19,6 @@ public:
 	class ISoundRenderer {
 	public:
 		virtual RARetCode requestData(uint32_t requestFrameLen, uint32_t* returnFrameLen, IDataWriter& writer) = 0;
-
 		virtual ~ISoundRenderer() = default;
 	protected:
 		ISoundRenderer() = default;
@@ -35,5 +34,6 @@ public:
 	virtual uint32_t getSystemChannels()     = 0;
 	virtual uint32_t getDelayTime()          = 0;
 
-	virtual RARetCode registerRenderer(ISoundRenderer* renderer) = 0;
+	virtual RARetCode registerRenderer(ISoundRenderer* renderer)   = 0;
+	virtual RARetCode unregisterRenderer(ISoundRenderer* renderer) = 0;
 };

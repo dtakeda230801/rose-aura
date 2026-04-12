@@ -8,6 +8,7 @@
 #include <audioclient.h>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <atlcomcli.h>
 
 #pragma comment(lib, "ole32.lib")
@@ -58,8 +59,26 @@ uint32_t SoundCoordinator::getDelayTime()
 
 RARetCode SoundCoordinator::registerRenderer(ISoundRenderer* renderer)
 {
+    mMutex.lock();
     mRenderers.push_back(renderer);
+    mMutex.unlock();
     return RARetCode::RET_OK;
+}
+
+RARetCode SoundCoordinator::unregisterRenderer(ISoundRenderer* renderer)
+{
+    RARetCode ret = RARetCode::RET_OK;
+
+    if (!renderer) {
+        return RARetCode::RET_ERR_INVALID_ARG;
+    }
+
+    mMutex.lock();
+    if (0 != Utility::eraseVectorElm(mRenderers, renderer)) {
+        ret = RARetCode::RET_ERR_INVALID_ARG;
+    }
+    mMutex.unlock();
+    return ret;
 }
 
 
@@ -290,6 +309,7 @@ uint32_t SoundCoordinator::requestDataInternal(float** buff, uint32_t frameNum)
 
             uint32_t retFrameMax = 0;
 
+            mMutex.lock();
             for (auto ite = mRenderers.begin(); ite != mRenderers.end(); )
             {
                 RARetCode       ret;
@@ -313,6 +333,7 @@ uint32_t SoundCoordinator::requestDataInternal(float** buff, uint32_t frameNum)
                 }
             }
             writeSB.mWritePointer += retFrameMax * SC_CHANNEL;
+            mMutex.unlock();
         }
 
         count = 0;

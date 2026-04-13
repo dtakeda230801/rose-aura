@@ -47,33 +47,33 @@ namespace OpeningObjects {
 					mVideoWork.mLocV = GetShaderLocation(*shader, "texV");
 
 					Image imgY = {
-						.data = malloc(mVideoWork.mWidth * mVideoWork.mHeight),
-						.width = mVideoWork.mWidth,
-						.height = mVideoWork.mHeight,
+						.data    = malloc(mVideoWork.mWidth * mVideoWork.mHeight),
+						.width   = mVideoWork.mWidth,
+						.height  = mVideoWork.mHeight,
 						.mipmaps = 1,
-						.format = PIXELFORMAT_UNCOMPRESSED_GRAYSCALE
+						.format  = PIXELFORMAT_UNCOMPRESSED_GRAYSCALE
 					};
 
 					mVideoWork.mTexY = LoadTextureFromImage(imgY);
 					free(imgY.data);
 
 					Image imgU = {
-						.data = malloc(mVideoWork.mWidth /2 * mVideoWork.mHeight),
-						.width = mVideoWork.mWidth /2,
-						.height = mVideoWork.mHeight,
+						.data    = malloc(mVideoWork.mWidth /2 * mVideoWork.mHeight),
+						.width   = mVideoWork.mWidth /2,
+						.height  = mVideoWork.mHeight,
 						.mipmaps = 1,
-						.format = PIXELFORMAT_UNCOMPRESSED_GRAYSCALE
+						.format  = PIXELFORMAT_UNCOMPRESSED_GRAYSCALE
 					};
 
 					mVideoWork.mTexU = LoadTextureFromImage(imgU);
 					free(imgU.data);
 
 					Image imgV = {
-						.data = malloc(mVideoWork.mWidth / 2 * mVideoWork.mHeight),
-						.width = mVideoWork.mWidth / 2,
-						.height = mVideoWork.mHeight,
+						.data    = malloc(mVideoWork.mWidth / 2 * mVideoWork.mHeight),
+						.width   = mVideoWork.mWidth / 2,
+						.height  = mVideoWork.mHeight,
 						.mipmaps = 1,
-						.format = PIXELFORMAT_UNCOMPRESSED_GRAYSCALE
+						.format  = PIXELFORMAT_UNCOMPRESSED_GRAYSCALE
 					};
 
 					mVideoWork.mTexV = LoadTextureFromImage(imgV);
@@ -113,6 +113,35 @@ namespace OpeningObjects {
 			*(returnFrameLen) = 0;
 
 			while (*(returnFrameLen) < requestFrameLen) {
+				float*		readBuffer;
+				uint32_t	availFrameLen;
+
+				mMultiBlockBuffer->getReadBuffer(readBuffer, availFrameLen);
+
+				if (!readBuffer || availFrameLen == 0) {
+					wakeUp();
+					continue;
+				}
+
+				uint32_t writeFrameLen;
+				if (requestFrameLen <= availFrameLen) {
+					writeFrameLen = requestFrameLen;
+				} else {
+					writeFrameLen = availFrameLen;
+				}
+
+				if (RARetCode::RET_OK != writer.write(readBuffer, writeFrameLen)) {
+					Utility::printLog("writer returned error");
+					continue;
+				}
+
+				mMultiBlockBuffer->updateReadBuffer(writeFrameLen,nullptr);
+				*(returnFrameLen) += writeFrameLen;
+			}
+			wakeUp();
+
+			/*
+			while (*(returnFrameLen) < requestFrameLen) {
 				uint32_t writeSize;
 				float*   writePointer;
 
@@ -137,6 +166,7 @@ namespace OpeningObjects {
 				}
 				wakeUp();
 			}
+			*/
 			Utility::printLog("requestData out: (%d) (%d)", *(returnFrameLen), requestFrameLen);
 			return RARetCode::RET_OK;
 		}
@@ -178,10 +208,27 @@ namespace OpeningObjects {
 				uint32_t    requestFrameLen;
 
 				while (aFrameRet) {
-					if (mAudioWritePointer == AUDIO_BUFFER_FRAME_LEN) {
+
+					mMultiBlockBuffer->getWriteBuffer(buffer, requestFrameLen);
+
+					if (!buffer || requestFrameLen == 0) {
 						break;
 					}
 
+					aFrameRet = mVideoFileHolder->getAudioFrame(&buffer, &returnFrameLen, requestFrameLen);
+
+					if (aFrameRet) {
+						mMultiBlockBuffer->updateWriteBuffer(returnFrameLen, nullptr);
+					} else {
+						mDecoderResult = VideoFileHolder::DecoderReturnCode::CONTINUE;
+						break;
+					}
+
+
+					/*
+					if (mAudioWritePointer == AUDIO_BUFFER_FRAME_LEN) {
+						break;
+					}
 					buffer          = mAudioBuffer + (mAudioWritePointer * mVideoFileHolder->getChannels());
 					requestFrameLen = AUDIO_BUFFER_FRAME_LEN - mAudioWritePointer;
 					aFrameRet       = mVideoFileHolder->getAudioFrame(&buffer, &returnFrameLen, requestFrameLen);
@@ -194,6 +241,7 @@ namespace OpeningObjects {
 						mDecoderResult = VideoFileHolder::DecoderReturnCode::CONTINUE;
 						break;
 					}
+					*/
 				}
 			}
 
@@ -205,30 +253,17 @@ namespace OpeningObjects {
 		void init()
 		{
 			mVideoWork.mInitialized = false;
-
-			mAudioBuffer = new float[AUDIO_BUFFER_FRAME_LEN * mVideoFileHolder->getChannels()];
 			mAudioDelay = mSoundCoordinator.getDelayTime();
 			mGraphicsManager.setRenderer(this);
 			mSoundCoordinator.registerRenderer(this);
-			startDecodeThread();
+			start();
 		}
 
 		void fin()
 		{
-			termDecodeThread();
-			mGraphicsManager.removeRenderer(this);
-			delete[] mAudioBuffer;
-			mSoundCoordinator.unregisterRenderer(this);
-		}
-
-		void startDecodeThread()
-		{
-			start();
-		}
-
-		void termDecodeThread()
-		{
 			finish();
+			mGraphicsManager.removeRenderer(this);
+			mSoundCoordinator.unregisterRenderer(this);
 		}
 
 		Movie(RoseAura& ra) :
@@ -236,17 +271,20 @@ namespace OpeningObjects {
 			, mSoundCoordinator(ra.getSoundCoordinator())
 			, mDecoderResult(VideoFileHolder::DecoderReturnCode::CONTINUE)
 			, mVideoFileHolder(std::make_unique<VideoFileHolder>("test.webm"))
-			, mAudioBuffer(nullptr)
-			, mAudioWritePointer(0)
-			, mAudioReadPointer(0)
+			, mMultiBlockBuffer(nullptr)
 			, mAudioDelay(0)
+			, mVideoPool{}
 			, mVideoPoolWritePointer(0)
 		    , mVideoPoolReadPointer(0)
 		    , mVideoPoolAvailable(VIDEO_BUFFER_FRAME_LEN)
 			, mVideoWork{}
 		{
+			mMultiBlockBuffer = new MultiBlockBuffer(AUDIO_BUFFER_BLOCK_NUM, AUDIO_BUFFER_FRAME_LEN, AUDIO_BUFFER_CHANNELS);
 		}
-		virtual ~Movie() = default;
+
+		virtual ~Movie() {
+			delete mMultiBlockBuffer;
+		};
 
 	private:
 		struct VideoWork {
@@ -261,7 +299,12 @@ namespace OpeningObjects {
 			bool        mInitialized;
 		};
 
-		static constexpr uint32_t	AUDIO_BUFFER_FRAME_LEN = 960*2;
+		MultiBlockBuffer*
+						mMultiBlockBuffer;
+
+		static constexpr uint32_t	AUDIO_BUFFER_BLOCK_NUM = 3;
+		static constexpr uint32_t	AUDIO_BUFFER_FRAME_LEN = 480;
+		static constexpr uint32_t	AUDIO_BUFFER_CHANNELS  = 2;
 		static constexpr uint32_t	VIDEO_BUFFER_FRAME_LEN = 3;
 
 		IGraphicsManager&  mGraphicsManager;
@@ -271,10 +314,6 @@ namespace OpeningObjects {
 
 		std::unique_ptr<VideoFileHolder>
 						   mVideoFileHolder;
-
-		float*			   mAudioBuffer;
-		uint32_t           mAudioWritePointer;
-		uint32_t		   mAudioReadPointer;
 
 		VideoFileHolder::VideoFrame 
 					      mVideoPool[VIDEO_BUFFER_FRAME_LEN];
@@ -286,8 +325,6 @@ namespace OpeningObjects {
 						  mDecoderResult;
 
 		VideoWork		  mVideoWork;
-
-		std::mutex        mAudioBufferMutex;
 	};
 
 	//////////////////////////////////////////////////////////////

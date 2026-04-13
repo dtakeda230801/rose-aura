@@ -7,6 +7,8 @@
 
 #include "ISoundCoordinator.h"
 #include "sound/SamplingRateConverter.h"
+#include "sound/MultiBlockBuffer.h"
+
 #include "Utility.h"
 
 #include <mmdeviceapi.h>
@@ -112,15 +114,16 @@ private:
     public:
         virtual RARetCode write(float* buff, uint32_t frameLen);
 
-        void setBuffer(SoundBuffer* soundBuffer);
+        void setBuffer(float*& buffer, uint32_t availFrames);
         void reset();
 
         DataWriter();
         virtual ~DataWriter() = default;
 
     private:
-        uint32_t        mWroteFrame;
-        SoundBuffer*    mSoundBuffer;
+        uint32_t    mWroteFrame;
+        uint32_t    mWriteAvailFrames;
+        float*      mWriteBuffer;
     };
 
     //////////////////////////////////////////////////////////
@@ -139,6 +142,7 @@ private:
     //////////////////////////////////////////////////////////
     static constexpr uint32_t SYSTEM_BUFFER_DURATION = 200000; // 20 msec
     static constexpr uint32_t SYSTEM_BUFFER_BASE_SIZE = 480;
+    static constexpr uint32_t SYSTEM_BUFFER_BLOCK_NUM = 2;
 
     static constexpr uint32_t SC_SAMPLING_RATE = 48000;
     static constexpr uint32_t SC_CHANNEL = 2;
@@ -153,6 +157,9 @@ private:
     float           mAverageDelayTime;
 
     SBHolder        mSystemBuffer;
+
+    std::unique_ptr<MultiBlockBuffer>
+                    mSystemBuffer2;
 
     uint32_t        mChOffsetMap[2];
 

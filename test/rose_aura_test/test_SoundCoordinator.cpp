@@ -11,6 +11,8 @@
 #include <RoseAura.h>
 #include "MediaUtility.h"
 #include "sound/SamplingRateConverter.h"
+#include "sound/MultiBlockBuffer.h"
+
 
 using namespace RoseAuraMediaUtility;
 
@@ -128,4 +130,100 @@ TEST(testSamplingRateConverter, BehaviourTest)
         delete waveFileHolder;
 	}
 	ROSE_AURA_TEST_FIN;
+}
+
+void fillBuffer(float*& buff, uint32_t frameLen)
+{
+    for (uint32_t f = 0; f < frameLen; ++f) {
+        for (uint32_t ch = 0; ch < 2; ++ch) {
+            *buff++ = f + (ch * frameLen);
+        }
+    }
+}
+
+bool checkBuffer(float*& buff, uint32_t frameLen)
+{
+    bool ret = true;
+
+    for (uint32_t f = 0; f < frameLen; ++f) {
+        for (uint32_t ch = 0; ch < 2; ++ch) {
+            if (*buff++ != (float)(f + (ch * frameLen))) {
+                ret = false;
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
+
+TEST(testMultiBlockBuffer, BehaviourTest)
+{
+    ROSE_AURA_TEST_BEGIN;
+    {
+        bool        ret;
+        float*      buff;
+        uint32_t    frameLen;
+        uint64_t    attribute;
+
+        MultiBlockBuffer* mbBuffer = new MultiBlockBuffer(2, 16, 2);
+
+        mbBuffer->getWriteBuffer(buff, frameLen);
+        EXPECT_NE(buff, nullptr);
+        EXPECT_NE(frameLen, 0);
+
+        fillBuffer(buff, frameLen);
+
+        attribute = 128;
+        ret = mbBuffer->updateWriteBuffer(frameLen, &attribute);
+        EXPECT_TRUE(ret);
+
+        mbBuffer->getWriteBuffer(buff, frameLen);
+        EXPECT_NE(buff, nullptr);
+        EXPECT_NE(frameLen, 0);
+
+        fillBuffer(buff, frameLen);
+
+        attribute = 128;
+        ret = mbBuffer->updateWriteBuffer(frameLen, &attribute);
+        EXPECT_TRUE(ret);
+
+        mbBuffer->getWriteBuffer(buff, frameLen);
+        EXPECT_EQ(buff, nullptr);
+        EXPECT_EQ(frameLen, 0);
+
+        //////
+        mbBuffer->getReadBuffer(buff, frameLen);
+        EXPECT_NE(buff, nullptr);
+        EXPECT_NE(frameLen, 0);
+
+        ret = checkBuffer(buff, frameLen);
+        EXPECT_TRUE(ret);
+
+        ret = mbBuffer->updateReadBuffer(frameLen, attribute);
+        EXPECT_TRUE(ret);
+        EXPECT_EQ(attribute,128);
+
+        mbBuffer->getReadBuffer(buff, frameLen);
+        EXPECT_NE(buff, nullptr);
+        EXPECT_NE(frameLen, 0);
+
+        ret = checkBuffer(buff, frameLen);
+        EXPECT_TRUE(ret);
+
+        ret = mbBuffer->updateReadBuffer(frameLen, attribute);
+        EXPECT_TRUE(ret);
+        EXPECT_EQ(attribute, 128);
+
+        mbBuffer->getReadBuffer(buff, frameLen);
+        EXPECT_EQ(buff, nullptr);
+        EXPECT_EQ(frameLen, 0);
+        ///
+        mbBuffer->getWriteBuffer(buff, frameLen);
+        EXPECT_NE(buff, nullptr);
+        EXPECT_NE(frameLen, 0);
+
+        delete mbBuffer;
+    }
+    ROSE_AURA_TEST_FIN;
 }

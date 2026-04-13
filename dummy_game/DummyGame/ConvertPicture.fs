@@ -9,13 +9,12 @@ uniform sampler2D texV;
 
 void main()
 {
-    // Yはフル解像度
-    vec2 uvY = fragTexCoord;
+    // Y（フル解像度）
+    float y = texture(texY, fragTexCoord).r;
 
-    // U/Vは横だけ1/2（YUV422）
+    // 422：横だけ1/2
     vec2 uvUV = vec2(fragTexCoord.x * 0.5, fragTexCoord.y);
 
-    float y = texture(texY, uvY).r;
     float u = texture(texU, uvUV).r - 0.5;
     float v = texture(texV, uvUV).r - 0.5;
 

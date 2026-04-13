@@ -23,8 +23,8 @@
 using namespace RoseAuraMediaUtility;
 using namespace RoseAuraReturnCode;
 
-#define WIN_SIZE_W 800
-#define WIN_SIZE_H 600
+#define WIN_SIZE_W 1400
+#define WIN_SIZE_H 800
 
 ////////////////////////////////////////////
 ////////////////////////////////////////////

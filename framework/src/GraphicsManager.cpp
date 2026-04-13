@@ -9,7 +9,7 @@
 ////////////////////////////////////
 void GraphicsManager::runUntilClosed()
 {
-	InitWindow(800, 600, "Rose Aura");
+	InitWindow(1400, 800, "Rose Aura");
 	SetTargetFPS(60);
 
 	for (auto& holder : mShaderHolders) {

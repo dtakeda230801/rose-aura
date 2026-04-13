@@ -10,6 +10,10 @@ using namespace RoseAuraReturnCode;
 class TestRenderer : public IGraphicsManager::IObjectRenderer {
 public:
 
+	void doPreprocess() {
+
+	}
+
 	void render()
 	{
 		DrawText("Close this window", 190, 200, 30, DARKGRAY);

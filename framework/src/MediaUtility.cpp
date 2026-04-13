@@ -645,28 +645,47 @@ VideoFileHolder::VideoFileHolderImpl::convertPictureFormat(const Dav1dPicture& p
 {
     VideoFileHolder::VideoFrame frame;
 
+    uint16_t* srcY;
+    uint16_t* srcU;
+    uint16_t* srcV;
+    uint32_t  stride;
+
     frame.mWidth  = pic.p.w;
     frame.mHeight = pic.p.h;
-
+    //////////////////////////
     frame.mY = new uint8_t[frame.mWidth * frame.mHeight];
 
+    srcY = static_cast<uint16_t*>(pic.data[0]);
+    stride = pic.stride[0] / 2;
+
     for (uint32_t y = 0; y < frame.mHeight; y++) {
-        memcpy(frame.mY + y * frame.mWidth
-             , static_cast<uint8_t*>(pic.data[0]) + y * pic.stride[0]
-             , frame.mWidth);
+        for (uint32_t x = 0; x < frame.mWidth; x++) {
+            uint16_t val = srcY[y * stride + x];
+            frame.mY[y * frame.mWidth + x] = static_cast<uint8_t>(val >> 2);
+        }
+    }
+    //////////////////////////
+    frame.mU = new uint8_t[frame.mWidth / 2 * frame.mHeight];
+    frame.mV = new uint8_t[frame.mWidth / 2 * frame.mHeight];
+
+    srcU = static_cast<uint16_t*>(pic.data[1]);
+    srcV = static_cast<uint16_t*>(pic.data[2]);
+    stride = pic.stride[1] / 2;
+
+    for (uint32_t y = 0; y < frame.mHeight; y++) {
+        for (uint32_t x = 0; x < frame.mWidth/2; x++) {
+            frame.mU[y * frame.mWidth / 2 + x] = (uint8_t)(srcU[y * stride + x] >> 2);
+            frame.mV[y * frame.mWidth / 2 + x] = (uint8_t)(srcV[y * stride + x] >> 2);
+        }
     }
 
-    uint32_t uw = frame.mWidth / 2;
-    uint32_t uh = frame.mHeight;
-
-    frame.mU = new uint8_t[uw * uh];
-    frame.mV = new uint8_t[uw * uh];
-
+    /*
     for (uint32_t y = 0; y < uh; y++)
     {
         memcpy(frame.mU + y * uw, static_cast<uint8_t*>(pic.data[1]) + y * pic.stride[1], uw);
         memcpy(frame.mV + y * uw, static_cast<uint8_t*>(pic.data[2]) + y * pic.stride[1], uw);
     }
+    */
 /*
     uint32_t ySize = static_cast<uint32_t>( pic.p.h      * pic.stride[0]);
     uint32_t uSize = static_cast<uint32_t>((pic.p.h / 2) * pic.stride[1]);

@@ -25,18 +25,6 @@ namespace OpeningObjects {
 		        , public PreRenderThread
 	{
 	public:
-		int32_t locY = 0;
-		int32_t locU = 0;
-		int32_t locV = 0;
-		Texture2D texY;
-		Texture2D texU;
-		Texture2D texV;
-		int32_t w = 0;
-		int32_t h = 0;
-
-		bool    initialized = false;
-		bool    frameReady = false;
-
 		void doPreprocess()
 		{
 			if (mVideoPoolAvailable < VIDEO_BUFFER_FRAME_LEN) {
@@ -46,75 +34,73 @@ namespace OpeningObjects {
 					mVideoPoolReadPointer = 0;
 				}
 				++mVideoPoolAvailable;
-				if (!initialized) {
-					initialized = true;
+				if (!mVideoWork.mInitialized) {
+					mVideoWork.mInitialized = true;
 
 					Shader* shader = SHADER_POINTER(mGraphicsManager.getShader(CONVERT_PICTURE_SHADER));
 
-					w = frame.mWidth;
-					h = frame.mHeight;
+					mVideoWork.mWidth  = frame.mWidth;
+					mVideoWork.mHeight = frame.mHeight;
 
-					locY = GetShaderLocation(*shader, "texY");
-					locU = GetShaderLocation(*shader, "texU");
-					locV = GetShaderLocation(*shader, "texV");
+					mVideoWork.mLocY = GetShaderLocation(*shader, "texY");
+					mVideoWork.mLocU = GetShaderLocation(*shader, "texU");
+					mVideoWork.mLocV = GetShaderLocation(*shader, "texV");
 
 					Image imgY = {
-						.data = malloc(w * h),
-						.width = w,
-						.height = h,
+						.data = malloc(mVideoWork.mWidth * mVideoWork.mHeight),
+						.width = mVideoWork.mWidth,
+						.height = mVideoWork.mHeight,
 						.mipmaps = 1,
 						.format = PIXELFORMAT_UNCOMPRESSED_GRAYSCALE
 					};
 
-					texY = LoadTextureFromImage(imgY);
+					mVideoWork.mTexY = LoadTextureFromImage(imgY);
+					free(imgY.data);
 
 					Image imgU = {
-						.data = malloc(w/2 * h),
-						.width = w/2,
-						.height = h,
+						.data = malloc(mVideoWork.mWidth /2 * mVideoWork.mHeight),
+						.width = mVideoWork.mWidth /2,
+						.height = mVideoWork.mHeight,
 						.mipmaps = 1,
 						.format = PIXELFORMAT_UNCOMPRESSED_GRAYSCALE
 					};
 
-					texU = LoadTextureFromImage(imgU);
+					mVideoWork.mTexU = LoadTextureFromImage(imgU);
+					free(imgU.data);
 
 					Image imgV = {
-						.data = malloc(w / 2 * h),
-						.width = w / 2,
-						.height = h,
+						.data = malloc(mVideoWork.mWidth / 2 * mVideoWork.mHeight),
+						.width = mVideoWork.mWidth / 2,
+						.height = mVideoWork.mHeight,
 						.mipmaps = 1,
 						.format = PIXELFORMAT_UNCOMPRESSED_GRAYSCALE
 					};
 
-					texV = LoadTextureFromImage(imgV);
+					mVideoWork.mTexV = LoadTextureFromImage(imgV);
+					free(imgV.data);
 				}
 
-				Utility::printLog("frame: %u x %u", frame.mWidth, frame.mHeight);
-				Utility::printLog("texY : %d x %d", texY.width, texY.height);
-
-				UpdateTexture(texY, frame.mY);
-				UpdateTexture(texU, frame.mU);
-				UpdateTexture(texV, frame.mV);
+				UpdateTexture(mVideoWork.mTexY, frame.mY);
+				UpdateTexture(mVideoWork.mTexU, frame.mU);
+				UpdateTexture(mVideoWork.mTexV, frame.mV);
 
 				mVideoFileHolder->releaseVideoFrame(frame);
-
-				frameReady = true;
+				wakeUp();
 			}
 		}
 
 		void render()
 		{
-			if (frameReady) {
-				frameReady = false;
+			if (mVideoWork.mInitialized) {
 				Shader* shader = SHADER_POINTER(mGraphicsManager.getShader(CONVERT_PICTURE_SHADER));
 
 				BeginShaderMode(*shader);
 
-				SetShaderValueTexture(*shader, locY, texY);
-				SetShaderValueTexture(*shader, locU, texU);
-				SetShaderValueTexture(*shader, locV, texV);
+				SetShaderValueTexture(*shader, mVideoWork.mLocY, mVideoWork.mTexY);
+				SetShaderValueTexture(*shader, mVideoWork.mLocU, mVideoWork.mTexU);
+				SetShaderValueTexture(*shader, mVideoWork.mLocV, mVideoWork.mTexV);
 
-				DrawRectangle(0, 0, w, h, WHITE);
+				DrawRectangle(0, 0, mVideoWork.mWidth, mVideoWork.mHeight, WHITE);
 
 				EndShaderMode();
 			}
@@ -122,14 +108,13 @@ namespace OpeningObjects {
 
 		RARetCode requestData(unsigned int requestFrameLen, unsigned int* returnFrameLen, ISoundCoordinator::IDataWriter& writer)
 		{
-			Utility::printLog("requestData in");
 			RARetCode ret;
 
 			*(returnFrameLen) = 0;
 
 			while (*(returnFrameLen) < requestFrameLen) {
 				uint32_t writeSize;
-				float* writePointer;
+				float*   writePointer;
 
 				writeSize    = mAudioWritePointer - mAudioReadPointer;
 				writePointer = mAudioBuffer + mAudioReadPointer;
@@ -144,30 +129,26 @@ namespace OpeningObjects {
 						mAudioReadPointer += writeSize;
 						*(returnFrameLen) += writeSize;
 					}
-				} else {
-					wakeUp();
 				}
-
 
 				if (mAudioWritePointer == mAudioReadPointer) {
 					mAudioReadPointer  = 0;
 					mAudioWritePointer = 0;
-					wakeUp();
 				}
+				wakeUp();
 			}
 			Utility::printLog("requestData out: (%d) (%d)", *(returnFrameLen), requestFrameLen);
 			return RARetCode::RET_OK;
 		}
 
 		void doWork() {
-			Utility::printLog("doWork in");
 
 			if (mDecoderResult == VideoFileHolder::DecoderReturnCode::CONTINUE) {
 				mDecoderResult = mVideoFileHolder->decode();
 			}
 
 			if (mDecoderResult == VideoFileHolder::DecoderReturnCode::VIDEO) {
-				Utility::printLog("VIDEO");
+				//Utility::printLog("VIDEO");
 				bool vFrameRet = true;
 				while (vFrameRet) {
 					if (mVideoPoolAvailable > 0) {
@@ -175,13 +156,12 @@ namespace OpeningObjects {
 						vFrameRet = mVideoFileHolder->getVideoFrame(frame);
 						if (vFrameRet) {
 							++mVideoPoolWritePointer;
-							if (mVideoPoolWritePointer == 5) {
+							if (mVideoPoolWritePointer == VIDEO_BUFFER_FRAME_LEN) {
 								mVideoPoolWritePointer = 0;
 							}
 							--mVideoPoolAvailable;
 						}
 					} else {
-						mDecoderResult = VideoFileHolder::DecoderReturnCode::CONTINUE;
 						break;
 					}
 				}
@@ -191,25 +171,27 @@ namespace OpeningObjects {
 			}
 
 			if (mDecoderResult == VideoFileHolder::DecoderReturnCode::AUDIO) {
-				Utility::printLog("AUDIO");
+				//Utility::printLog("AUDIO");
 				bool		aFrameRet = true;
-				float*		buffer;
+				float*      buffer;
 				uint32_t	returnFrameLen;
 				uint32_t    requestFrameLen;
 
 				while (aFrameRet) {
+					if (mAudioWritePointer == AUDIO_BUFFER_FRAME_LEN) {
+						break;
+					}
+
 					buffer          = mAudioBuffer + (mAudioWritePointer * mVideoFileHolder->getChannels());
 					requestFrameLen = AUDIO_BUFFER_FRAME_LEN - mAudioWritePointer;
 					aFrameRet       = mVideoFileHolder->getAudioFrame(&buffer, &returnFrameLen, requestFrameLen);
 
 					if (aFrameRet) {
+						mAudioBufferMutex.lock();
 						mAudioWritePointer += returnFrameLen;
+						mAudioBufferMutex.unlock();
 					} else {
 						mDecoderResult = VideoFileHolder::DecoderReturnCode::CONTINUE;
-						break;
-					}
-
-					if (mAudioWritePointer == AUDIO_BUFFER_FRAME_LEN) {
 						break;
 					}
 				}
@@ -222,6 +204,8 @@ namespace OpeningObjects {
 
 		void init()
 		{
+			mVideoWork.mInitialized = false;
+
 			mAudioBuffer = new float[AUDIO_BUFFER_FRAME_LEN * mVideoFileHolder->getChannels()];
 			mAudioDelay = mSoundCoordinator.getDelayTime();
 			mGraphicsManager.setRenderer(this);
@@ -259,14 +243,26 @@ namespace OpeningObjects {
 			, mVideoPoolWritePointer(0)
 		    , mVideoPoolReadPointer(0)
 		    , mVideoPoolAvailable(VIDEO_BUFFER_FRAME_LEN)
-
+			, mVideoWork{}
 		{
 		}
 		virtual ~Movie() = default;
 
 	private:
-		static constexpr uint32_t	AUDIO_BUFFER_FRAME_LEN = 960;
-		static constexpr uint32_t	VIDEO_BUFFER_FRAME_LEN = 5;
+		struct VideoWork {
+			int32_t		mLocY;
+			int32_t		mLocU;
+			int32_t		mLocV;
+			Texture2D	mTexY;
+			Texture2D	mTexU;
+			Texture2D	mTexV;
+			int32_t		mWidth;
+			int32_t		mHeight;
+			bool        mInitialized;
+		};
+
+		static constexpr uint32_t	AUDIO_BUFFER_FRAME_LEN = 960*2;
+		static constexpr uint32_t	VIDEO_BUFFER_FRAME_LEN = 3;
 
 		IGraphicsManager&  mGraphicsManager;
 		ISoundCoordinator& mSoundCoordinator;
@@ -287,10 +283,11 @@ namespace OpeningObjects {
 		uint32_t          mVideoPoolAvailable;
 
 		VideoFileHolder::DecoderReturnCode
-						   mDecoderResult;
+						  mDecoderResult;
 
+		VideoWork		  mVideoWork;
 
-
+		std::mutex        mAudioBufferMutex;
 	};
 
 	//////////////////////////////////////////////////////////////

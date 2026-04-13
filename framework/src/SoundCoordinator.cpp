@@ -94,23 +94,16 @@ SoundCoordinator::SoundCoordinator() :
     , mSystemChannels(2)
     , mSystemSamplingRate(48000)
     , mChOffsetMap{0,1}
-    , mSystemBuffer2(std::make_unique<MultiBlockBuffer>(
-                                      SYSTEM_BUFFER_BLOCK_NUM
-                                    , SYSTEM_BUFFER_BASE_SIZE
+    , mSCBuffer(std::make_unique<MultiBlockBufferInternal>(
+                                      SC_BUFFER_BLOCK_NUM
+                                    , SC_BUFFER_BASE_SIZE
                                     , SC_CHANNEL))
-    , mSystemSRCOutBuff(nullptr)
-    , mSystemSRCOutFrameCurrent(0)
-    , mSystemSRCOutFrameLen(0)
+    , mSCSRCOutBuff(nullptr)
+    , mSCSRCOutFrameCurrent(0)
+    , mSCSRCOutFrameLen(0)
     , mAverageDelayTime(0.0f)
 {
-    //allocateSystemBuffer();
 };
-
-SoundCoordinator::~SoundCoordinator()
-{
-    //releaseSystemBuffer();
-}
-
 
 ////////////////////////////////////
 // Private
@@ -131,7 +124,7 @@ RARetCode SoundCoordinator::DataWriter::write(float* buff, uint32_t frameLen)
             *(mWriteBuffer + frame * SC_CHANNEL + ch) += *(buff + frame * SC_CHANNEL + ch);
         }
     }
-
+    
     mWroteFrame += frameLen;
 
     return RARetCode::RET_OK;
@@ -218,7 +211,7 @@ void SoundCoordinator::renderToDevice()
         Utility::printLog("Update System Audio Config:fs %d, ch %d", mSystemSamplingRate,mSystemChannels);
 
         if (SC_SAMPLING_RATE != mSystemSamplingRate) {
-            mSystemSrc.setConfig(SC_SAMPLING_RATE, SC_CHANNEL, mSystemSamplingRate);
+            mSCSrc.setConfig(SC_SAMPLING_RATE, SC_CHANNEL, mSystemSamplingRate);
         }
 
         audioEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
@@ -307,7 +300,7 @@ uint32_t SoundCoordinator::requestDataInternal(float** buff, uint32_t frameNum)
         float*   writeBuffer;
         uint32_t writeAvailFrameLen;
 
-        mSystemBuffer2->getWriteBuffer(writeBuffer, writeAvailFrameLen);
+        mSCBuffer->getWriteBuffer(writeBuffer, writeAvailFrameLen);
 
         if (writeBuffer && writeAvailFrameLen > 0) {
             uint32_t updateSize = writeAvailFrameLen;
@@ -344,7 +337,7 @@ uint32_t SoundCoordinator::requestDataInternal(float** buff, uint32_t frameNum)
                 mMutex.unlock();
             }
             currentTime = Utility::getCurrentTime();
-            if (!mSystemBuffer2->updateWriteBuffer(updateSize, &currentTime)) {
+            if (!mSCBuffer->updateWriteBuffer(updateSize, &currentTime)) {
                 Utility::printLog("updateWriteBuffer failed");
             }
         }
@@ -358,7 +351,7 @@ uint32_t SoundCoordinator::requestDataInternal(float** buff, uint32_t frameNum)
 
         if (mSystemSamplingRate == SC_SAMPLING_RATE) {
 
-            mSystemBuffer2->getReadBuffer(readBuffer, readAvailFrameLen);
+            mSCBuffer->getReadBuffer(readBuffer, readAvailFrameLen);
 
             if (readBuffer && readAvailFrameLen > 0) {
 
@@ -366,8 +359,9 @@ uint32_t SoundCoordinator::requestDataInternal(float** buff, uint32_t frameNum)
                 for (uint32_t i = 0; i < readAvailFrameLen && outFrameNum < frameNum; ++i) {
                     uint32_t scCh = 0;
                     for (uint32_t sysCh = 0; sysCh < mSystemChannels; ++sysCh) {
-                        if (mChOffsetMap[scCh++] == sysCh) {
+                        if (mChOffsetMap[scCh] == sysCh) {
                             *outBuff++ = *(readBuffer + i * SC_CHANNEL + scCh);
+                            ++scCh;
                         }
                         else {
                             *outBuff++ = 0.0f;
@@ -376,31 +370,37 @@ uint32_t SoundCoordinator::requestDataInternal(float** buff, uint32_t frameNum)
                     ++readFrameCount;
                     ++outFrameNum;
                 }
-                mSystemBuffer2->updateReadBuffer(readFrameCount, nullptr);
+                uint64_t timeFromBuffer;
+                if (!mSCBuffer->updateReadBuffer(readFrameCount, &timeFromBuffer)) {
+                    Utility::printLog("updateReadBuffer failed");
+                }
+                calcAverageDelayTime(Utility::getCurrentTime() - timeFromBuffer);
+
             }
         } else { //mSystemSamplingRate != SC_SAMPLING_RATE
 
-            mSystemBuffer2->getReadBuffer(readBuffer, readAvailFrameLen);
+            mSCBuffer->getReadBuffer(readBuffer, readAvailFrameLen);
 
             if (readBuffer && readAvailFrameLen > 0) {
-                if (!mSystemSRCOutBuff) {
-                    mSystemSrc.apply(readBuffer
+                if (!mSCSRCOutBuff) {
+                    mSCSrc.apply(readBuffer
                         , readAvailFrameLen
-                        , &mSystemSRCOutBuff
-                        , &mSystemSRCOutFrameLen);
+                        , &mSCSRCOutBuff
+                        , &mSCSRCOutFrameLen);
                 }
-                mSystemBuffer2->updateReadBuffer(readAvailFrameLen,nullptr);
+                mSCBuffer->updateReadBuffer(readAvailFrameLen,nullptr);
 
                 readFrameCount = 0;
-                for (uint32_t i = mSystemSRCOutFrameCurrent * SC_CHANNEL
-                    ; i < mSystemSRCOutFrameLen && outFrameNum < frameNum
+                for (uint32_t i = mSCSRCOutFrameCurrent * SC_CHANNEL
+                    ; i < mSCSRCOutFrameLen && outFrameNum < frameNum
                     ; i += mSystemChannels) {
 
                     uint32_t scCh = 0;
 
                     for (uint32_t sysCh = 0; sysCh < mSystemChannels; ++sysCh) {
                         if (mChOffsetMap[scCh] == sysCh) {
-                            *outBuff++ = mSystemSRCOutBuff[i + scCh];
+                            *outBuff++ = mSCSRCOutBuff[i + scCh];
+                            ++scCh;
                         }
                         else {
                             *outBuff++ = 0.0f;
@@ -409,42 +409,18 @@ uint32_t SoundCoordinator::requestDataInternal(float** buff, uint32_t frameNum)
                     ++outFrameNum;
                     ++readFrameCount;
                 }
-                mSystemSRCOutFrameCurrent += readFrameCount;
+                mSCSRCOutFrameCurrent += readFrameCount;
 
-                if (mSystemSRCOutFrameLen <= mSystemSRCOutFrameCurrent) {
-                    mSystemSrc.releaseBuffer();
-                    mSystemSRCOutBuff = nullptr;
-                    mSystemSRCOutFrameLen     = 0;
-                    mSystemSRCOutFrameCurrent = 0;
+                if (mSCSRCOutFrameLen <= mSCSRCOutFrameCurrent) {
+                    mSCSrc.releaseBuffer();
+                    mSCSRCOutBuff = nullptr;
+                    mSCSRCOutFrameLen     = 0;
+                    mSCSRCOutFrameCurrent = 0;
                 }
             }
         }
     }
     return outFrameNum;
-}
-
-void SoundCoordinator::allocateSystemBuffer()
-{
-    mSystemBuffer.mBuffer[0].mBuffer = new float[SYSTEM_BUFFER_BASE_SIZE * mSystemChannels];
-    mSystemBuffer.mBuffer[1].mBuffer = new float[SYSTEM_BUFFER_BASE_SIZE * mSystemChannels];
-
-    mSystemBuffer.mWritePointer = 0;
-    mSystemBuffer.mReadPointer  = 0;
-
-    mSystemBuffer.mBuffer[0].mBufferSize   = SYSTEM_BUFFER_BASE_SIZE * mSystemChannels;
-    mSystemBuffer.mBuffer[0].mWritePointer = 0;
-    mSystemBuffer.mBuffer[0].mReadPointer  = 0;
-
-    mSystemBuffer.mBuffer[1].mBufferSize   = SYSTEM_BUFFER_BASE_SIZE * mSystemChannels;
-    mSystemBuffer.mBuffer[1].mWritePointer = 0;
-    mSystemBuffer.mBuffer[1].mReadPointer  = 0;
-
-}
-
-void SoundCoordinator::releaseSystemBuffer()
-{
-    delete[] mSystemBuffer.mBuffer[0].mBuffer;
-    delete[] mSystemBuffer.mBuffer[1].mBuffer;
 }
 
 void SoundCoordinator::makeChannelOffsetMap(uint32_t mask)
@@ -488,18 +464,5 @@ void SoundCoordinator::makeChannelOffsetMap(uint32_t mask)
 void SoundCoordinator::calcAverageDelayTime(uint64_t sample)
 {
     mAverageDelayTime += ((float)sample - mAverageDelayTime) * 0.3f;
-}
-
-
-
-void SoundCoordinator::dumpSystemBufferCondition()
-{
-    Utility::printLog("===================");
-    Utility::printLog("System Buffer:wp(%d) rp(%d)", mSystemBuffer.mWritePointer, mSystemBuffer.mReadPointer);
-    Utility::printLog("Buffer1: wp(%d) rp(%d) size(%d)"
-        , mSystemBuffer.mBuffer[0].mWritePointer, mSystemBuffer.mBuffer[0].mReadPointer, mSystemBuffer.mBuffer[0].mBufferSize);
-    Utility::printLog("Buffer2: wp(%d) rp(%d) size(%d)"
-        , mSystemBuffer.mBuffer[1].mWritePointer, mSystemBuffer.mBuffer[1].mReadPointer, mSystemBuffer.mBuffer[1].mBufferSize);
-    Utility::printLog("===================");
 }
 

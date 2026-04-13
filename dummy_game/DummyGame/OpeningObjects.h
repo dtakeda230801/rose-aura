@@ -16,7 +16,7 @@ namespace OpeningObjects {
 
 	static const IObjectRepository::TAG_ID TAG_OPENING_OBJECT = 0x3;
 
-	static const std::string	CONVERT_PICTURE_SHADER = "ConvertPicture.fs";
+	static const char*	CONVERT_PICTURE_SHADER = "ConvertPicture.fs";
 
 	//////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////

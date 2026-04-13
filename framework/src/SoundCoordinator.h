@@ -7,7 +7,7 @@
 
 #include "ISoundCoordinator.h"
 #include "sound/SamplingRateConverter.h"
-#include "sound/MultiBlockBuffer.h"
+#include "sound/MultiBlockBufferInternal.h"
 
 #include "Utility.h"
 
@@ -35,7 +35,7 @@ public:
     void recover();
 
 	SoundCoordinator();
-	virtual ~SoundCoordinator();
+	virtual ~SoundCoordinator() = default;
 
 private:
     //////////////////////////////////////////////////////////
@@ -95,20 +95,6 @@ private:
         SoundCoordinator&   mSoundCoordinator;
 	};
 
-    struct SoundBuffer {
-        float*     mBuffer;
-        uint32_t   mBufferSize;
-        uint32_t   mWritePointer;
-        uint32_t   mReadPointer;
-        uint64_t   mWriteTime;
-    };
-
-    struct SBHolder {
-        SoundBuffer mBuffer[2];
-        uint32_t    mWritePointer;
-        uint32_t    mReadPointer;
-    };
-
     //////////////////////////////////////////////////////////
     class DataWriter : public IDataWriter {
     public:
@@ -131,48 +117,44 @@ private:
     //////////////////////////////////////////////////////////
     void     renderToDevice();
     uint32_t requestDataInternal(float** buff, uint32_t frameNum);
-    void     allocateSystemBuffer();
-    void     releaseSystemBuffer();
     void     makeChannelOffsetMap(uint32_t mask);
     void     calcAverageDelayTime(uint64_t sample);
-    void     dumpSystemBufferCondition();
 
     //////////////////////////////////////////////////////////
     // Private Members
     //////////////////////////////////////////////////////////
     static constexpr uint32_t SYSTEM_BUFFER_DURATION = 200000; // 20 msec
-    static constexpr uint32_t SYSTEM_BUFFER_BASE_SIZE = 480;
-    static constexpr uint32_t SYSTEM_BUFFER_BLOCK_NUM = 2;
 
-    static constexpr uint32_t SC_SAMPLING_RATE = 48000;
-    static constexpr uint32_t SC_CHANNEL = 2;
+    uint32_t	    mSystemChannels;
+    uint32_t	    mSystemSamplingRate;
+
+    static constexpr uint32_t SC_BUFFER_BASE_SIZE = 240;
+    static constexpr uint32_t SC_BUFFER_BLOCK_NUM = 2;
+    static constexpr uint32_t SC_SAMPLING_RATE    = 48000;
+    static constexpr uint32_t SC_CHANNEL          = 2;
 
     std::thread		mThread;
 	bool			mStarted;
     bool			mRecover;
     std::mutex      mMutex;
 
-	uint32_t	    mSystemChannels;
-	uint32_t	    mSystemSamplingRate;
     float           mAverageDelayTime;
-
-    SBHolder        mSystemBuffer;
-
-    std::unique_ptr<MultiBlockBuffer>
-                    mSystemBuffer2;
 
     uint32_t        mChOffsetMap[2];
 
     std::vector<ISoundRenderer*>
-        mRenderers;
+                    mRenderers;
 
     DataWriter      mDataWriter;
 
-    SamplingRateConverter
-                    mSystemSrc;
+    std::unique_ptr<MultiBlockBufferInternal>
+                    mSCBuffer;
 
-    float*          mSystemSRCOutBuff;
-    uint32_t        mSystemSRCOutFrameCurrent;
-    uint32_t        mSystemSRCOutFrameLen;
+    SamplingRateConverter
+                    mSCSrc;
+
+    float*          mSCSRCOutBuff;
+    uint32_t        mSCSRCOutFrameCurrent;
+    uint32_t        mSCSRCOutFrameLen;
 
 };

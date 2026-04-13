@@ -123,4 +123,19 @@ namespace RoseAuraMediaUtility {
 		std::binary_semaphore	mSem;
 		std::atomic<bool>		mStarted;
 	};
+
+	/////////////////////////////////////////////
+	class MultiBlockBuffer {
+	public:
+		MultiBlockBuffer(uint32_t numberOfBlocks, uint32_t framePerBlock, uint32_t elmPerFrame);
+
+		void getWriteBuffer(float*& buffer, uint32_t& aveilFrameLen);
+		void getReadBuffer(float*& buffer, uint32_t& aveilFrameLen);
+		bool updateWriteBuffer(uint32_t writeFrameLen, uint64_t* attribute);
+		bool updateReadBuffer(uint32_t readFrameLen, uint64_t* attribute);
+
+		virtual ~MultiBlockBuffer();
+	private:
+		void* mImpl;
+	};
 }

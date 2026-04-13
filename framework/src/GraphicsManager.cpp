@@ -44,8 +44,6 @@ void GraphicsManager::runUntilClosed()
 		delete shader;
 	}
 
-
-
 	CloseWindow();
 }
 

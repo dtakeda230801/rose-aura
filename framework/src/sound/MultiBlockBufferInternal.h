@@ -4,17 +4,17 @@
 #include <atomic>
 #include <mutex>
 
-class MultiBlockBuffer
+class MultiBlockBufferInternal
 {
 public:
-	MultiBlockBuffer(uint32_t numberOfBlocks, uint32_t framePerBlock, uint32_t elmPerFrame);
+	MultiBlockBufferInternal(uint32_t numberOfBlocks, uint32_t framePerBlock, uint32_t elmPerFrame);
 
 	void getWriteBuffer(float*& buffer, uint32_t& aveilFrameLen);
 	void getReadBuffer(float*& buffer, uint32_t& aveilFrameLen);
 	bool updateWriteBuffer(uint32_t writeFrameLen, uint64_t* attribute);
     bool updateReadBuffer(uint32_t readFrameLen, uint64_t* attribute);
 
-	virtual ~MultiBlockBuffer();
+	virtual ~MultiBlockBufferInternal();
 
 private:
     void dumpBudderStatus();

@@ -17,6 +17,7 @@ extern "C" {
 #include "MediaUtility.h"
 
 #include "MediaUtilityImpl.h"
+#include "sound/MultiBlockBufferInternal.h"
 
 using namespace RoseAuraMediaUtility;
 
@@ -776,4 +777,43 @@ void PreRenderThread::threadFunc()
         doWork();
         mSem.acquire(); 
     }
+}
+
+////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+
+#define INSTANCE MultiBlockBufferInternal* impl = static_cast<MultiBlockBufferInternal*>(mImpl)
+
+MultiBlockBuffer::MultiBlockBuffer(uint32_t numberOfBlocks, uint32_t framePerBlock, uint32_t elmPerFrame) :
+    mImpl(nullptr)
+{
+    mImpl = static_cast<void*>(new MultiBlockBufferInternal(numberOfBlocks, framePerBlock, elmPerFrame));
+}
+
+void MultiBlockBuffer::getWriteBuffer(float*& buffer, uint32_t& aveilFrameLen)
+{
+    INSTANCE;
+    impl->getWriteBuffer(buffer, aveilFrameLen);
+
+}
+void MultiBlockBuffer::getReadBuffer(float*& buffer, uint32_t& aveilFrameLen)
+{
+    INSTANCE;
+    impl->getReadBuffer(buffer, aveilFrameLen);
+}
+bool MultiBlockBuffer::updateWriteBuffer(uint32_t writeFrameLen, uint64_t* attribute)
+{
+    INSTANCE;
+    return impl->updateWriteBuffer(writeFrameLen, attribute);
+}
+bool MultiBlockBuffer::updateReadBuffer(uint32_t readFrameLen, uint64_t* attribute)
+{
+    INSTANCE;
+    return impl->updateReadBuffer(readFrameLen, attribute);
+}
+
+MultiBlockBuffer::~MultiBlockBuffer()
+{
+    INSTANCE;
+    delete impl;
 }

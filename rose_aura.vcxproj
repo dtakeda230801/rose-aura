@@ -37,7 +37,7 @@
     <ClCompile Include="framework\src\SoundCoordinator.cpp" />
     <ClCompile Include="framework\src\ObjectRepository.cpp" />
     <ClCompile Include="framework\src\RoseAura.cpp" />
-    <ClCompile Include="framework\src\sound\MultiBlockBuffer.cpp" />
+    <ClCompile Include="framework\src\sound\MultiBlockBufferInternal.cpp" />
     <ClCompile Include="framework\src\sound\SamplingRateConverter.cpp" />
     <ClCompile Include="framework\src\Utility.cpp" />
     <ClCompile Include="framework\src\WorldNavigator.cpp" />
@@ -59,7 +59,7 @@
     <ClInclude Include="framework\src\SoundCoordinator.h" />
     <ClInclude Include="framework\src\ObjectRepository.h" />
     <ClInclude Include="framework\src\RoseAuraImpl.h" />
-    <ClInclude Include="framework\src\sound\MultiBlockBuffer.h" />
+    <ClInclude Include="framework\src\sound\MultiBlockBufferInternal.h" />
     <ClInclude Include="framework\src\sound\SamplingRateConverter.h" />
     <ClInclude Include="framework\src\Utility.h" />
     <ClInclude Include="framework\src\WorldNavigator.h" />

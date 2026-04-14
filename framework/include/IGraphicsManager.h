@@ -10,6 +10,13 @@ using namespace RoseAuraReturnCode;
 
 class IGraphicsManager {
 public:
+	struct Conf {
+		uint32_t		mWindowWidth;
+		uint32_t		mWindowHeight;
+		uint32_t		mFrameRate;
+		const char*		mWindowTitle;
+	};
+
 	class IObjectRenderer {
 	public:
 		virtual void doPreprocess() = 0;
@@ -23,7 +30,7 @@ public:
 	//////////////////////////////////////////////////////////
 	// APIs
 	//////////////////////////////////////////////////////////
-	virtual void      runUntilClosed()							= 0;
+	virtual void      runUntilClosed(Conf conf)					= 0;
 	virtual RARetCode setRenderer(IObjectRenderer* renderer)	= 0;
 	virtual RARetCode removeRenderer(IObjectRenderer* renderer)	= 0;
 	virtual RARetCode setShaderFile(std::string file)           = 0;

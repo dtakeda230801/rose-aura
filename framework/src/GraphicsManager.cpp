@@ -7,10 +7,10 @@
 ////////////////////////////////////
 // APIs
 ////////////////////////////////////
-void GraphicsManager::runUntilClosed()
+void GraphicsManager::runUntilClosed(Conf conf)
 {
-	InitWindow(1400, 800, "Rose Aura");
-	SetTargetFPS(60);
+	InitWindow(conf.mWindowWidth, conf.mWindowHeight, conf.mWindowTitle);
+	SetTargetFPS(conf.mFrameRate);
 
 	for (auto& holder : mShaderHolders) {
 		Shader* shader = static_cast<Shader*>(holder.mShader);
@@ -92,8 +92,6 @@ void* GraphicsManager::getShader(std::string file)
 	}
 	return nullptr;
 }
-
-
 
 ////////////////////////////////////
 // Private

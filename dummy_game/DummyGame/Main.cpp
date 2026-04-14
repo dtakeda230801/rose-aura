@@ -20,11 +20,11 @@
 #include "GameObjects.h"
 #include "OpeningObjects.h"
 
+#include "DummyGame.h"
+
 using namespace RoseAuraMediaUtility;
 using namespace RoseAuraReturnCode;
 
-#define WIN_SIZE_W 1400
-#define WIN_SIZE_H 800
 
 ////////////////////////////////////////////
 ////////////////////////////////////////////
@@ -75,6 +75,12 @@ int main()
 
 		graphicsManager.setShaderFile(OpeningObjects::CONVERT_PICTURE_SHADER);
 
+		IGraphicsManager::Conf conf;
+		conf.mWindowWidth  = WIN_SIZE_W;
+		conf.mWindowHeight = WIN_SIZE_H;
+		conf.mWindowTitle  = WIN_TITLE;
+		conf.mFrameRate    = VIDEO_FRAME_RATE;
+
 		////////////////////////////////////////////
 
 		objectRepository.activateByTag(CommonObjects::TAG_COMMON_OBJECT);
@@ -82,8 +88,8 @@ int main()
 
 		////////////////////////////////////////////
 		soundCoordinator.start();
-		centralLooper.start(30);
-		graphicsManager.runUntilClosed();
+		centralLooper.start(LOOPER_FRAME_RATE);
+		graphicsManager.runUntilClosed(conf);
 
 		////////////////////////////////////////////
 		centralLooper.stop();

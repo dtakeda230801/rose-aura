@@ -14,7 +14,7 @@ public:
 		std::string mFileName;
 	};
 
-	void	  runUntilClosed();
+	void	  runUntilClosed(Conf conf);
 	RARetCode setRenderer(IObjectRenderer* renderer);
 	RARetCode removeRenderer(IObjectRenderer* renderer);
 	RARetCode setShaderFile(std::string file);

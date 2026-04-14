@@ -3,6 +3,7 @@
 #include "RoseAura.h"
 #include "RoseAuraReturnCode.h"
 
+#include "DummyGame.h"
 #include "GameObjects.h"
 #include "OpeningObjects.h"
 

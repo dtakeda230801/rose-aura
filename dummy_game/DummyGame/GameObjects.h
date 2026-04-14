@@ -10,10 +10,14 @@
 using namespace RoseAuraMediaUtility;
 using namespace RoseAuraReturnCode;
 
-#define TXT_POS_X 10
-#define TXT_POS_Y 10
+#include "DummyGame.h"
 
-#define CIRCLE_SIZE 10
+#define TXT_POS_X	10
+#define TXT_POS_Y	10
+
+#define CIRCLE_SIZE 20
+
+#define MOVE_DELTA  10
 
 namespace GameObjects {
 
@@ -26,15 +30,15 @@ namespace GameObjects {
 		gWorldConf.mWorldSpace.mMin.mX = 100;
 		gWorldConf.mWorldSpace.mMin.mY = 100;
 		gWorldConf.mWorldSpace.mMin.mZ = 0;
-		gWorldConf.mWorldSpace.mMax.mX = 700;
-		gWorldConf.mWorldSpace.mMax.mY = 500;
+		gWorldConf.mWorldSpace.mMax.mX = WIN_SIZE_W - 100;
+		gWorldConf.mWorldSpace.mMax.mY = WIN_SIZE_H - 100;
 		gWorldConf.mWorldSpace.mMax.mZ = 0;
 
-		gWorldConf.mActiveRange.mX = 100;
+		gWorldConf.mActiveRange.mX = 150;
 		gWorldConf.mActiveRange.mY = 100;
 		gWorldConf.mActiveRange.mZ = 100;
 
-		gWorldConf.mNonScrollRange.mX = 50;
+		gWorldConf.mNonScrollRange.mX = 100;
 		gWorldConf.mNonScrollRange.mY = 50;
 		gWorldConf.mNonScrollRange.mZ = 50;
 
@@ -56,10 +60,10 @@ namespace GameObjects {
 
 		void render()
 		{
-			Rectangle rect = { static_cast<float>(gWorldConf.mWorldSpace.mMin.mX)
-							 , static_cast<float>(gWorldConf.mWorldSpace.mMin.mY)
-							 , static_cast<float>(gWorldConf.mWorldSpace.mMax.mX - gWorldConf.mWorldSpace.mMin.mX)
-							 , static_cast<float>(gWorldConf.mWorldSpace.mMax.mY - gWorldConf.mWorldSpace.mMin.mY) };
+			Rectangle rect = { static_cast<float>(gWorldConf.mWorldSpace.mMin.mX - CIRCLE_SIZE)
+							 , static_cast<float>(gWorldConf.mWorldSpace.mMin.mY - CIRCLE_SIZE)
+							 , static_cast<float>(gWorldConf.mWorldSpace.mMax.mX - gWorldConf.mWorldSpace.mMin.mX + (CIRCLE_SIZE*2) )
+							 , static_cast<float>(gWorldConf.mWorldSpace.mMax.mY - gWorldConf.mWorldSpace.mMin.mY + (CIRCLE_SIZE*2) ) };
 			DrawRectangleLinesEx(rect, 3.0f, LIGHTGRAY);
 		};
 
@@ -235,16 +239,16 @@ namespace GameObjects {
 
 				if (state == InputState::PUSHED || state == InputState::PRESSED) {
 					if (type == InputType::UP) {
-						pos.mY -= 5;
+						pos.mY -= MOVE_DELTA;
 					}
 					else if (type == InputType::DOWN) {
-						pos.mY += 5;
+						pos.mY += MOVE_DELTA;
 					}
 					else if (type == InputType::LEFT) {
-						pos.mX -= 5;
+						pos.mX -= MOVE_DELTA;
 					}
 					else if (type == InputType::RIGHT) {
-						pos.mX += 5;
+						pos.mX += MOVE_DELTA;
 					}
 					mWorldNavigator.movePosition(pos);
 				}
@@ -418,8 +422,8 @@ namespace GameObjects {
 		std::mutex					mMutex;
 		IWorldNavigator::TRIGGER_ID mId = 1;
 		IWorldNavigator::Vec3		mPosition = { 200,200, 0 };
-		int							mXDelta = -5;
-		int							mYDelta = -5;
+		int							mXDelta = -MOVE_DELTA;
+		int							mYDelta = -MOVE_DELTA;
 		float						mDistance = 30.f;
 		Color						mColor = RED;
 		int							mAfterHit = 0;

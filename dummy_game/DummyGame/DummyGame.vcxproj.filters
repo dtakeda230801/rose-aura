@@ -37,5 +37,8 @@
     <ClInclude Include="OpeningObjects.h">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="DummyGame.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

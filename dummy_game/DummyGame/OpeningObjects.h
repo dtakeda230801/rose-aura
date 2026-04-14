@@ -9,6 +9,9 @@
 #include "MediaUtility.h"
 #include "Utility.h"
 
+#include "DummyGame.h"
+
+
 using namespace RoseAuraMediaUtility;
 using namespace RoseAuraReturnCode;
 
@@ -47,6 +50,9 @@ namespace OpeningObjects {
 
 					mVideoWork.mWidth  = frame.mWidth;
 					mVideoWork.mHeight = frame.mHeight;
+
+					mVideoWork.mDispX = (WIN_SIZE_W - mVideoWork.mWidth) / 2;
+					mVideoWork.mDispY = (WIN_SIZE_H - mVideoWork.mHeight) / 2;
 
 					mVideoWork.mLocY = GetShaderLocation(*shader, "texY");
 					mVideoWork.mLocU = GetShaderLocation(*shader, "texU");
@@ -106,7 +112,7 @@ namespace OpeningObjects {
 				SetShaderValueTexture(*shader, mVideoWork.mLocU, mVideoWork.mTexU);
 				SetShaderValueTexture(*shader, mVideoWork.mLocV, mVideoWork.mTexV);
 
-				DrawRectangle(0, 0, mVideoWork.mWidth, mVideoWork.mHeight, WHITE);
+				DrawRectangle(mVideoWork.mDispX, mVideoWork.mDispY, mVideoWork.mWidth, mVideoWork.mHeight, WHITE);
 
 				EndShaderMode();
 			}
@@ -258,6 +264,8 @@ namespace OpeningObjects {
 			Texture2D	mTexV;
 			int32_t		mWidth;
 			int32_t		mHeight;
+			uint32_t    mDispX;
+			uint32_t    mDispY;
 			bool        mInitialized;
 		};
 

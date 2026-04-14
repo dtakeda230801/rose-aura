@@ -649,8 +649,8 @@ VideoFileHolder::VideoFileHolderImpl::convertPictureFormat(const Dav1dPicture& p
     //////////////////////////
     frame.mY = new uint8_t[frame.mWidth * frame.mHeight];
 
-    srcY = static_cast<uint16_t*>(pic.data[0]);
-    stride = pic.stride[0] / 2;
+    srcY   = static_cast<uint16_t*>(pic.data[0]);
+    stride = static_cast<uint32_t>(pic.stride[0]) / 2;
 
     for (uint32_t y = 0; y < frame.mHeight; y++) {
         for (uint32_t x = 0; x < frame.mWidth; x++) {
@@ -662,9 +662,9 @@ VideoFileHolder::VideoFileHolderImpl::convertPictureFormat(const Dav1dPicture& p
     frame.mU = new uint8_t[frame.mWidth / 2 * frame.mHeight];
     frame.mV = new uint8_t[frame.mWidth / 2 * frame.mHeight];
 
-    srcU = static_cast<uint16_t*>(pic.data[1]);
-    srcV = static_cast<uint16_t*>(pic.data[2]);
-    stride = pic.stride[1] / 2;
+    srcU   = static_cast<uint16_t*>(pic.data[1]);
+    srcV   = static_cast<uint16_t*>(pic.data[2]);
+    stride = static_cast<uint32_t>(pic.stride[1]) / 2;
 
     for (uint32_t y = 0; y < frame.mHeight; y++) {
         for (uint32_t x = 0; x < frame.mWidth/2; x++) {

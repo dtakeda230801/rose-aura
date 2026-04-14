@@ -136,7 +136,7 @@ void fillBuffer(float*& buff, uint32_t frameLen)
 {
     for (uint32_t f = 0; f < frameLen; ++f) {
         for (uint32_t ch = 0; ch < 2; ++ch) {
-            *buff++ = f + (ch * frameLen);
+            *buff++ = (float)(f + (ch * frameLen));
         }
     }
 }

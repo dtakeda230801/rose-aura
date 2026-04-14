@@ -122,8 +122,6 @@ namespace OpeningObjects {
 
 		RARetCode requestData(unsigned int requestFrameLen, unsigned int* returnFrameLen, ISoundCoordinator::IDataWriter& writer)
 		{
-			RARetCode ret;
-
 			*(returnFrameLen) = 0;
 
 			while (*(returnFrameLen) < requestFrameLen) {

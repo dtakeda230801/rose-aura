@@ -76,7 +76,7 @@ int main()
 		graphicsManager.setShaderFile(OpeningObjects::CONVERT_PICTURE_SHADER);
 
 		IGraphicsManager::Conf conf;
-		conf.mWindowWidth  = WIN_SIZE_W;
+		conf.mWindowWidth  = WIN_SIZE_W; 
 		conf.mWindowHeight = WIN_SIZE_H;
 		conf.mWindowTitle  = WIN_TITLE;
 		conf.mFrameRate    = VIDEO_FRAME_RATE;

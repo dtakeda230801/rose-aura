@@ -41,7 +41,14 @@ TEST(testGraphicsManager, APITest)
 		EXPECT_EQ(gm.removeRenderer(testRenderer)	, RARetCode::RET_OK);
 
 		EXPECT_EQ(gm.setRenderer(testRenderer), RARetCode::RET_OK);
-		gm.runUntilClosed();
+
+		IGraphicsManager::Conf conf;
+		conf.mWindowWidth  = 800;
+		conf.mWindowHeight = 600;
+		conf.mWindowTitle  = "testGraphicsManager";
+		conf.mFrameRate    = 30;
+
+		gm.runUntilClosed(conf);
 
 		delete testRenderer;
 		delete testRenderer2;

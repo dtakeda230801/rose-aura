@@ -161,6 +161,8 @@ void SoundCoordinator::renderToDevice()
 {
     Utility::printLog("Start Sound Rendering Thread");
 
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
+
     CALL_WITH_RETURN(CoInitializeEx(nullptr, COINIT_MULTITHREADED), "CoInitializeEx fails");
 
     while (mStarted) {

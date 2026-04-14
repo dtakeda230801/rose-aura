@@ -1,3 +1,4 @@
+#include <windows.h>
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -732,6 +733,8 @@ PreRenderThread::PreRenderThread() :
 
 void PreRenderThread::threadFunc()
 {
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+
     mStarted.store(true, std::memory_order_release);
     mStarted.notify_one();
 

@@ -33,7 +33,7 @@ public:
 	//////////////////////////////////////////////////////////
 	// APIs
 	//////////////////////////////////////////////////////////
-	virtual RARetCode start(unsigned int timeOfFrame)                     = 0;
+	virtual RARetCode start(uint32_t timeOfFrame)                     = 0;
 	virtual RARetCode stop()                                              = 0;
 	virtual RARetCode enqueueTask(ITask* task)                            = 0;
 	virtual RARetCode registerFrameSyncCallback(IFrameSyncCallback* cb)   = 0;

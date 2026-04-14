@@ -6,7 +6,7 @@
 ////////////////////////////////////
 // APIs
 ////////////////////////////////////
-RARetCode CentralLooper::start(unsigned int  timeOfFrame)
+RARetCode CentralLooper::start(uint32_t  timeOfFrame)
 {
 
 	if (mStarted) {
@@ -103,7 +103,7 @@ void CentralLooper::run() {
 		}
 
 		auto takenTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - frameStart);
-		int takenTimeInt = static_cast<int>(takenTime.count() / 1000);
+		uint32_t takenTimeInt = static_cast<uint32_t>(takenTime.count() / 1000);
 		if (takenTimeInt > mTimeOfFrame) {
 			Utility::printLog("The frame time is over specified time.(%d)", takenTime);
 		}

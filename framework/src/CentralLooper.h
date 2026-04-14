@@ -14,7 +14,7 @@ public:
 	//////////////////////////////////////////////////////////
 	// APIs
 	//////////////////////////////////////////////////////////
-	RARetCode start(unsigned int  timeOfFrame);
+	RARetCode start(uint32_t  timeOfFrame);
 	RARetCode stop();
 	RARetCode enqueueTask(ITask* task);
 	RARetCode registerFrameSyncCallback(IFrameSyncCallback* cb);
@@ -33,7 +33,7 @@ private:
 
 	std::atomic<bool>  mStarted;
 
-	int				   mTimeOfFrame;
+	uint32_t		   mTimeOfFrame;
 	
 	std::vector<IFrameSyncCallback*>
 				       mFrameSyncCallbacks;

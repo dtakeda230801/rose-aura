@@ -774,6 +774,12 @@ bool MultiBlockBuffer::updateReadBuffer(uint32_t readFrameLen, uint64_t* attribu
     return impl->updateReadBuffer(readFrameLen, attribute);
 }
 
+uint32_t MultiBlockBuffer::getAvailBlockNum()
+{
+    INSTANCE;
+    return impl->getAvailBlockNum();
+}
+
 MultiBlockBuffer::~MultiBlockBuffer()
 {
     INSTANCE;

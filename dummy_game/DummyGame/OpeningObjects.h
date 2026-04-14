@@ -30,6 +30,8 @@ namespace OpeningObjects {
 	public:
 		void doPreprocess()
 		{
+			std::lock_guard<std::mutex> lock(mMutex);
+
 			if (mVideoPoolAvailable < VIDEO_BUFFER_FRAME_LEN) {
 				VideoFileHolder::VideoFrame& frame = mVideoPool[mVideoPoolReadPointer];
 
@@ -162,6 +164,11 @@ namespace OpeningObjects {
 			return RARetCode::RET_OK;
 		}
 
+		void onFinish()
+		{
+			Utility::printLog("Movie onFinish");
+		}
+
 		void doWork() {
 
 			if (mDecoderResult == VideoFileHolder::DecoderReturnCode::CONTINUE) {
@@ -173,6 +180,8 @@ namespace OpeningObjects {
 				bool vFrameRet = true;
 				while (vFrameRet) {
 					if (mVideoPoolAvailable > 0) {
+						std::lock_guard<std::mutex> lock(mMutex);
+
 						VideoFileHolder::VideoFrame& frame = mVideoPool[mVideoPoolWritePointer];
 						vFrameRet = mVideoFileHolder->getVideoFrame(frame);
 						if (vFrameRet) {
@@ -223,7 +232,20 @@ namespace OpeningObjects {
 			}
 		}
 
-		void cleanUpVideoPool() {
+		void waitPreDecode() 
+		{
+			uint32_t count = 0;
+
+			while (count < AUDIO_BUFFER_BLOCK_NUM) {
+				wakeUp();
+				count = mMultiBlockBuffer->getAvailBlockNum();
+			}
+
+		}
+
+		void cleanUpVideoPool()
+		{
+			std::lock_guard<std::mutex> lock(mMutex);
 
 			while (mVideoPoolAvailable < VIDEO_BUFFER_FRAME_LEN) {
 				VideoFileHolder::VideoFrame& frame = mVideoPool[mVideoPoolReadPointer];
@@ -241,13 +263,17 @@ namespace OpeningObjects {
 		void init()
 		{
 			mVideoWork.mInitialized = false;
+
+			start();
+			waitPreDecode();
+
 			mGraphicsManager.setRenderer(this);
 			mSoundCoordinator.registerRenderer(this);
-			start();
 		}
 
 		void fin()
 		{
+			mFinish = true;
 			finish();
 			cleanUpVideoPool();
 			mGraphicsManager.removeRenderer(this);
@@ -314,8 +340,8 @@ namespace OpeningObjects {
 		VideoWork		  mVideoWork;
 
 		uint64_t		  mBaseTime;
-
 		bool			  mFinish;
+		std::mutex		  mMutex;
 	};
 
 	//////////////////////////////////////////////////////////////

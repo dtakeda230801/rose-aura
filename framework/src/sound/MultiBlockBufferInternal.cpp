@@ -149,6 +149,19 @@ bool MultiBlockBufferInternal::updateReadBuffer(uint32_t readFrameLen, uint64_t*
 	return true;
 }
 
+uint32_t MultiBlockBufferInternal::getAvailBlockNum()
+{
+	mMutex.lock();
+	uint32_t count = 0;
+	for (uint32_t i = 0; i < mBufferHolder.mNumberOfBlocks; ++i) {
+		if (!mBufferHolder.mBlock[i]->mWriteAvailable)
+			++count;
+	}
+	mMutex.unlock();
+	return count;
+}
+
+
 MultiBlockBufferInternal::~MultiBlockBufferInternal()
 {
 	for (uint32_t i = 0; i < mBufferHolder.mNumberOfBlocks; ++i) {

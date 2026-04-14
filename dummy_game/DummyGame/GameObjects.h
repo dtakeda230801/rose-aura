@@ -485,6 +485,11 @@ namespace GameObjects {
 			return RARetCode::RET_OK;
 		}
 
+		void onFinish()
+		{
+			Utility::printLog("SoundEffect01 onFinish");
+		}
+
 		SoundEffect01(RoseAura& ra) :
 			  mInputHandler(ra.getInputHandler())
 			, mSoundCoordinator(ra.getSoundCoordinator())
@@ -601,6 +606,12 @@ namespace GameObjects {
 			}
 			return ret;
 		}
+
+		void onFinish()
+		{
+			Utility::printLog("Music onFinish");
+		}
+
 
 		Music(RoseAura& ra) :
 			  mInputHandler(ra.getInputHandler())

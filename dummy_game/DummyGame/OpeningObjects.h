@@ -17,8 +17,6 @@ using namespace RoseAuraReturnCode;
 
 namespace OpeningObjects {
 
-	static const IObjectRepository::TAG_ID TAG_OPENING_OBJECT = 0x3;
-
 	static const char*	CONVERT_PICTURE_SHADER = "ConvertPicture.fs";
 
 	//////////////////////////////////////////////////////////////
@@ -167,7 +165,8 @@ namespace OpeningObjects {
 			Utility::printLog("Movie onFinish");
 		}
 
-		void doWork() {
+		void doWork()
+		{
 
 			if (mDecoderResult == VideoFileHolder::DecoderReturnCode::CONTINUE) {
 				mDecoderResult = mVideoFileHolder->decode();
@@ -294,8 +293,7 @@ namespace OpeningObjects {
 		{
 		}
 
-		virtual ~Movie() {
-		};
+		virtual ~Movie() = default;
 
 	private:
 		struct VideoWork {

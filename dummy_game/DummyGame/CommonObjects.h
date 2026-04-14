@@ -4,14 +4,10 @@
 #include "RoseAuraReturnCode.h"
 
 #include "DummyGame.h"
-#include "GameObjects.h"
-#include "OpeningObjects.h"
 
 using namespace RoseAuraReturnCode;
 
 namespace CommonObjects {
-
-	static const IObjectRepository::TAG_ID TAG_COMMON_OBJECT = 0x1;
 
 	//////////////////////////////////////////////////////////////
 	class ContinuousInputHandler :
@@ -73,13 +69,13 @@ namespace CommonObjects {
 		{
 			if (mActivated) {
 				mActivated = false;
-				mObjectRepository.deactivateByTag(GameObjects::TAG_GAME_OBJECT);
-				mObjectRepository.activateByTag(OpeningObjects::TAG_OPENING_OBJECT);
+				mObjectRepository.deactivateByTag(TAG_GAME_OBJECT);
+				mObjectRepository.activateByTag(TAG_OPENING_OBJECT);
 			}
 			else {
 				mActivated = true;
-				mObjectRepository.deactivateByTag(OpeningObjects::TAG_OPENING_OBJECT);
-				mObjectRepository.activateByTag(GameObjects::TAG_GAME_OBJECT);
+				mObjectRepository.deactivateByTag(TAG_OPENING_OBJECT);
+				mObjectRepository.activateByTag(TAG_GAME_OBJECT);
 			}
 		};
 

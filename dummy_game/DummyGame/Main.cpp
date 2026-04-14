@@ -83,8 +83,8 @@ int main()
 
 		////////////////////////////////////////////
 
-		objectRepository.activateByTag(CommonObjects::TAG_COMMON_OBJECT);
-		objectRepository.activateByTag(GameObjects::TAG_GAME_OBJECT);
+		objectRepository.activateByTag(TAG_COMMON_OBJECT);
+		objectRepository.activateByTag(TAG_GAME_OBJECT);
 
 		////////////////////////////////////////////
 		soundCoordinator.start();
@@ -94,9 +94,9 @@ int main()
 		////////////////////////////////////////////
 		centralLooper.stop();
 		soundCoordinator.stop();
-		objectRepository.deactivateByTag(GameObjects::TAG_GAME_OBJECT);
-		objectRepository.deactivateByTag(OpeningObjects::TAG_OPENING_OBJECT);
-		objectRepository.deactivateByTag(CommonObjects::TAG_COMMON_OBJECT);
+		objectRepository.deactivateByTag(TAG_GAME_OBJECT);
+		objectRepository.deactivateByTag(TAG_OPENING_OBJECT);
+		objectRepository.deactivateByTag(TAG_COMMON_OBJECT);
 
 	}
 	_CrtDumpMemoryLeaks();

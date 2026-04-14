@@ -21,8 +21,6 @@ using namespace RoseAuraReturnCode;
 
 namespace GameObjects {
 
-	static const IObjectRepository::TAG_ID TAG_GAME_OBJECT = 0x2;
-
 	IWorldNavigator::WorldConfig gWorldConf;
 
 	void buildWorldConf()
@@ -47,7 +45,7 @@ namespace GameObjects {
 		gWorldConf.mPosition.mZ = 0;
 
 		gWorldConf.mEnableFollowing = true;
-		gWorldConf.mLimitScrolling = true;
+		gWorldConf.mLimitScrolling  = true;
 	}
 
 	//////////////////////////////////////////////////////////////
@@ -207,8 +205,8 @@ namespace GameObjects {
 		IGraphicsManager& mGraphicsManager;
 		IInputHandler&    mInputHandler;
 
-		std::mutex		mMutex;
-		bool			mDisplay = true;
+		std::mutex		  mMutex;
+		bool			  mDisplay = true;
 
 	};
 
@@ -422,10 +420,10 @@ namespace GameObjects {
 		std::mutex					mMutex;
 		IWorldNavigator::TRIGGER_ID mId = 1;
 		IWorldNavigator::Vec3		mPosition = { 200,200, 0 };
-		int							mXDelta = -MOVE_DELTA;
-		int							mYDelta = -MOVE_DELTA;
+		int							mXDelta   = -MOVE_DELTA;
+		int							mYDelta   = -MOVE_DELTA;
 		float						mDistance = 30.f;
-		Color						mColor = RED;
+		Color						mColor    = RED;
 		int							mAfterHit = 0;
 
 	};
@@ -531,7 +529,8 @@ namespace GameObjects {
 			}
 		}
 
-		void doWork() {
+		void doWork()
+		{
 			mNoFinish = mOpusFileHolder->decode();
 		}
 

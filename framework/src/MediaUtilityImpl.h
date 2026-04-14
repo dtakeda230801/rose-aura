@@ -52,6 +52,7 @@ namespace RoseAuraMediaUtility {
 
 		Dav1dPicture				 mPicture;
 		bool						 mPictureReady;
+		uint64_t					 mLatestTimeStamp;
 
 		unsigned int				 mSamplingRate;
 		unsigned int				 mChannels;

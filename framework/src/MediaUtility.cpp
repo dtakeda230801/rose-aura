@@ -342,6 +342,7 @@ VideoFileHolder::VideoFileHolderImpl::VideoFileHolderImpl(const char* path) :
     , mFrameCount(0)
     , mPicture{}
     , mPictureReady(false)
+    , mLatestTimeStamp(0)
     , mAudioBuffer(nullptr)
     , mSamplingRate(0)
     , mChannels(0)
@@ -450,12 +451,6 @@ VideoFileHolder::DecoderReturnCode VideoFileHolder::VideoFileHolderImpl::decode(
         if (mCluster->GetFirst(mBlockEntry)) {
             return DecoderReturnCode::CONTINUE;
         }
-        /*
-        if (!mBlockEntry || mBlockEntry->EOS()) {
-            mCluster = mSegment->GetNext(mCluster);
-            return DecoderReturnCode::CONTINUE;
-        }
-        */
     }
 
     const mkvparser::Block* block = mBlockEntry->GetBlock();
@@ -466,6 +461,7 @@ VideoFileHolder::DecoderReturnCode VideoFileHolder::VideoFileHolderImpl::decode(
     for (mFrameCount; mFrameCount < frameLen; ++mFrameCount) {
 
         const mkvparser::Block::Frame& frame = block->GetFrame(mFrameCount);
+        mLatestTimeStamp = block->GetTime(mCluster) / 1000;
 
         std::vector<uint8_t> buf(frame.len);
         if (mReader.Read(frame.pos, frame.len, buf.data())) continue;
@@ -475,7 +471,6 @@ VideoFileHolder::DecoderReturnCode VideoFileHolder::VideoFileHolderImpl::decode(
             sendToDav1d(buf.data(), static_cast<unsigned int>(buf.size()));
 
             if (getPicture()) {
-                //Utility::printLog("video frame: %d x %d", mPicture.p.w, mPicture.p.h);
                 mPictureReady = true;
                 ret = DecoderReturnCode::VIDEO;
                 mFrameCount++;
@@ -494,7 +489,6 @@ VideoFileHolder::DecoderReturnCode VideoFileHolder::VideoFileHolderImpl::decode(
                 , 0);
 
             if (mAudioFrameLen > 0) {
-                //Utility::printLog("audio frame: %d frame", mAudioFrameLen);
                 mAudioReady = true;
                 mFrameCount++;
                 ret = DecoderReturnCode::AUDIO;
@@ -559,7 +553,6 @@ bool VideoFileHolder::VideoFileHolderImpl::getVideoFrame(VideoFrame& videoFrame)
         return true;
     } else {
         if (getPicture()) {
-            //Utility::printLog("video frame: %d x %d", mPicture.p.w, mPicture.p.h);
             videoFrame = convertPictureFormat(mPicture);
             dav1d_picture_unref(&mPicture);
             return true;
@@ -680,42 +673,11 @@ VideoFileHolder::VideoFileHolderImpl::convertPictureFormat(const Dav1dPicture& p
         }
     }
 
-    /*
-    for (uint32_t y = 0; y < uh; y++)
-    {
-        memcpy(frame.mU + y * uw, static_cast<uint8_t*>(pic.data[1]) + y * pic.stride[1], uw);
-        memcpy(frame.mV + y * uw, static_cast<uint8_t*>(pic.data[2]) + y * pic.stride[1], uw);
-    }
-    */
-/*
-    uint32_t ySize = static_cast<uint32_t>( pic.p.h      * pic.stride[0]);
-    uint32_t uSize = static_cast<uint32_t>((pic.p.h / 2) * pic.stride[1]);
-    uint32_t vSize = static_cast<uint32_t>((pic.p.h / 2) * pic.stride[1]);
-
-    frame.mY = new uint8_t[ySize];
-    frame.mU = new uint8_t[uSize];
-    frame.mV = new uint8_t[vSize];
-    
-    uint8_t* srcStart;
-    uint8_t* srcEnd;
-
-    srcStart = static_cast<uint8_t*>(pic.data[0]);
-    srcEnd   = static_cast<uint8_t*>(pic.data[0]) + ySize;
-    std::copy(srcStart, srcEnd, frame.mY);
-
-    srcStart = static_cast<uint8_t*>(pic.data[1]);
-    srcEnd   = static_cast<uint8_t*>(pic.data[1]) + uSize;
-    std::copy(srcStart, srcEnd, frame.mU);
-
-    srcStart = static_cast<uint8_t*>(pic.data[2]);
-    srcEnd   = static_cast<uint8_t*>(pic.data[2]) + vSize;
-    std::copy(srcStart, srcEnd, frame.mV);
-*/
     frame.mStrideY = static_cast<uint32_t>(pic.stride[0]);
     frame.mStrideU = static_cast<uint32_t>(pic.stride[1]);
     frame.mStrideV = static_cast<uint32_t>(pic.stride[1]);
 
-    frame.mTimestamp = pic.m.timestamp;
+    frame.mTimestamp = mLatestTimeStamp;
 
     return frame;
 }

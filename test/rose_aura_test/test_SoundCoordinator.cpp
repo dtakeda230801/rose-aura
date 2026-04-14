@@ -11,7 +11,7 @@
 #include <RoseAura.h>
 #include "MediaUtility.h"
 #include "sound/SamplingRateConverter.h"
-#include "sound/MultiBlockBuffer.h"
+#include "sound/MultiBlockBufferInternal.h"
 
 
 using namespace RoseAuraMediaUtility;
@@ -200,7 +200,7 @@ TEST(testMultiBlockBuffer, BehaviourTest)
         ret = checkBuffer(buff, frameLen);
         EXPECT_TRUE(ret);
 
-        ret = mbBuffer->updateReadBuffer(frameLen, attribute);
+        ret = mbBuffer->updateReadBuffer(frameLen, &attribute);
         EXPECT_TRUE(ret);
         EXPECT_EQ(attribute,128);
 
@@ -211,7 +211,7 @@ TEST(testMultiBlockBuffer, BehaviourTest)
         ret = checkBuffer(buff, frameLen);
         EXPECT_TRUE(ret);
 
-        ret = mbBuffer->updateReadBuffer(frameLen, attribute);
+        ret = mbBuffer->updateReadBuffer(frameLen, &attribute);
         EXPECT_TRUE(ret);
         EXPECT_EQ(attribute, 128);
 

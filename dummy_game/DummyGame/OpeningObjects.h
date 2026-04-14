@@ -29,6 +29,12 @@ namespace OpeningObjects {
 		{
 			if (mVideoPoolAvailable < VIDEO_BUFFER_FRAME_LEN) {
 				VideoFileHolder::VideoFrame& frame = mVideoPool[mVideoPoolReadPointer];
+
+				uint64_t timming = frame.mTimestamp + mBaseTime;
+				if (Utility::getCurrentTime() < timming) {
+					return;
+				}
+
 				++mVideoPoolReadPointer;
 				if (mVideoPoolReadPointer == VIDEO_BUFFER_FRAME_LEN) {
 					mVideoPoolReadPointer = 0;
@@ -140,34 +146,10 @@ namespace OpeningObjects {
 			}
 			wakeUp();
 
-			/*
-			while (*(returnFrameLen) < requestFrameLen) {
-				uint32_t writeSize;
-				float*   writePointer;
-
-				writeSize    = mAudioWritePointer - mAudioReadPointer;
-				writePointer = mAudioBuffer + mAudioReadPointer;
-
-				if (writeSize > requestFrameLen) {
-					writeSize = requestFrameLen;
-				}
-
-				if (writeSize > 0) {
-					ret = writer.write(writePointer, writeSize);
-					if (ret == RARetCode::RET_OK) {
-						mAudioReadPointer += writeSize;
-						*(returnFrameLen) += writeSize;
-					}
-				}
-
-				if (mAudioWritePointer == mAudioReadPointer) {
-					mAudioReadPointer  = 0;
-					mAudioWritePointer = 0;
-				}
-				wakeUp();
+			if (mBaseTime == 0) {
+				mBaseTime = mSoundCoordinator.getDelayTime() + Utility::getCurrentTime();
 			}
-			*/
-			Utility::printLog("requestData out: (%d) (%d)", *(returnFrameLen), requestFrameLen);
+
 			return RARetCode::RET_OK;
 		}
 
@@ -223,25 +205,6 @@ namespace OpeningObjects {
 						mDecoderResult = VideoFileHolder::DecoderReturnCode::CONTINUE;
 						break;
 					}
-
-
-					/*
-					if (mAudioWritePointer == AUDIO_BUFFER_FRAME_LEN) {
-						break;
-					}
-					buffer          = mAudioBuffer + (mAudioWritePointer * mVideoFileHolder->getChannels());
-					requestFrameLen = AUDIO_BUFFER_FRAME_LEN - mAudioWritePointer;
-					aFrameRet       = mVideoFileHolder->getAudioFrame(&buffer, &returnFrameLen, requestFrameLen);
-
-					if (aFrameRet) {
-						mAudioBufferMutex.lock();
-						mAudioWritePointer += returnFrameLen;
-						mAudioBufferMutex.unlock();
-					} else {
-						mDecoderResult = VideoFileHolder::DecoderReturnCode::CONTINUE;
-						break;
-					}
-					*/
 				}
 			}
 
@@ -253,7 +216,6 @@ namespace OpeningObjects {
 		void init()
 		{
 			mVideoWork.mInitialized = false;
-			mAudioDelay = mSoundCoordinator.getDelayTime();
 			mGraphicsManager.setRenderer(this);
 			mSoundCoordinator.registerRenderer(this);
 			start();
@@ -272,12 +234,12 @@ namespace OpeningObjects {
 			, mDecoderResult(VideoFileHolder::DecoderReturnCode::CONTINUE)
 			, mVideoFileHolder(std::make_unique<VideoFileHolder>("test.webm"))
 			, mMultiBlockBuffer(nullptr)
-			, mAudioDelay(0)
 			, mVideoPool{}
 			, mVideoPoolWritePointer(0)
 		    , mVideoPoolReadPointer(0)
 		    , mVideoPoolAvailable(VIDEO_BUFFER_FRAME_LEN)
 			, mVideoWork{}
+			, mBaseTime(0)
 		{
 			mMultiBlockBuffer = new MultiBlockBuffer(AUDIO_BUFFER_BLOCK_NUM, AUDIO_BUFFER_FRAME_LEN, AUDIO_BUFFER_CHANNELS);
 		}
@@ -302,15 +264,13 @@ namespace OpeningObjects {
 		MultiBlockBuffer*
 						mMultiBlockBuffer;
 
-		static constexpr uint32_t	AUDIO_BUFFER_BLOCK_NUM = 3;
-		static constexpr uint32_t	AUDIO_BUFFER_FRAME_LEN = 480;
+		static constexpr uint32_t	AUDIO_BUFFER_BLOCK_NUM = 4;
+		static constexpr uint32_t	AUDIO_BUFFER_FRAME_LEN = 960;
 		static constexpr uint32_t	AUDIO_BUFFER_CHANNELS  = 2;
 		static constexpr uint32_t	VIDEO_BUFFER_FRAME_LEN = 3;
 
 		IGraphicsManager&  mGraphicsManager;
 		ISoundCoordinator& mSoundCoordinator;
-
-		uint32_t		   mAudioDelay;
 
 		std::unique_ptr<VideoFileHolder>
 						   mVideoFileHolder;
@@ -325,6 +285,8 @@ namespace OpeningObjects {
 						  mDecoderResult;
 
 		VideoWork		  mVideoWork;
+
+		uint64_t		  mBaseTime;
 	};
 
 	//////////////////////////////////////////////////////////////

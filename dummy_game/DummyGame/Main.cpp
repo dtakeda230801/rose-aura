@@ -95,6 +95,7 @@ int main()
 		centralLooper.stop();
 		soundCoordinator.stop();
 		objectRepository.deactivateByTag(GameObjects::TAG_GAME_OBJECT);
+		objectRepository.deactivateByTag(OpeningObjects::TAG_OPENING_OBJECT);
 		objectRepository.deactivateByTag(CommonObjects::TAG_COMMON_OBJECT);
 
 	}

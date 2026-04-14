@@ -131,6 +131,9 @@ namespace OpeningObjects {
 				mMultiBlockBuffer->getReadBuffer(readBuffer, availFrameLen);
 
 				if (!readBuffer || availFrameLen == 0) {
+					if (mFinish) {
+						return RARetCode::RET_END_OF_CONTENT;
+					}
 					wakeUp();
 					continue;
 				}
@@ -215,7 +218,23 @@ namespace OpeningObjects {
 			}
 
 			if (mDecoderResult == VideoFileHolder::DecoderReturnCode::FINISH) {
+				mFinish = true;
 				finishSelf();
+			}
+		}
+
+		void cleanUpVideoPool() {
+
+			while (mVideoPoolAvailable < VIDEO_BUFFER_FRAME_LEN) {
+				VideoFileHolder::VideoFrame& frame = mVideoPool[mVideoPoolReadPointer];
+
+				mVideoFileHolder->releaseVideoFrame(frame);
+
+				++mVideoPoolReadPointer;
+				if (mVideoPoolReadPointer == VIDEO_BUFFER_FRAME_LEN) {
+					mVideoPoolReadPointer = 0;
+				}
+				++mVideoPoolAvailable;
 			}
 		}
 
@@ -230,6 +249,7 @@ namespace OpeningObjects {
 		void fin()
 		{
 			finish();
+			cleanUpVideoPool();
 			mGraphicsManager.removeRenderer(this);
 			mSoundCoordinator.unregisterRenderer(this);
 		}
@@ -239,19 +259,18 @@ namespace OpeningObjects {
 			, mSoundCoordinator(ra.getSoundCoordinator())
 			, mDecoderResult(VideoFileHolder::DecoderReturnCode::CONTINUE)
 			, mVideoFileHolder(std::make_unique<VideoFileHolder>("test.webm"))
-			, mMultiBlockBuffer(nullptr)
+			, mMultiBlockBuffer(std::make_unique<MultiBlockBuffer>(AUDIO_BUFFER_BLOCK_NUM, AUDIO_BUFFER_FRAME_LEN, AUDIO_BUFFER_CHANNELS))
 			, mVideoPool{}
 			, mVideoPoolWritePointer(0)
 		    , mVideoPoolReadPointer(0)
 		    , mVideoPoolAvailable(VIDEO_BUFFER_FRAME_LEN)
 			, mVideoWork{}
 			, mBaseTime(0)
+			, mFinish(false)
 		{
-			mMultiBlockBuffer = new MultiBlockBuffer(AUDIO_BUFFER_BLOCK_NUM, AUDIO_BUFFER_FRAME_LEN, AUDIO_BUFFER_CHANNELS);
 		}
 
 		virtual ~Movie() {
-			delete mMultiBlockBuffer;
 		};
 
 	private:
@@ -269,7 +288,7 @@ namespace OpeningObjects {
 			bool        mInitialized;
 		};
 
-		MultiBlockBuffer*
+		std::unique_ptr<MultiBlockBuffer>
 						mMultiBlockBuffer;
 
 		static constexpr uint32_t	AUDIO_BUFFER_BLOCK_NUM = 4;
@@ -295,6 +314,8 @@ namespace OpeningObjects {
 		VideoWork		  mVideoWork;
 
 		uint64_t		  mBaseTime;
+
+		bool			  mFinish;
 	};
 
 	//////////////////////////////////////////////////////////////

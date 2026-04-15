@@ -104,7 +104,7 @@ WaveFileHolder::WaveFileHolder(const char* path) :
 
     mChannels     = channels;
     mSamplingRate = sampleRate;
-    mFrameLen     = static_cast<unsigned int>(sampleCount) / channels;
+    mFrameLen     = static_cast<uint32_t>(sampleCount) / channels;
     mCurrentFrame = 0;
 }
 
@@ -113,7 +113,7 @@ float* WaveFileHolder::getCurrentFramePointer()
     return &mData[mCurrentFrame * mChannels];
 }
 
-void WaveFileHolder::moveCurrentFramePointer(unsigned int frameLen)
+void WaveFileHolder::moveCurrentFramePointer(uint32_t frameLen)
 {
     mCurrentFrame += frameLen;
 
@@ -122,23 +122,23 @@ void WaveFileHolder::moveCurrentFramePointer(unsigned int frameLen)
     }
 }
 
-unsigned int WaveFileHolder::getFrameLen()
+uint32_t WaveFileHolder::getFrameLen()
 {
     return mFrameLen;
 }
 
-unsigned int WaveFileHolder::getRemainFrameLen()
+uint32_t WaveFileHolder::getRemainFrameLen()
 {
     return mFrameLen - mCurrentFrame;
 }
 
 
-unsigned int WaveFileHolder::getSamplingRate()
+uint32_t WaveFileHolder::getSamplingRate()
 {
     return mSamplingRate;
 }
 
-unsigned int WaveFileHolder::getChannelNum()
+uint32_t WaveFileHolder::getChannelNum()
 {
     return mChannels;
 }
@@ -186,7 +186,7 @@ OpusFileHolder::OpusFileHolder(const char* path) :
     }
 
     mFile     = static_cast<void*>(file);
-    mChannels = static_cast<unsigned int>(ret);
+    mChannels = static_cast<uint32_t>(ret);
     mBuffer   = new float[BUFF_FRAME_LEN * mChannels];
 }
 
@@ -204,20 +204,20 @@ bool OpusFileHolder::decode()
             if (mJump) {
                 mFrameCounter += ret;
                 if (mJumpPoint <= mFrameCounter) {
-                    mFrameLen -= (mFrameCounter - mJumpPoint);
+                    mFrameLen -= static_cast<uint32_t>(mFrameCounter - mJumpPoint);
 
-                    unsigned int seekPoint;
-                    unsigned int preDecodeLen;
+                    uint64_t seekPoint;
+                    uint32_t preDecodeLen;
                     if (mJumpTo < BUFF_FRAME_LEN) {
                         seekPoint    = 0;
-                        preDecodeLen = mJumpTo;
+                        preDecodeLen = static_cast<uint32_t>(mJumpTo);
                     } else {
                         seekPoint    = mJumpTo - BUFF_FRAME_LEN;
                         preDecodeLen = BUFF_FRAME_LEN;
                     }
                     op_pcm_seek(file, seekPoint);
 
-                    unsigned int preDecodeOut = 0;
+                    uint32_t preDecodeOut = 0;
                     float* preDecodeBuffer = new float[preDecodeLen*mChannels];
                     while (preDecodeOut < preDecodeLen) {
                         preDecodeOut += op_read_float(file, preDecodeBuffer, preDecodeLen, nullptr);
@@ -236,14 +236,14 @@ bool OpusFileHolder::decode()
     return mNoFinish;
 }
 
-void OpusFileHolder::getCurrentPointer(float*& data, unsigned int* frameLen)
+void OpusFileHolder::getCurrentPointer(float*& data, uint32_t* frameLen)
 {
 
     data      = mBuffer + mReadPointer * mChannels;
     *frameLen = mFrameLen;
 }
 
-void OpusFileHolder::moveReadPointer(unsigned int frameLen)
+void OpusFileHolder::moveReadPointer(uint32_t frameLen)
 {
     mReadPointer += frameLen;
     if (mReadPointer >= mFrameLen) {
@@ -252,12 +252,12 @@ void OpusFileHolder::moveReadPointer(unsigned int frameLen)
     }
 }
 
-unsigned int OpusFileHolder::getChannels()
+uint32_t OpusFileHolder::getChannels()
 {
     return mChannels;
 }
 
-void OpusFileHolder::setJumpPoint(unsigned long point, unsigned long to)
+void OpusFileHolder::setJumpPoint(uint64_t point, uint64_t to)
 {
     mJump      = true;
     mJumpPoint = point;
@@ -304,7 +304,7 @@ VideoFileHolder::DecoderReturnCode VideoFileHolder::decode()
     return mImpl->decode();
 }
 
-bool VideoFileHolder::getAudioFrame(float** buff, unsigned int* returnFrameLen, unsigned int requestFrameLen)
+bool VideoFileHolder::getAudioFrame(float** buff, uint32_t* returnFrameLen, uint32_t requestFrameLen)
 {
     return mImpl->getAudioFrame(buff, returnFrameLen, requestFrameLen);
 }
@@ -399,12 +399,12 @@ VideoFileHolder::VideoFileHolderImpl::VideoFileHolderImpl(const char* path) :
         return;
     }
 
-    unsigned long long   priv_size;
-    const unsigned char* priv = mVideoTrack->GetCodecPrivate(priv_size);
+    uint64_t priv_size;
+    const uint8_t* priv = mVideoTrack->GetCodecPrivate(priv_size);
 
-    std::vector<unsigned char> out;
-    out = extractSequenceHeaderOBU(priv, static_cast<unsigned int>(priv_size));
-    sendToDav1d(out.data(), static_cast<unsigned int>(priv_size));
+    std::vector<uint8_t> out;
+    out = extractSequenceHeaderOBU(priv, static_cast<uint32_t>(priv_size));
+    sendToDav1d(out.data(), static_cast<uint32_t>(priv_size));
 
     mCluster = mSegment->GetFirst();
     if (!mCluster) {
@@ -422,8 +422,8 @@ VideoFileHolder::VideoFileHolderImpl::VideoFileHolderImpl(const char* path) :
     const mkvparser::AudioTrack* audioTrack =
         static_cast<const mkvparser::AudioTrack*>(mAudioTrack);
 
-    mSamplingRate = static_cast<unsigned int>(audioTrack->GetSamplingRate());
-    mChannels     = static_cast<unsigned int>(audioTrack->GetChannels());
+    mSamplingRate = static_cast<uint32_t>(audioTrack->GetSamplingRate());
+    mChannels     = static_cast<uint32_t>(audioTrack->GetChannels());
 
     int opus_err = 0;
     mOpusDecoder = opus_decoder_create(mSamplingRate, mChannels, &opus_err);
@@ -457,7 +457,7 @@ VideoFileHolder::DecoderReturnCode VideoFileHolder::VideoFileHolderImpl::decode(
     const mkvparser::Block* block = mBlockEntry->GetBlock();
     const mkvparser::Track* track = mSegment->GetTracks()->GetTrackByNumber(static_cast<long>(block->GetTrackNumber()));
 
-    unsigned int frameLen = block->GetFrameCount();
+    uint32_t frameLen = block->GetFrameCount();
 
     for (mFrameCount; mFrameCount < frameLen; ++mFrameCount) {
 
@@ -469,7 +469,7 @@ VideoFileHolder::DecoderReturnCode VideoFileHolder::VideoFileHolderImpl::decode(
 
         //////////////////////////////////////
         if (track == mVideoTrack) {
-            sendToDav1d(buf.data(), static_cast<unsigned int>(buf.size()));
+            sendToDav1d(buf.data(), static_cast<uint32_t>(buf.size()));
 
             if (getPicture()) {
                 mPictureReady = true;
@@ -509,14 +509,14 @@ VideoFileHolder::DecoderReturnCode VideoFileHolder::VideoFileHolderImpl::decode(
     return ret;
 }
 
-bool VideoFileHolder::VideoFileHolderImpl::getAudioFrame(float** buff, unsigned int* returnFrameLen, unsigned int requestFrameLen)
+bool VideoFileHolder::VideoFileHolderImpl::getAudioFrame(float** buff, uint32_t* returnFrameLen, uint32_t requestFrameLen)
 {
     bool ret = false;
 
     if (mAudioReady) {
         float*          srcBuff  = mAudioBuffer + (mAudioReadPointer * mChannels);
         float*          outBuff  = *buff;
-        unsigned int    outCount = 0;
+        uint32_t    outCount = 0;
 
         *returnFrameLen = 0;
 
@@ -525,8 +525,8 @@ bool VideoFileHolder::VideoFileHolderImpl::getAudioFrame(float** buff, unsigned 
         } else {
             outCount = requestFrameLen;
         }
-        for (unsigned int i = 0; i < outCount; ++i) {
-            for (unsigned int ch = 0; ch < mChannels; ++ch) {
+        for (uint32_t i = 0; i < outCount; ++i) {
+            for (uint32_t ch = 0; ch < mChannels; ++ch) {
                 *outBuff++ = *srcBuff++;
             }
             ++(*returnFrameLen);
@@ -593,15 +593,15 @@ VideoFileHolder::VideoFileHolderImpl::~VideoFileHolderImpl()
     delete[] mAudioBuffer;
 }
 
-std::vector<unsigned char>
-VideoFileHolder::VideoFileHolderImpl::extractSequenceHeaderOBU(const unsigned char* priv, unsigned int size)
+std::vector<uint8_t>
+VideoFileHolder::VideoFileHolderImpl::extractSequenceHeaderOBU(const uint8_t* priv, uint32_t size)
 {
-    std::vector<unsigned char> out;
+    std::vector<uint8_t> out;
 
     if (!priv || size < 4)
         return out;
 
-    unsigned int pos = 4;
+    uint32_t pos = 4;
 
     while (pos < size)
     {
@@ -611,18 +611,18 @@ VideoFileHolder::VideoFileHolderImpl::extractSequenceHeaderOBU(const unsigned ch
     return out;
 }
 
-void VideoFileHolder::VideoFileHolderImpl::sendToDav1d(const unsigned char* data, unsigned int size)
+void VideoFileHolder::VideoFileHolderImpl::sendToDav1d(const uint8_t* data, uint32_t size)
 {
     Dav1dData d = { 0 };
 
-    unsigned char* heap = new unsigned char[size];
+    uint8_t* heap = new uint8_t[size];
     memcpy(heap, data, size);
 
     dav1d_data_wrap(
         &d,
         heap,
         size,
-        [](const unsigned char* data, void*) {
+        [](const uint8_t* data, void*) {
             delete[] data;
         },
         nullptr

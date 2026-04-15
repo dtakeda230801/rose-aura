@@ -11,7 +11,7 @@ TEST(testRoseAuraClass, APITest)
 		ICentralLooper& cl = ra->getCentralLooper();
 		IGraphicsManager& gm = ra->getGraphicsManager();
 		IInputHandler& ih = ra->getInputHandler();
-		IObjectRepository& ir = ra->getObjectRepository();
+		IObjectActivator& ir = ra->getObjectRepository();
 		IWorldNavigator& iw = ra->getWorldNavigator();
 	}
 	ROSE_AURA_TEST_FIN;

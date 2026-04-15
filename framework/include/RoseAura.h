@@ -4,7 +4,7 @@
 #include "ICentralLooper.h"
 #include "IGraphicsManager.h"
 #include "IInputHandler.h"
-#include "IObjectRepository.h"
+#include "IObjectActivator.h"
 #include "IWorldNavigator.h"
 #include "ISoundCoordinator.h"
 
@@ -15,7 +15,7 @@ public:
 	virtual ICentralLooper&		getCentralLooper()		= 0;
 	virtual IGraphicsManager&	getGraphicsManager()	= 0;
 	virtual IInputHandler&		getInputHandler()		= 0;
-	virtual IObjectRepository&	getObjectRepository()	= 0;
+	virtual IObjectActivator&	getObjectRepository()	= 0;
 	virtual IWorldNavigator&	getWorldNavigator()		= 0;
 	virtual ISoundCoordinator&  getSoundCoordinator()   = 0;
 

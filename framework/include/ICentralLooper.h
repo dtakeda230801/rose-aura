@@ -12,9 +12,9 @@ public:
 	//////////////////////////////////////////////////////////
 	class ITask {
 	public:
-		virtual void		doTask()      = 0;
-		virtual void		finish()      = 0;
-		virtual std::string getTaskName() = 0;
+		virtual void		doTask()       = 0;
+		virtual void		onTaskFinish() = 0;
+		virtual std::string getTaskName()  = 0;
 
 		virtual ~ITask() = default;
 	protected:
@@ -23,7 +23,7 @@ public:
 
 	class IFrameSyncCallback {
 	public:
-		virtual void sync() = 0;
+		virtual void onFrameSync() = 0;
 
 		virtual ~IFrameSyncCallback() = default;
 	protected:

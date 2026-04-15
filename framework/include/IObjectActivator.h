@@ -8,11 +8,11 @@
 
 using namespace RoseAuraReturnCode;
 
-class IObjectRepository {
+class IObjectActivator {
 public:
 
-	using OBJECT_ID = unsigned int;
-	using TAG_ID    = unsigned int;
+	using OBJECT_ID = uint32_t;
+	using TAG_ID    = uint32_t;
 
 #define isValidObjectId(x) (0 < x)
 

@@ -39,25 +39,25 @@ private:
 };
 
 
-TEST(testObjectRepository, APITest)
+TEST(testObjectActivator, APITest)
 {
 	ROSE_AURA_TEST_BEGIN;
 	{
 		RARetCode ret;
 		bool	  check;
 
-		std::vector<IObjectRepository::TAG_ID> tags;
+		std::vector<IObjectActivator::TAG_ID> tags;
 
-		IObjectRepository::OBJECT_ID id1;
-		IObjectRepository::OBJECT_ID id2;
+		IObjectActivator::OBJECT_ID id1;
+		IObjectActivator::OBJECT_ID id2;
 
-		IObjectRepository::TAG_ID TEST_TAG1 = 0x01;
-		IObjectRepository::TAG_ID TEST_TAG2 = 0x02;
+		IObjectActivator::TAG_ID TEST_TAG1 = 0x01;
+		IObjectActivator::TAG_ID TEST_TAG2 = 0x02;
 
 		//////////////////////////////////
 		std::unique_ptr<RoseAura> ra = RoseAura::create();
 
-		IObjectRepository& objR = ra->getObjectRepository();
+		IObjectActivator& objR = ra->getObjectRepository();
 
 		//////////////////////////////////
 		id1 = objR.registerObject(

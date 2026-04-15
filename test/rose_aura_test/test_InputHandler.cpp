@@ -8,7 +8,7 @@ using namespace RoseAuraReturnCode;
 
 class TestCallback : public IInputHandler::IInputHandlerCallback {
 public:
-	void onEvent(std::vector<std::pair<InputState, InputType>>& events)
+	void onInputEvent(std::vector<std::pair<InputState, InputType>>& events)
 	{
 	}
 

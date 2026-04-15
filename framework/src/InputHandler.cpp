@@ -168,7 +168,7 @@ void InputHandler::handleKeyboard()
 void InputHandler::doCallback(std::vector<std::pair<IInputHandlerCallback::InputState, IInputHandlerCallback::InputType>>& events)
 {
 	for (IInputHandlerCallback* frameSyncCallback : mInputHandlerCallbacks) {
-		frameSyncCallback->onEvent(events);
+		frameSyncCallback->onInputEvent(events);
 	}
 }
 

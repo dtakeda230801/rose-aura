@@ -11,7 +11,7 @@ RoseAuraImpl::RoseAuraImpl()
 	mCentralLooper		= std::make_unique<CentralLooper>();
 	mGraphicsManager	= std::make_unique<GraphicsManager>();
 	mInputHandler		= std::make_unique<InputHandler>();
-	mObjectRepository	= std::make_unique<ObjectRepository>();
+	mObjectRepository	= std::make_unique<ObjectActivator>();
 	mWorldNavigator		= std::make_unique<WorldNavigator>();
 	mSoundCoordinator   = std::make_unique<SoundCoordinator>();
 }
@@ -31,7 +31,7 @@ IInputHandler& RoseAuraImpl::getInputHandler()
 	return *mInputHandler;
 }
 
-IObjectRepository& RoseAuraImpl::getObjectRepository()
+IObjectActivator& RoseAuraImpl::getObjectRepository()
 {
 	return *mObjectRepository;
 }

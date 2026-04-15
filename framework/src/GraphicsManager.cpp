@@ -20,17 +20,17 @@ void GraphicsManager::runUntilClosed(Conf conf)
 	while (!WindowShouldClose())
 	{
 		mMutex.lock();
-		std::vector<IObjectRenderer*> renderers = mRenderers;
+		std::vector<IGraphicsRenderer*> renderers = mRenderers;
 		mMutex.unlock();
 
-		for (IObjectRenderer* renderer : renderers)
+		for (IGraphicsRenderer* renderer : renderers)
 		{
-			renderer->doPreprocess();
+			renderer->preprocess();
 		}
 
 		BeginDrawing();
 
-		for (IObjectRenderer* renderer : renderers)
+		for (IGraphicsRenderer* renderer : renderers)
 		{
 			renderer->render();
 		}
@@ -47,7 +47,7 @@ void GraphicsManager::runUntilClosed(Conf conf)
 	CloseWindow();
 }
 
-RARetCode GraphicsManager::setRenderer(IObjectRenderer* renderer)
+RARetCode GraphicsManager::setRenderer(IGraphicsRenderer* renderer)
 {	
 	if (!renderer) {
 		return RARetCode::RET_ERR_INVALID_ARG;
@@ -60,7 +60,7 @@ RARetCode GraphicsManager::setRenderer(IObjectRenderer* renderer)
 	return RARetCode::RET_OK;
 }
 
-RARetCode GraphicsManager::removeRenderer(IObjectRenderer* renderer)
+RARetCode GraphicsManager::removeRenderer(IGraphicsRenderer* renderer)
 {
 	if (!renderer) {
 		return RARetCode::RET_ERR_INVALID_ARG;

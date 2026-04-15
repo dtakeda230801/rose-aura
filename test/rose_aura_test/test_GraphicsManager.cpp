@@ -7,10 +7,10 @@
 
 using namespace RoseAuraReturnCode;
 
-class TestRenderer : public IGraphicsManager::IObjectRenderer {
+class TestRenderer : public IGraphicsManager::IGraphicsRenderer {
 public:
 
-	void doPreprocess() {
+	void preprocess() {
 
 	}
 

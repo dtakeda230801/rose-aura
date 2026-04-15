@@ -17,22 +17,22 @@ public:
 		const char*		mWindowTitle;
 	};
 
-	class IObjectRenderer {
+	class IGraphicsRenderer {
 	public:
-		virtual void doPreprocess() = 0;
-		virtual void render()       = 0;
+		virtual void preprocess() = 0;
+		virtual void render()     = 0;
 
-		virtual ~IObjectRenderer() = default;
+		virtual ~IGraphicsRenderer() = default;
 	protected:
-		IObjectRenderer() = default;
+		IGraphicsRenderer() = default;
 	};
 
 	//////////////////////////////////////////////////////////
 	// APIs
 	//////////////////////////////////////////////////////////
 	virtual void      runUntilClosed(Conf conf)					= 0;
-	virtual RARetCode setRenderer(IObjectRenderer* renderer)	= 0;
-	virtual RARetCode removeRenderer(IObjectRenderer* renderer)	= 0;
+	virtual RARetCode setRenderer(IGraphicsRenderer* renderer)	= 0;
+	virtual RARetCode removeRenderer(IGraphicsRenderer* renderer)	= 0;
 	virtual RARetCode setShaderFile(std::string file)           = 0;
 	virtual void*	  getShader(std::string file)               = 0;
 };

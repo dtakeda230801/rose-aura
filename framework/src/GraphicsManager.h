@@ -15,8 +15,8 @@ public:
 	};
 
 	void	  runUntilClosed(Conf conf);
-	RARetCode setRenderer(IObjectRenderer* renderer);
-	RARetCode removeRenderer(IObjectRenderer* renderer);
+	RARetCode setRenderer(IGraphicsRenderer* renderer);
+	RARetCode removeRenderer(IGraphicsRenderer* renderer);
 	RARetCode setShaderFile(std::string file);
 	void*     getShader(std::string file);
 
@@ -25,7 +25,7 @@ public:
 
 private:
 	std::mutex						mMutex;
-	std::vector<IObjectRenderer*>	mRenderers;
+	std::vector<IGraphicsRenderer*>	mRenderers;
 	std::vector<ShaderHolder>	    mShaderHolders;
 };
 

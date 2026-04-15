@@ -55,20 +55,20 @@ int main()
 		IInputHandler&	   inputHandler	    = rose_aura->getInputHandler();
 		IGraphicsManager&  graphicsManager  = rose_aura->getGraphicsManager();
 		IWorldNavigator&   worldNavigator   = rose_aura->getWorldNavigator();
-		IObjectRepository& objectRepository = rose_aura->getObjectRepository();
+		IObjectActivator& objectRepository = rose_aura->getObjectRepository();
 		ISoundCoordinator& soundCoordinator = rose_aura->getSoundCoordinator();
 
 		////////////////////////////////////////////
 		GameObjects::buildWorldConf();
 		IWorldNavigator::WORLD_ID wId = worldNavigator.createWorld(GameObjects::gWorldConf);
 
-		std::vector<IObjectRepository::OBJECT_ID> commonObjIDs 
+		std::vector<IObjectActivator::OBJECT_ID> commonObjIDs 
 			= CommonObjects::registerObjects(*rose_aura);
 
-		std::vector<IObjectRepository::OBJECT_ID> gameObjIDs
+		std::vector<IObjectActivator::OBJECT_ID> gameObjIDs
 			= GameObjects::registerObjects(*rose_aura);
 
-		std::vector<IObjectRepository::OBJECT_ID> OpeningObjIDs
+		std::vector<IObjectActivator::OBJECT_ID> OpeningObjIDs
 			= OpeningObjects::registerObjects(*rose_aura);
 
 		inputHandler.setConf(readInputConf());

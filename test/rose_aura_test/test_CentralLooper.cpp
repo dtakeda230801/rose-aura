@@ -12,7 +12,7 @@ public:
 	{
 	};
 
-	void finish()
+	void onTaskFinish()
 	{
 	};
 
@@ -27,7 +27,7 @@ public:
 
 class TestCallback : public ICentralLooper::IFrameSyncCallback {
 public:
-	void sync()
+	void onFrameSync()
 	{
 	};
 

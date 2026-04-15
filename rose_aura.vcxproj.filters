@@ -30,7 +30,7 @@
     <ClCompile Include="framework\src\InputHandler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="framework\src\ObjectRepository.cpp">
+    <ClCompile Include="framework\src\ObjectActivator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="framework\src\Utility.cpp">
@@ -71,7 +71,7 @@
     <ClInclude Include="framework\src\GraphicsManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="framework\src\ObjectRepository.h">
+    <ClInclude Include="framework\src\ObjectActivator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="framework\src\Utility.h">
@@ -92,7 +92,7 @@
     <ClInclude Include="framework\include\IInputHandler.h">
       <Filter>RoseAura Interface</Filter>
     </ClInclude>
-    <ClInclude Include="framework\include\IObjectRepository.h">
+    <ClInclude Include="framework\include\IObjectActivator.h">
       <Filter>RoseAura Interface</Filter>
     </ClInclude>
     <ClInclude Include="framework\include\IWorldNavigator.h">

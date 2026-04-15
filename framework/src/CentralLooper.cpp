@@ -91,7 +91,7 @@ void CentralLooper::run() {
 			if (task) {
 				auto taskStart = std::chrono::steady_clock::now();
 				task->doTask();
-				task->finish();
+				task->onTaskFinish();
 			}
 			else {
 				std::this_thread::yield();
@@ -99,7 +99,7 @@ void CentralLooper::run() {
 		}
 
 		for (IFrameSyncCallback* frameSyncCallback : mFrameSyncCallbacks) {
-			frameSyncCallback->sync();
+			frameSyncCallback->onFrameSync();
 		}
 
 		auto takenTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - frameStart);

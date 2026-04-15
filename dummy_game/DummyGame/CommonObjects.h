@@ -20,7 +20,7 @@ namespace CommonObjects {
 			mInputHandler.update();
 		};
 
-		void finish()
+		void onTaskFinish()
 		{
 		};
 
@@ -30,7 +30,7 @@ namespace CommonObjects {
 		}
 
 		//IFrameSyncCallback
-		void sync()
+		void onFrameSync()
 		{
 			mCentralLooper.enqueueTask(this);
 		}
@@ -79,7 +79,7 @@ namespace CommonObjects {
 			}
 		};
 
-		void finish()
+		void onTaskFinish()
 		{
 		};
 
@@ -89,7 +89,7 @@ namespace CommonObjects {
 		}
 
 		//IInputHandlerCallback
-		void onEvent(std::vector<std::pair<InputState, InputType>>& events)
+		void onInputEvent(std::vector<std::pair<InputState, InputType>>& events)
 		{
 			for (auto event : events) {
 				InputState state = event.first;
@@ -123,15 +123,15 @@ namespace CommonObjects {
 	private:
 		ICentralLooper&    mCentralLooper;
 		IInputHandler&     mInputHandler;
-		IObjectRepository& mObjectRepository;
+		IObjectActivator& mObjectRepository;
 		bool		       mActivated;
 	};
 
 	//////////////////////////////////////////////////////////////
-	class Background : public IGraphicsManager::IObjectRenderer
+	class Background : public IGraphicsManager::IGraphicsRenderer
 	{
 	public:
-		void doPreprocess()
+		void preprocess()
 		{
 		}
 
@@ -165,12 +165,12 @@ namespace CommonObjects {
 
 	//////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////
-	std::vector<IObjectRepository::OBJECT_ID> registerObjects(RoseAura& ra)
+	std::vector<IObjectActivator::OBJECT_ID> registerObjects(RoseAura& ra)
 	{
-		std::vector<IObjectRepository::OBJECT_ID> ids;
-		std::vector<IObjectRepository::TAG_ID>	  tags = { TAG_COMMON_OBJECT };
+		std::vector<IObjectActivator::OBJECT_ID> ids;
+		std::vector<IObjectActivator::TAG_ID>	  tags = { TAG_COMMON_OBJECT };
 
-		IObjectRepository& objectRepository = ra.getObjectRepository();
+		IObjectActivator& objectRepository = ra.getObjectRepository();
 
 		//////////////////////////////////
 		ids.push_back(

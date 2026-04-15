@@ -49,10 +49,10 @@ namespace GameObjects {
 	}
 
 	//////////////////////////////////////////////////////////////
-	class GameWorld : public IGraphicsManager::IObjectRenderer
+	class GameWorld : public IGraphicsManager::IGraphicsRenderer
 	{
 	public:
-		void doPreprocess()
+		void preprocess()
 		{
 		}
 
@@ -87,11 +87,11 @@ namespace GameObjects {
 	};
 
 	//////////////////////////////////////////////////////////////
-	class ActiveSpace : public IGraphicsManager::IObjectRenderer
+	class ActiveSpace : public IGraphicsManager::IGraphicsRenderer
 		              , public IWorldNavigator::IActiveSpaceCallback
 	{
 	public:
-		void doPreprocess()
+		void preprocess()
 		{
 		}
 
@@ -147,12 +147,12 @@ namespace GameObjects {
 	};
 
 	//////////////////////////////////////////////////////////////
-	class Text01 : public IGraphicsManager::IObjectRenderer
+	class Text01 : public IGraphicsManager::IGraphicsRenderer
 		         , public IInputHandler::IInputHandlerCallback
 	{
 	public:
 		//IObjectRenderer
-		void doPreprocess()
+		void preprocess()
 		{
 		}
 
@@ -165,7 +165,7 @@ namespace GameObjects {
 		};
 
 		//IInputHandlerCallback
-		void onEvent(std::vector<std::pair<InputState, InputType>>& events)
+		void onInputEvent(std::vector<std::pair<InputState, InputType>>& events)
 		{
 			for (auto event : events) {
 				InputState state = event.first;
@@ -212,11 +212,11 @@ namespace GameObjects {
 
 	//////////////////////////////////////////////////////////////
 	class MyCharacter :
-		  public IGraphicsManager::IObjectRenderer
+		  public IGraphicsManager::IGraphicsRenderer
 		, public IInputHandler::IInputHandlerCallback
 	{
 	public:
-		void doPreprocess()
+		void preprocess()
 		{
 		}
 
@@ -226,7 +226,7 @@ namespace GameObjects {
 			DrawCircle(pos.mX, pos.mY, CIRCLE_SIZE, SKYBLUE);
 		};
 
-		void onEvent(std::vector<std::pair<InputState, InputType>>& events)
+		void onInputEvent(std::vector<std::pair<InputState, InputType>>& events)
 		{
 			for (auto event : events) {
 				//Utility::printLog("MyDot Input(%d / %d)", event.first, event.second);
@@ -285,7 +285,7 @@ namespace GameObjects {
 	//////////////////////////////////////////////////////////////
 	class Target : public ICentralLooper::ITask
 		         , public ICentralLooper::IFrameSyncCallback
-		         , public IGraphicsManager::IObjectRenderer
+		         , public IGraphicsManager::IGraphicsRenderer
 		         , public IWorldNavigator::ITriggerCallback
 	{
 	public:
@@ -330,7 +330,7 @@ namespace GameObjects {
 			}
 		};
 
-		void finish()
+		void onTaskFinish()
 		{
 		};
 
@@ -340,13 +340,13 @@ namespace GameObjects {
 		}
 
 		//IFrameSyncCallback
-		void sync()
+		void onFrameSync()
 		{
 			mCentralLooper.enqueueTask(this);
 		}
 
 		//IObjectRenderer
-		void doPreprocess()
+		void preprocess()
 		{
 		}
 
@@ -434,7 +434,7 @@ namespace GameObjects {
 	{
 	public:
 		//IInputHandlerCallback
-		void onEvent(std::vector<std::pair<InputState, InputType>>& events)
+		void onInputEvent(std::vector<std::pair<InputState, InputType>>& events)
 		{
 			for (auto event : events) {
 				InputState state = event.first;
@@ -483,7 +483,7 @@ namespace GameObjects {
 			return RARetCode::RET_OK;
 		}
 
-		void onFinish()
+		void onAudioStreamFinish()
 		{
 			Utility::printLog("SoundEffect01 onFinish");
 		}
@@ -509,7 +509,7 @@ namespace GameObjects {
 	{
 	public:
 		//IInputHandlerCallback
-		void onEvent(std::vector<std::pair<InputState, InputType>>& events)
+		void onInputEvent(std::vector<std::pair<InputState, InputType>>& events)
 		{
 			for (auto event : events) {
 				InputState state = event.first;
@@ -606,7 +606,7 @@ namespace GameObjects {
 			return ret;
 		}
 
-		void onFinish()
+		void onAudioStreamFinish()
 		{
 			Utility::printLog("Music onFinish");
 		}
@@ -633,12 +633,12 @@ namespace GameObjects {
 
 	//////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////
-	std::vector<IObjectRepository::OBJECT_ID> registerObjects(RoseAura& ra)
+	std::vector<IObjectActivator::OBJECT_ID> registerObjects(RoseAura& ra)
 	{
-		std::vector<IObjectRepository::OBJECT_ID> ids;
-		std::vector<IObjectRepository::TAG_ID>	  tags = { TAG_GAME_OBJECT };
+		std::vector<IObjectActivator::OBJECT_ID> ids;
+		std::vector<IObjectActivator::TAG_ID>	  tags = { TAG_GAME_OBJECT };
 
-		IObjectRepository& objectRepository = ra.getObjectRepository();
+		IObjectActivator& objectRepository = ra.getObjectRepository();
 
 		//////////////////////////////////
 		ids.push_back(

@@ -329,7 +329,7 @@ uint32_t SoundCoordinator::requestDataInternal(float** buff, uint32_t frameNum)
                     }
 
                     if (ret == RARetCode::RET_END_OF_CONTENT) {
-                        sound->onFinish();
+                        sound->onAudioStreamFinish();
                         ite = mRenderers.erase(ite);
                     }
                     else {

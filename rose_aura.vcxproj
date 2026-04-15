@@ -35,7 +35,7 @@
     <ClCompile Include="framework\src\InputHandler.cpp" />
     <ClCompile Include="framework\src\MediaUtility.cpp" />
     <ClCompile Include="framework\src\SoundCoordinator.cpp" />
-    <ClCompile Include="framework\src\ObjectRepository.cpp" />
+    <ClCompile Include="framework\src\ObjectActivator.cpp" />
     <ClCompile Include="framework\src\RoseAura.cpp" />
     <ClCompile Include="framework\src\sound\MultiBlockBufferInternal.cpp" />
     <ClCompile Include="framework\src\sound\SamplingRateConverter.cpp" />
@@ -47,7 +47,7 @@
     <ClInclude Include="framework\include\IGraphicsManager.h" />
     <ClInclude Include="framework\include\IInputHandler.h" />
     <ClInclude Include="framework\include\ISoundCoordinator.h" />
-    <ClInclude Include="framework\include\IObjectRepository.h" />
+    <ClInclude Include="framework\include\IObjectActivator.h" />
     <ClInclude Include="framework\include\IWorldNavigator.h" />
     <ClInclude Include="framework\include\MediaUtility.h" />
     <ClInclude Include="framework\include\RoseAura.h" />
@@ -57,7 +57,7 @@
     <ClInclude Include="framework\src\InputHandler.h" />
     <ClInclude Include="framework\src\MediaUtilityImpl.h" />
     <ClInclude Include="framework\src\SoundCoordinator.h" />
-    <ClInclude Include="framework\src\ObjectRepository.h" />
+    <ClInclude Include="framework\src\ObjectActivator.h" />
     <ClInclude Include="framework\src\RoseAuraImpl.h" />
     <ClInclude Include="framework\src\sound\MultiBlockBufferInternal.h" />
     <ClInclude Include="framework\src\sound\SamplingRateConverter.h" />

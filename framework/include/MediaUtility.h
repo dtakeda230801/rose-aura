@@ -12,50 +12,50 @@ namespace RoseAuraMediaUtility {
 	class WaveFileHolder {
 	public:
 		WaveFileHolder(const char* path);
-		float*       getCurrentFramePointer();
-		void         moveCurrentFramePointer(unsigned int frameLen);
-		unsigned int getFrameLen();
-		unsigned int getRemainFrameLen();
-		unsigned int getSamplingRate();
-		unsigned int getChannelNum();
-		void         reset();
+		float*   getCurrentFramePointer();
+		void     moveCurrentFramePointer(uint32_t frameLen);
+		uint32_t getFrameLen();
+		uint32_t getRemainFrameLen();
+		uint32_t getSamplingRate();
+		uint32_t getChannelNum();
+		void     reset();
 
 		virtual ~WaveFileHolder();
 
 	private:
-		unsigned int mChannels;
-		unsigned int mSamplingRate;
-		unsigned int mFrameLen;
-		unsigned int mCurrentFrame;
-		float*		 mData;
+		uint32_t mChannels;
+		uint32_t mSamplingRate;
+		uint32_t mFrameLen;
+		uint32_t mCurrentFrame;
+		float*	 mData;
 	};
 
 	/////////////////////////////////////////////
 	class OpusFileHolder {
 	public:
 		OpusFileHolder(const char* path);
-		bool		 decode();
-		void		 getCurrentPointer(float*& data, unsigned int* frameLen);
-		void		 moveReadPointer(unsigned int frameLen);
-		unsigned int getChannels();
-		void		 setJumpPoint(unsigned long point, unsigned long to);
-		void		 reset();
+		bool	 decode();
+		void	 getCurrentPointer(float*& data, uint32_t* frameLen);
+		void	 moveReadPointer(uint32_t frameLen);
+		uint32_t getChannels();
+		void	 setJumpPoint(uint64_t point, uint64_t to);
+		void	 reset();
 
 		virtual ~OpusFileHolder();
 
 	private:
-		static constexpr unsigned int BUFF_FRAME_LEN = 960;
+		static constexpr uint32_t BUFF_FRAME_LEN = 960;
 
-		void*			mFile;
-		unsigned int	mChannels;
-		float*			mBuffer;
-		unsigned int	mFrameLen;
-		unsigned int    mReadPointer;
-		bool            mNoFinish;
-		bool			mJump;
-		unsigned long   mJumpTo;
-		unsigned long   mJumpPoint;
-		unsigned long   mFrameCounter;
+		void*		mFile;
+		uint32_t	mChannels;
+		float*		mBuffer;
+		uint32_t	mFrameLen;
+		uint32_t    mReadPointer;
+		bool        mNoFinish;
+		bool	    mJump;
+		uint64_t    mJumpTo;
+		uint64_t    mJumpPoint;
+		uint64_t    mFrameCounter;
 	};
 
 	/////////////////////////////////////////////
@@ -88,7 +88,7 @@ namespace RoseAuraMediaUtility {
 
 		DecoderReturnCode decode();
 
-		bool     getAudioFrame(float** buff, unsigned int* returnFrameLen, unsigned int requestFrameLen);
+		bool     getAudioFrame(float** buff, uint32_t* returnFrameLen, uint32_t requestFrameLen);
 		bool     getVideoFrame(VideoFrame& videoFrame);
 
 		void     releaseVideoFrame(VideoFrame& frame);

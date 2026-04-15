@@ -6,8 +6,8 @@ using namespace RoseAuraReturnCode;
 
 class IWorldNavigator {
 public:
-	using WORLD_ID = unsigned int;
-	using TRIGGER_ID = unsigned int;
+	using WORLD_ID   = uint32_t;
+	using TRIGGER_ID = uint32_t;
 
 #define isValidWorldId(x) (0 != x) 
 

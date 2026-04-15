@@ -19,7 +19,7 @@ public:
 	class ISoundRenderer {
 	public:
 		virtual RARetCode requestData(uint32_t requestFrameLen, uint32_t* returnFrameLen, IDataWriter& writer) = 0;
-		virtual void      onFinish() = 0;
+		virtual void      onAudioStreamFinish() = 0;
 		virtual ~ISoundRenderer() = default;
 	protected:
 		ISoundRenderer() = default;

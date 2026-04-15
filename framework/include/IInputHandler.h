@@ -29,7 +29,7 @@ public:
 			UNKNOWN_TYPE = 0xFF
 		};
 
-		virtual void onEvent(std::vector<std::pair<InputState,InputType>>& events) = 0;
+		virtual void onInputEvent(std::vector<std::pair<InputState,InputType>>& events) = 0;
 
 		virtual ~IInputHandlerCallback() = default;
 	protected:

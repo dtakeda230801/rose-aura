@@ -1,15 +1,15 @@
-#include "ObjectRepository.h"
+#include "ObjectActivator.h"
 #include "Utility.h"
 
-ObjectRepository::OBJECT_ID 
-	ObjectRepository::registerObject(std::unique_ptr<ObjectBinder> binder)
+ObjectActivator::OBJECT_ID 
+	ObjectActivator::registerObject(std::unique_ptr<ObjectBinder> binder)
 {
 	std::vector<TAG_ID> tags = {};
 	return registerObject(std::move(binder), tags);
 }
 
-ObjectRepository::OBJECT_ID 
-	ObjectRepository::registerObject(std::unique_ptr<ObjectBinder> binder, std::vector<TAG_ID>& tags)
+ObjectActivator::OBJECT_ID 
+	ObjectActivator::registerObject(std::unique_ptr<ObjectBinder> binder, std::vector<TAG_ID>& tags)
 {
 	OBJECT_ID id = ++mIdCounter;
 
@@ -28,7 +28,7 @@ ObjectRepository::OBJECT_ID
 }
 
 
-RARetCode ObjectRepository::unregisterObject(OBJECT_ID id)
+RARetCode ObjectActivator::unregisterObject(OBJECT_ID id)
 {
 	RARetCode ret = RARetCode::RET_OK;
 
@@ -53,7 +53,7 @@ RARetCode ObjectRepository::unregisterObject(OBJECT_ID id)
 	return ret;
 }
 
-RARetCode ObjectRepository::addTag(OBJECT_ID id, TAG_ID tag)
+RARetCode ObjectActivator::addTag(OBJECT_ID id, TAG_ID tag)
 {
 	ObjectEntry* objEntry = searchObjectEntry(id);
 	if (!objEntry) {
@@ -66,7 +66,7 @@ RARetCode ObjectRepository::addTag(OBJECT_ID id, TAG_ID tag)
 	return RARetCode::RET_OK;
 }
 
-RARetCode ObjectRepository::removeTag(OBJECT_ID id, TAG_ID tag)
+RARetCode ObjectActivator::removeTag(OBJECT_ID id, TAG_ID tag)
 {
 	ObjectEntry* objEntry = searchObjectEntry(id);
 	if (!objEntry) {
@@ -82,7 +82,7 @@ RARetCode ObjectRepository::removeTag(OBJECT_ID id, TAG_ID tag)
 	return RARetCode::RET_OK;
 }
 
-RARetCode ObjectRepository::activate(OBJECT_ID id)
+RARetCode ObjectActivator::activate(OBJECT_ID id)
 {
 	ObjectEntry* objEntry = searchObjectEntry(id);
 	if (!objEntry) {
@@ -92,7 +92,7 @@ RARetCode ObjectRepository::activate(OBJECT_ID id)
 	return activateInternal(objEntry);
 }
 
-RARetCode ObjectRepository::deactivate(OBJECT_ID id)
+RARetCode ObjectActivator::deactivate(OBJECT_ID id)
 {
 	ObjectEntry* objEntry = searchObjectEntry(id);
 	if (!objEntry) {
@@ -102,7 +102,7 @@ RARetCode ObjectRepository::deactivate(OBJECT_ID id)
 	return deactivateInternal(objEntry);
 }
 
-RARetCode ObjectRepository::activateByTag(TAG_ID id)
+RARetCode ObjectActivator::activateByTag(TAG_ID id)
 {
 	std::vector<ObjectEntry*> entries = searchObjectEntryByTag(id);
 	if (entries.empty()) {
@@ -118,7 +118,7 @@ RARetCode ObjectRepository::activateByTag(TAG_ID id)
 
 	return ret;
 }
-RARetCode ObjectRepository::deactivateByTag(TAG_ID id)
+RARetCode ObjectActivator::deactivateByTag(TAG_ID id)
 {
 	std::vector<ObjectEntry*> entries = searchObjectEntryByTag(id);
 	if (entries.empty()) {
@@ -135,7 +135,7 @@ RARetCode ObjectRepository::deactivateByTag(TAG_ID id)
 	return ret;
 }
 
-bool ObjectRepository::isActivate(OBJECT_ID id) 
+bool ObjectActivator::isActivate(OBJECT_ID id) 
 {
 	ObjectEntry* objEntry = searchObjectEntry(id);
 	if (!objEntry) {
@@ -145,7 +145,7 @@ bool ObjectRepository::isActivate(OBJECT_ID id)
 	return (objEntry->mInstance);
 }
 
-bool ObjectRepository::isActivateByTag(TAG_ID id)
+bool ObjectActivator::isActivateByTag(TAG_ID id)
 {
 	std::vector<ObjectEntry*> entries = searchObjectEntryByTag(id);
 	if (entries.empty()) {
@@ -161,12 +161,12 @@ bool ObjectRepository::isActivateByTag(TAG_ID id)
 	return ret;
 }
 
-ObjectRepository::ObjectRepository() :
+ObjectActivator::ObjectActivator() :
 	mIdCounter(0)
 {
 }
 
-ObjectRepository::~ObjectRepository()
+ObjectActivator::~ObjectActivator()
 {
 	for (std::unique_ptr<ObjectEntry>& entry : mObjects) {
 		deactivateInternal(entry.get());
@@ -175,8 +175,8 @@ ObjectRepository::~ObjectRepository()
 }
 
 
-ObjectRepository::ObjectEntry* 
-	ObjectRepository::searchObjectEntry(OBJECT_ID id)
+ObjectActivator::ObjectEntry* 
+	ObjectActivator::searchObjectEntry(OBJECT_ID id)
 {
 	for (auto& entry : mObjects)
 	{
@@ -187,10 +187,10 @@ ObjectRepository::ObjectEntry*
 	return nullptr;
 }
 
-std::vector<ObjectRepository::ObjectEntry*>
-	ObjectRepository::searchObjectEntryByTag(TAG_ID id)
+std::vector<ObjectActivator::ObjectEntry*>
+	ObjectActivator::searchObjectEntryByTag(TAG_ID id)
 {
-	std::vector<ObjectRepository::ObjectEntry*> entries = {};
+	std::vector<ObjectActivator::ObjectEntry*> entries = {};
 
 	for (auto& entry : mObjects)
 	{
@@ -204,7 +204,7 @@ std::vector<ObjectRepository::ObjectEntry*>
 	return entries;
 }
 
-RARetCode ObjectRepository::activateInternal(ObjectEntry* entry)
+RARetCode ObjectActivator::activateInternal(ObjectEntry* entry)
 {
 	if (entry->mInstance) {
 		return RARetCode::RET_ERR_INVALID_STATE;
@@ -214,7 +214,7 @@ RARetCode ObjectRepository::activateInternal(ObjectEntry* entry)
 	return RARetCode::RET_OK;
 }
 
-RARetCode ObjectRepository::deactivateInternal(ObjectEntry* entry)
+RARetCode ObjectActivator::deactivateInternal(ObjectEntry* entry)
 {
 	if (!entry->mInstance) {
 		return RARetCode::RET_ERR_INVALID_STATE;

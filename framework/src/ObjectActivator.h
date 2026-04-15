@@ -2,9 +2,9 @@
 
 #include <vector>
 
-#include "IObjectRepository.h"
+#include "IObjectActivator.h"
 
-class ObjectRepository : public IObjectRepository {
+class ObjectActivator : public IObjectActivator {
 public:
 	struct ObjectEntry {
 		OBJECT_ID			 mId;
@@ -32,12 +32,12 @@ public:
 	bool isActivate(OBJECT_ID id);
 	bool isActivateByTag(TAG_ID id);
 
-	ObjectRepository();
-	virtual ~ObjectRepository();
+	ObjectActivator();
+	virtual ~ObjectActivator();
 
 private:
 	ObjectEntry* searchObjectEntry(OBJECT_ID id);
-	std::vector<ObjectRepository::ObjectEntry*>
+	std::vector<ObjectActivator::ObjectEntry*>
 		searchObjectEntryByTag(TAG_ID id);
 
 	RARetCode activateInternal(ObjectEntry* entry);

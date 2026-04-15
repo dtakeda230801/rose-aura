@@ -21,12 +21,12 @@ namespace OpeningObjects {
 
 	//////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////
-	class Movie : public IGraphicsManager::IObjectRenderer
+	class Movie : public IGraphicsManager::IGraphicsRenderer
 		        , public ISoundCoordinator::ISoundRenderer
 		        , public PreRenderThread
 	{
 	public:
-		void doPreprocess()
+		void preprocess()
 		{
 			std::lock_guard<std::mutex> lock(mMutex);
 
@@ -160,7 +160,7 @@ namespace OpeningObjects {
 			return RARetCode::RET_OK;
 		}
 
-		void onFinish()
+		void onAudioStreamFinish()
 		{
 			Utility::printLog("Movie onFinish");
 		}
@@ -342,12 +342,12 @@ namespace OpeningObjects {
 
 	//////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////
-	std::vector<IObjectRepository::OBJECT_ID> registerObjects(RoseAura& ra)
+	std::vector<IObjectActivator::OBJECT_ID> registerObjects(RoseAura& ra)
 	{
-		std::vector<IObjectRepository::OBJECT_ID> ids;
-		std::vector<IObjectRepository::TAG_ID>	  tags = { TAG_OPENING_OBJECT };
+		std::vector<IObjectActivator::OBJECT_ID> ids;
+		std::vector<IObjectActivator::TAG_ID>	  tags = { TAG_OPENING_OBJECT };
 
-		IObjectRepository& objectRepository = ra.getObjectRepository();
+		IObjectActivator& objectRepository = ra.getObjectRepository();
 
 		//////////////////////////////////
 		ids.push_back(

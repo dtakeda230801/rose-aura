@@ -1,6 +1,7 @@
 #pragma once
 
 #include "raylib.h"
+#include "rlgl.h"
 
 #include "RoseAura.h"
 #include "RoseAuraReturnCode.h"
@@ -47,6 +48,96 @@ namespace GameObjects {
 		gWorldConf.mEnableFollowing = true;
 		gWorldConf.mLimitScrolling  = true;
 	}
+
+	//////////////////////////////////////////////////////////////
+	class Test3DModel : public IGraphicsManager::IGraphicsRenderer
+ 		              , public ICentralLooper::ITask
+		              , public ICentralLooper::IFrameSyncCallback
+	{
+	public:
+		void doTask()
+		{
+			float angle = mAngle;
+
+			angle += 5.0f;
+			if (angle > 360.0f) {
+				angle -= 360;
+			}
+
+			mAngle.store(angle);
+
+		};
+
+		void onTaskFinish()
+		{
+		};
+
+		std::string getTaskName()
+		{
+			return "Test 3D Model";
+		}
+
+		void onFrameSync()
+		{
+			mCentralLooper.enqueueTask(this);
+		}
+
+		void preprocess()
+		{
+		}
+
+		void render()
+		{
+			BeginMode3D(mCamera);
+
+			rlPushMatrix();
+
+			rlTranslatef(0.0f, 0.0f, 0.0f);
+			rlRotatef(mAngle.load(), 0.0f, 1.0f, 0.0f);
+
+			DrawCubeV({ 0, 0, 0 }, { 2, 2, 2 }, RED);
+			DrawCubeWiresV({ 0, 0, 0 }, { 2, 2, 2 }, BLACK);
+
+			rlPopMatrix();
+
+			DrawGrid(10, 1.0f);
+
+			EndMode3D();
+		};
+
+		void init()
+		{
+			mGraphicsManager.setRenderer(this);
+			mCentralLooper.registerFrameSyncCallback(this);
+			mCentralLooper.enqueueTask(this);
+		}
+
+		void fin()
+		{
+			mGraphicsManager.removeRenderer(this);
+			mCentralLooper.unregisterFrameSyncCallback(this);
+		}
+
+		Test3DModel(RoseAura& ra) :
+			  mCentralLooper(ra.getCentralLooper())
+			, mGraphicsManager(ra.getGraphicsManager())
+			, mAngle(0.0f)
+		{
+			mCamera.position = { 5.0f, 5.0f, 5.0f };
+			mCamera.target   = { 0.0f, 0.0f, 0.0f };
+			mCamera.up       = { 0.0f, 1.0f, 0.0f };
+			mCamera.fovy     = 45.0f;
+			mCamera.projection = CAMERA_PERSPECTIVE; 
+		}
+
+		virtual ~Test3DModel() = default;
+
+	private:
+		ICentralLooper&    mCentralLooper;
+		IGraphicsManager&  mGraphicsManager;
+		Camera			   mCamera;
+		std::atomic<float> mAngle;
+	};
 
 	//////////////////////////////////////////////////////////////
 	class GameWorld : public IGraphicsManager::IGraphicsRenderer
@@ -641,6 +732,13 @@ namespace GameObjects {
 		IObjectActivator& objectRepository = ra.getObjectRepository();
 
 		//////////////////////////////////
+		ids.push_back(
+			objectRepository.registerObject(
+				objectRepository.makeObjectBinder<Test3DModel, RoseAura&>(
+					&Test3DModel::init, &Test3DModel::fin, ra)
+				, tags
+			));
+
 		ids.push_back(
 			objectRepository.registerObject(
 				objectRepository.makeObjectBinder<GameWorld, RoseAura&>(

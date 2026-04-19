@@ -281,8 +281,9 @@ namespace OpeningObjects {
 			  mGraphicsManager(ra.getGraphicsManager())
 			, mSoundCoordinator(ra.getSoundCoordinator())
 			, mDecoderResult(VideoFileHolder::DecoderReturnCode::CONTINUE)
-			, mVideoFileHolder(std::make_unique<VideoFileHolder>("test.webm"))
-			, mMultiBlockBuffer(std::make_unique<MultiBlockBuffer>(AUDIO_BUFFER_BLOCK_NUM, AUDIO_BUFFER_FRAME_LEN, AUDIO_BUFFER_CHANNELS))
+			, mVideoFileHolder(std::make_unique<VideoFileHolder>("bluestone.webm"))
+//			, mVideoFileHolder(std::make_unique<VideoFileHolder>("test.webm"))
+, mMultiBlockBuffer(std::make_unique<MultiBlockBuffer>(AUDIO_BUFFER_BLOCK_NUM, AUDIO_BUFFER_FRAME_LEN, AUDIO_BUFFER_CHANNELS))
 			, mVideoPool{}
 			, mVideoPoolWritePointer(0)
 		    , mVideoPoolReadPointer(0)

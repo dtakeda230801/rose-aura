@@ -85,6 +85,7 @@ int main()
 
 		objectRepository.activateByTag(TAG_COMMON_OBJECT);
 		objectRepository.activateByTag(TAG_GAME_OBJECT);
+		//objectRepository.activateByTag(TAG_OPENING_OBJECT);
 
 		////////////////////////////////////////////
 		soundCoordinator.start();

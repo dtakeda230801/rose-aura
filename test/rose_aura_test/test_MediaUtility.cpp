@@ -122,7 +122,8 @@ TEST(testVideoFileHolder, BehaviourTest)
         float* dummyBuffer = new float[480 * 2];
         unsigned int  videoFrameCount = 0;
 
-        std::unique_ptr<VideoFileHolder> vfh = std::make_unique<VideoFileHolder>("..\\..\\test\\rose_aura_test\\test.webm");
+        //std::unique_ptr<VideoFileHolder> vfh = std::make_unique<VideoFileHolder>("..\\..\\test\\rose_aura_test\\test.webm");
+        std::unique_ptr<VideoFileHolder> vfh = std::make_unique<VideoFileHolder>("E:\\works\\Dev\\github\\rose-aura\\dummy_game\\DummyGame\\bluestone.webm");
 
         VideoFileHolder::DecoderReturnCode decRet = VideoFileHolder::DecoderReturnCode::CONTINUE;
 

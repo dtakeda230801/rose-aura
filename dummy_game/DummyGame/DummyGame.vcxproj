@@ -168,6 +168,7 @@ kernel32.lib;opus.lib;opusfile.lib;ogg.lib;dav1d.lib;%(AdditionalDependencies)</
     <None Include="Seeker.opus" />
   </ItemGroup>
   <ItemGroup>
+    <Media Include="bluestone.webm" />
     <Media Include="test.wav" />
   </ItemGroup>
   <ItemGroup>

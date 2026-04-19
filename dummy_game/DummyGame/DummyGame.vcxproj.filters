@@ -26,6 +26,7 @@
   </ItemGroup>
   <ItemGroup>
     <Media Include="test.wav" />
+    <Media Include="bluestone.webm" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommonObjects.h">

@@ -169,6 +169,7 @@ kernel32.lib;opus.lib;opusfile.lib;ogg.lib;dav1d.lib;%(AdditionalDependencies)</
     <ClCompile Include="test_ObjectActivator.cpp" />
     <ClCompile Include="test_SoundCoordinator.cpp" />
     <ClCompile Include="test_MediaUtility.cpp" />
+    <ClCompile Include="test_ConditionSaver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\rose_aura.vcxproj">

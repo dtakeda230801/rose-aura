@@ -63,6 +63,12 @@
     <ClCompile Include="framework\src\sound\MultiBlockBufferInternal.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="framework\src\ConditionSaver.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\src\StoryAnchor.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework\src\CentralLooper.h">
@@ -123,6 +129,18 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="framework\src\sound\MultiBlockBufferInternal.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\include\IStoryAnchor.h">
+      <Filter>RoseAura Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\include\IConditionSaver.h">
+      <Filter>RoseAura Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\src\StoryAnchor.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\src\ConditionSaver.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

@@ -14,6 +14,7 @@ RoseAuraImpl::RoseAuraImpl()
 	mObjectRepository	= std::make_unique<ObjectActivator>();
 	mWorldNavigator		= std::make_unique<WorldNavigator>();
 	mSoundCoordinator   = std::make_unique<SoundCoordinator>();
+	mConditionSaver     = std::make_unique<ConditionSaver>();
 }
 
 ICentralLooper& RoseAuraImpl::getCentralLooper()
@@ -46,3 +47,7 @@ ISoundCoordinator& RoseAuraImpl::getSoundCoordinator()
 	return *mSoundCoordinator;
 }
 
+IConditionSaver& RoseAuraImpl::getConditionSaver()
+{
+	return *mConditionSaver;
+}

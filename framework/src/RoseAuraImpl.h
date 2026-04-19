@@ -7,6 +7,7 @@
 #include "ObjectActivator.h"
 #include "WorldNavigator.h"
 #include "SoundCoordinator.h"
+#include "ConditionSaver.h"
 
 class RoseAuraImpl : public RoseAura{
 public:
@@ -16,6 +17,7 @@ public:
 	IObjectActivator& 	getObjectRepository();
 	IWorldNavigator&	getWorldNavigator();
 	ISoundCoordinator&  getSoundCoordinator();
+	IConditionSaver&    getConditionSaver();
 
 	RoseAuraImpl();
 	virtual ~RoseAuraImpl() = default;
@@ -27,4 +29,6 @@ private:
 	std::unique_ptr<ObjectActivator>	mObjectRepository;
 	std::unique_ptr<WorldNavigator>		mWorldNavigator;
 	std::unique_ptr<SoundCoordinator>	mSoundCoordinator;
+	std::unique_ptr<ConditionSaver>	    mConditionSaver;
+
 };

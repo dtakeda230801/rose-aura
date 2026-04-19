@@ -8,6 +8,7 @@
 #include "WorldNavigator.h"
 #include "SoundCoordinator.h"
 #include "ConditionSaver.h"
+#include "StoryAnchor.h"
 
 class RoseAuraImpl : public RoseAura{
 public:
@@ -18,6 +19,7 @@ public:
 	IWorldNavigator&	getWorldNavigator();
 	ISoundCoordinator&  getSoundCoordinator();
 	IConditionSaver&    getConditionSaver();
+	IStoryAnchor&		getStoryAnchor();
 
 	RoseAuraImpl();
 	virtual ~RoseAuraImpl() = default;
@@ -30,5 +32,6 @@ private:
 	std::unique_ptr<WorldNavigator>		mWorldNavigator;
 	std::unique_ptr<SoundCoordinator>	mSoundCoordinator;
 	std::unique_ptr<ConditionSaver>	    mConditionSaver;
+	std::unique_ptr<StoryAnchor>	    mStoryAnchor;
 
 };

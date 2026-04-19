@@ -1,0 +1,91 @@
+{
+  "story_point": [
+    {
+      "name": "Test Story Point A",
+      "available_req": [
+
+      ],
+      "disabled_req": [
+
+      ],
+      "auto_available": false,
+      "auto_disabled": false
+    },
+    {
+      "name": "Test Story Point B",
+      "available_req": [
+        {
+          "story_point": "Test Story Point A",
+          "state": "completed"
+        }
+      ],
+      "disabled_req": [
+
+      ],
+      "auto_available": true,
+      "auto_disabled": false
+    },
+    {
+      "name": "Test Story Point C",
+      "available_req": [
+        {
+          "story_point": "Test Story Point A",
+          "state": "completed"
+        }
+      ],
+      "disabled_req": [],
+      "auto_available": true,
+      "auto_disabled": false
+    },
+    {
+      "name": "Test Story Point D",
+      "available_req": [
+        {
+          "story_point": "Test Story Point B",
+          "state": "completed"
+        },
+        {
+          "story_point": "Test Story Point C",
+          "state": "completed"
+        }
+      ],
+      "disabled_req": [],
+      "auto_available": true,
+      "auto_disabled": false
+    },
+    {
+      "name": "Test Story Point E",
+      "available_req": [
+        {
+          "story_point": "Test Story Point A",
+          "state": "completed"
+        }
+      ],
+      "disabled_req": [
+        {
+          "story_point": "Test Story Point B",
+          "state": "available"
+        }
+      ],
+      "auto_available": true,
+      "auto_disabled": true
+    },
+    {
+      "name": "Test Story Point F",
+      "available_req": [
+        {
+          "story_point": "Test Story Point A",
+          "state": "completed"
+        }
+      ],
+      "disabled_req": [
+        {
+          "story_point": "Test Story Point B",
+          "state": "completed"
+        }
+      ],
+      "auto_available": false,
+      "auto_disabled": false
+    }
+  ]
+}

@@ -170,6 +170,7 @@ kernel32.lib;opus.lib;opusfile.lib;ogg.lib;dav1d.lib;%(AdditionalDependencies)</
     <ClCompile Include="test_SoundCoordinator.cpp" />
     <ClCompile Include="test_MediaUtility.cpp" />
     <ClCompile Include="test_ConditionSaver.cpp" />
+    <ClCompile Include="test_StoryAnchor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\rose_aura.vcxproj">
@@ -179,6 +180,7 @@ kernel32.lib;opus.lib;opusfile.lib;ogg.lib;dav1d.lib;%(AdditionalDependencies)</
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="Seeker.opus" />
+    <None Include="testStoryAnchor.json" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="test.wav" />

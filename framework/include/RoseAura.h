@@ -8,6 +8,7 @@
 #include "IWorldNavigator.h"
 #include "ISoundCoordinator.h"
 #include "IConditionSaver.h"
+#include "IStoryAnchor.h"
 
 class RoseAura {
 public:
@@ -20,6 +21,8 @@ public:
 	virtual IWorldNavigator&	getWorldNavigator()		= 0;
 	virtual ISoundCoordinator&  getSoundCoordinator()   = 0;
 	virtual IConditionSaver&    getConditionSaver()     = 0;
+	virtual IStoryAnchor&       getStoryAnchor()        = 0;
+
 
 	virtual ~RoseAura() = default;
 protected:

@@ -101,6 +101,9 @@ namespace OpeningObjects {
 
 				mVideoFileHolder->releaseVideoFrame(frame);
 				wakeUp();
+			} else {
+				Utility::printLog("Video Buffer Under run");
+				wakeUp();
 			}
 		}
 
@@ -117,13 +120,7 @@ namespace OpeningObjects {
 				SetShaderValueTexture(*shader, mVideoWork.mLocV, mVideoWork.mTexV);
 
 				DrawTexture(mVideoWork.mTexY, mVideoWork.mDispX, mVideoWork.mDispY, WHITE);
-				/*
-				SetShaderValueTexture(*shader, mVideoWork.mLocY, mVideoWork.mTexY);
-				SetShaderValueTexture(*shader, mVideoWork.mLocU, mVideoWork.mTexU);
-				SetShaderValueTexture(*shader, mVideoWork.mLocV, mVideoWork.mTexV);
 
-				DrawRectangle(mVideoWork.mDispX, mVideoWork.mDispY, mVideoWork.mWidth, mVideoWork.mHeight, WHITE);
-				*/
 				EndShaderMode();
 			}
 		};
@@ -291,8 +288,8 @@ namespace OpeningObjects {
 			  mGraphicsManager(ra.getGraphicsManager())
 			, mSoundCoordinator(ra.getSoundCoordinator())
 			, mDecoderResult(VideoFileHolder::DecoderReturnCode::CONTINUE)
-//			, mVideoFileHolder(std::make_unique<VideoFileHolder>("testColor.webm"))
-			, mVideoFileHolder(std::make_unique<VideoFileHolder>("bluestone.webm"))
+			, mVideoFileHolder(std::make_unique<VideoFileHolder>("testColor.webm"))
+//			, mVideoFileHolder(std::make_unique<VideoFileHolder>("bluestone2.webm"))
 //			, mVideoFileHolder(std::make_unique<VideoFileHolder>("test.webm"))
 			, mMultiBlockBuffer(std::make_unique<MultiBlockBuffer>(AUDIO_BUFFER_BLOCK_NUM, AUDIO_BUFFER_FRAME_LEN, AUDIO_BUFFER_CHANNELS))
 			, mVideoPool{}

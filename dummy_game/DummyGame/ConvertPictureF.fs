@@ -13,8 +13,7 @@ void main()
     vec2 texSizeY = textureSize(texY, 0);
     vec2 texSizeU = textureSize(texU, 0);
 
-    // ★ 0～255に戻す
-    float y = texture(texY, fragTexCoord).r * 255.0;
+    float y = texture(texY, fragTexCoord).r;
 
     float px = fragTexCoord.x * texSizeY.x;
     float ux = floor(px / 2.0);
@@ -22,18 +21,15 @@ void main()
 
     vec2 uvCoord = vec2(uCoordX, fragTexCoord.y);
 
-    float u = texture(texU, uvCoord).r * 255.0;
-    float v = texture(texV, uvCoord).r * 255.0;
+    float u = texture(texU, uvCoord).r;
+    float v = texture(texV, uvCoord).r;
 
-    // ★ Octaveと完全一致
-    u = (u - 128.0) / 128.0;
-    v = (v - 128.0) / 128.0;
+    u = u - 0.5;
+    v = v - 0.5;
 
-    // ★ Yも255スケールで使う
-    float r = y + 1.5748 * v * 255.0;
-    float g = y - 0.1873 * u * 255.0 - 0.4681 * v * 255.0;
-    float b = y + 1.8556 * u * 255.0;
+    float r = y + 1.5748 * v;
+    float g = y - 0.1873 * u - 0.4681 * v;
+    float b = y + 1.8556 * u;
 
-    // ★ 最後に戻す
-    finalColor = vec4(r/255.0, g/255.0, b/255.0, 1.0);
+    finalColor = vec4(r, g, b, 1.0);
 }

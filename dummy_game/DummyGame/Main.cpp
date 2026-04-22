@@ -73,7 +73,9 @@ int main()
 
 		inputHandler.setConf(readInputConf());
 
-		graphicsManager.setShaderFile(OpeningObjects::CONVERT_PICTURE_SHADER);
+		graphicsManager.setShaderFile(OpeningObjects::CONVERT_PICTURE_V_SHADER
+			                        , OpeningObjects::CONVERT_PICTURE_F_SHADER
+		                            , OpeningObjects::OPENING_SHADER_ID);
 
 		IGraphicsManager::Conf conf;
 		conf.mWindowWidth  = WIN_SIZE_W; 

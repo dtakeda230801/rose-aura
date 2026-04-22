@@ -17,7 +17,10 @@ using namespace RoseAuraReturnCode;
 
 namespace OpeningObjects {
 
-	static const char*	CONVERT_PICTURE_SHADER = "ConvertPicture.fs";
+	static const char*	CONVERT_PICTURE_F_SHADER = "ConvertPictureF.fs";
+	static const char*  CONVERT_PICTURE_V_SHADER = "ConvertPictureV.fs";
+
+	static IGraphicsManager::SHADER_ID OPENING_SHADER_ID = 0;
 
 	//////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////
@@ -46,7 +49,7 @@ namespace OpeningObjects {
 				if (!mVideoWork.mInitialized) {
 					mVideoWork.mInitialized = true;
 
-					Shader* shader = SHADER_POINTER(mGraphicsManager.getShader(CONVERT_PICTURE_SHADER));
+					Shader* shader = SHADER_POINTER(mGraphicsManager.getShader(OPENING_SHADER_ID));
 
 					mVideoWork.mWidth  = frame.mWidth;
 					mVideoWork.mHeight = frame.mHeight;
@@ -104,7 +107,8 @@ namespace OpeningObjects {
 		void render()
 		{
 			if (mVideoWork.mInitialized) {
-				Shader* shader = SHADER_POINTER(mGraphicsManager.getShader(CONVERT_PICTURE_SHADER));
+
+				Shader* shader = SHADER_POINTER(mGraphicsManager.getShader(OPENING_SHADER_ID));
 
 				BeginShaderMode(*shader);
 
@@ -112,8 +116,14 @@ namespace OpeningObjects {
 				SetShaderValueTexture(*shader, mVideoWork.mLocU, mVideoWork.mTexU);
 				SetShaderValueTexture(*shader, mVideoWork.mLocV, mVideoWork.mTexV);
 
-				DrawRectangle(mVideoWork.mDispX, mVideoWork.mDispY, mVideoWork.mWidth, mVideoWork.mHeight, WHITE);
+				DrawTexture(mVideoWork.mTexY, mVideoWork.mDispX, mVideoWork.mDispY, WHITE);
+				/*
+				SetShaderValueTexture(*shader, mVideoWork.mLocY, mVideoWork.mTexY);
+				SetShaderValueTexture(*shader, mVideoWork.mLocU, mVideoWork.mTexU);
+				SetShaderValueTexture(*shader, mVideoWork.mLocV, mVideoWork.mTexV);
 
+				DrawRectangle(mVideoWork.mDispX, mVideoWork.mDispY, mVideoWork.mWidth, mVideoWork.mHeight, WHITE);
+				*/
 				EndShaderMode();
 			}
 		};
@@ -281,9 +291,10 @@ namespace OpeningObjects {
 			  mGraphicsManager(ra.getGraphicsManager())
 			, mSoundCoordinator(ra.getSoundCoordinator())
 			, mDecoderResult(VideoFileHolder::DecoderReturnCode::CONTINUE)
+//			, mVideoFileHolder(std::make_unique<VideoFileHolder>("testColor.webm"))
 			, mVideoFileHolder(std::make_unique<VideoFileHolder>("bluestone.webm"))
 //			, mVideoFileHolder(std::make_unique<VideoFileHolder>("test.webm"))
-, mMultiBlockBuffer(std::make_unique<MultiBlockBuffer>(AUDIO_BUFFER_BLOCK_NUM, AUDIO_BUFFER_FRAME_LEN, AUDIO_BUFFER_CHANNELS))
+			, mMultiBlockBuffer(std::make_unique<MultiBlockBuffer>(AUDIO_BUFFER_BLOCK_NUM, AUDIO_BUFFER_FRAME_LEN, AUDIO_BUFFER_CHANNELS))
 			, mVideoPool{}
 			, mVideoPoolWritePointer(0)
 		    , mVideoPoolReadPointer(0)

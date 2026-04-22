@@ -22,7 +22,8 @@
   <ItemGroup>
     <None Include="input_map.json" />
     <None Include="Seeker.opus" />
-    <None Include="ConvertPicture.fs" />
+    <None Include="ConvertPictureF.fs" />
+    <None Include="ConvertPictureV.fs" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="test.wav" />

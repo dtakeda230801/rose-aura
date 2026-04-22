@@ -10,6 +10,8 @@ using namespace RoseAuraReturnCode;
 
 class IGraphicsManager {
 public:
+	using SHADER_ID = uint32_t;
+
 	struct Conf {
 		uint32_t		mWindowWidth;
 		uint32_t		mWindowHeight;
@@ -30,9 +32,11 @@ public:
 	//////////////////////////////////////////////////////////
 	// APIs
 	//////////////////////////////////////////////////////////
-	virtual void      runUntilClosed(Conf conf)					= 0;
-	virtual RARetCode setRenderer(IGraphicsRenderer* renderer)	= 0;
+	virtual void      runUntilClosed(Conf conf)					    = 0;
+	virtual RARetCode setRenderer(IGraphicsRenderer* renderer)	    = 0;
 	virtual RARetCode removeRenderer(IGraphicsRenderer* renderer)	= 0;
-	virtual RARetCode setShaderFile(std::string file)           = 0;
-	virtual void*	  getShader(std::string file)               = 0;
+	virtual RARetCode setShaderFile(std::string vsfile
+		                          , std::string fsfile
+		                          , SHADER_ID& id)                  = 0;
+	virtual void*	  getShader(SHADER_ID id)                       = 0;
 };

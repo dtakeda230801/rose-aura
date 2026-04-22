@@ -115,6 +115,23 @@ TEST(testOpusFileHolder, BehaviourTest)
 	ROSE_AURA_TEST_FIN;
 }
 
+void writeVideoDataToCSV(const uint8_t* data, uint32_t width, uint32_t height, const std::string& filename)
+{
+    std::ofstream ofs(filename);
+    if (!ofs) return;
+
+    for (uint32_t y = 0; y < height; ++y) {
+        for (uint32_t x = 0; x < width; ++x) {
+            ofs << static_cast<int32_t>(data[y * width + x ]);
+            if (x != width -1){
+                ofs << ",";
+            }
+        }
+        ofs << "\n";
+    }
+    ofs.close();
+}
+
 TEST(testVideoFileHolder, BehaviourTest)
 {
     ROSE_AURA_TEST_BEGIN;
@@ -122,8 +139,10 @@ TEST(testVideoFileHolder, BehaviourTest)
         float* dummyBuffer = new float[480 * 2];
         unsigned int  videoFrameCount = 0;
 
-        //std::unique_ptr<VideoFileHolder> vfh = std::make_unique<VideoFileHolder>("..\\..\\test\\rose_aura_test\\test.webm");
-        std::unique_ptr<VideoFileHolder> vfh = std::make_unique<VideoFileHolder>("E:\\works\\Dev\\github\\rose-aura\\dummy_game\\DummyGame\\bluestone.webm");
+        uint32_t dumpFrame = 5;
+
+        std::unique_ptr<VideoFileHolder> vfh = std::make_unique<VideoFileHolder>("..\\..\\test\\rose_aura_test\\testColor.webm");
+        //std::unique_ptr<VideoFileHolder> vfh = std::make_unique<VideoFileHolder>("E:\\works\\Dev\\github\\rose-aura\\dummy_game\\DummyGame\\bluestone.webm");
 
         VideoFileHolder::DecoderReturnCode decRet = VideoFileHolder::DecoderReturnCode::CONTINUE;
 
@@ -136,6 +155,12 @@ TEST(testVideoFileHolder, BehaviourTest)
                 while (vFrameRet) {
                     vFrameRet = vfh->getVideoFrame(frame);
                     if (vFrameRet) {
+                        if (dumpFrame == videoFrameCount) {
+                            writeVideoDataToCSV(frame.mY, frame.mWidth, frame.mHeight, "..\\..\\test\\rose_aura_test\\testResultY.csv");
+                            writeVideoDataToCSV(frame.mU, frame.mWidth/2, frame.mHeight, "..\\..\\test\\rose_aura_test\\testResultU.csv");
+                            writeVideoDataToCSV(frame.mV, frame.mWidth/2, frame.mHeight, "..\\..\\test\\rose_aura_test\\testResultV.csv");
+                        }
+
                         vfh->releaseVideoFrame(frame);
                         videoFrameCount++;
                     }

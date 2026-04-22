@@ -674,9 +674,9 @@ VideoFileHolder::VideoFileHolderImpl::convertPictureFormat(const Dav1dPicture& p
         }
     }
 
-    frame.mStrideY = static_cast<uint32_t>(pic.stride[0]);
-    frame.mStrideU = static_cast<uint32_t>(pic.stride[1]);
-    frame.mStrideV = static_cast<uint32_t>(pic.stride[1]);
+    frame.mStrideY = static_cast<uint32_t>(pic.stride[0])/2;
+    frame.mStrideU = static_cast<uint32_t>(pic.stride[1])/2;
+    frame.mStrideV = static_cast<uint32_t>(pic.stride[1])/2;
 
     frame.mTimestamp = mLatestTimeStamp;
 

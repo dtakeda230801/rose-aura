@@ -143,9 +143,6 @@
     <ClInclude Include="framework\include\MediaUtility.h">
       <Filter>RoseAura Interface</Filter>
     </ClInclude>
-    <ClInclude Include="framework\src\MediaUtilityImpl.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="framework\include\IStoryAnchor.h">
       <Filter>RoseAura Interface</Filter>
     </ClInclude>

@@ -65,7 +65,6 @@
     <ClInclude Include="framework\src\ConditionSaver.h" />
     <ClInclude Include="framework\src\GraphicsManager.h" />
     <ClInclude Include="framework\src\InputHandler.h" />
-    <ClInclude Include="framework\src\MediaUtilityImpl.h" />
     <ClInclude Include="framework\src\media_utility\MovieRendererInternal.h" />
     <ClInclude Include="framework\src\media_utility\MultiBlockBufferInternal.h" />
     <ClInclude Include="framework\src\media_utility\OpusFileHolderInternal.h" />

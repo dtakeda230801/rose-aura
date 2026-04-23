@@ -231,19 +231,19 @@ MultiBlockBuffer::~MultiBlockBuffer()
 #define MVR_INSTANCE static_cast<MovieRendererInternal*>(mImpl)
 
 
-MovieRenderer::MovieRenderer(RoseAura& ra, const int8_t* movieFile, IMovieRendererCallback* cb) : 
-    mImpl(static_cast<void*>(new MovieRendererInternal(ra, movieFile, cb)))
+MovieRenderer::MovieRenderer(RoseAura& ra, const char* movieFile, uint32_t x, uint32_t y, IMovieRendererCallback* cb) :
+    mImpl(static_cast<void*>(new MovieRendererInternal(ra, movieFile,x,y, cb)))
 {
 }
 
-bool MovieRenderer::start()
+bool MovieRenderer::playMovie()
 {
-    return MVR_INSTANCE->start();
+    return MVR_INSTANCE->playMovie();
 }
 
-bool MovieRenderer::stop()
+bool MovieRenderer::stopPlaying()
 {
-    return MVR_INSTANCE->stop();
+    return MVR_INSTANCE->stopPlaying();
 }
 
 MovieRenderer::~MovieRenderer()

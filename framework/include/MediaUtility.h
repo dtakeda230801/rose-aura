@@ -121,10 +121,10 @@ namespace RoseAuraMediaUtility {
 			virtual void onVideoFinish() = 0;
 		};
 
-		MovieRenderer(RoseAura& ra, const int8_t* movieFile, IMovieRendererCallback* cb);
+		MovieRenderer(RoseAura& ra, const char* movieFile, uint32_t x, uint32_t y,IMovieRendererCallback* cb);
 
-		bool start();
-		bool stop();
+		bool playMovie();
+		bool stopPlaying();
 
 		virtual ~MovieRenderer();
 	private:

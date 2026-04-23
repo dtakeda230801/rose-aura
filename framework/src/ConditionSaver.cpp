@@ -218,7 +218,7 @@ RARetCode ConditionSaver::Serializer::serialize(std::any data)
 	} else if (auto p = std::any_cast<std::string>(&data)) {
 		std::stringstream ss;
 		const char* cStr = p->c_str();
-		uint32_t    size = p->size();
+		uint32_t    size = static_cast<uint32_t>(p->size());
 		ss << std::hex << std::setw(8) << std::setfill('0') << size;
 		ss << std::hex << cStr;
 		mContainer += ss.str();

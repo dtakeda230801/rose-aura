@@ -19,6 +19,9 @@
     <Filter Include="external">
       <UniqueIdentifier>{81b91088-031e-4384-9e8e-bbc08844701a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="MediaUtility">
+      <UniqueIdentifier>{36095f2b-cf6b-4037-9085-646c4a42ed51}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="framework\src\CentralLooper.cpp">
@@ -48,9 +51,6 @@
     <ClCompile Include="framework\src\sound\SamplingRateConverter.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="framework\src\MediaUtility.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="external\libwebm\common\file_util.cc">
       <Filter>external</Filter>
     </ClCompile>
@@ -60,14 +60,32 @@
     <ClCompile Include="external\libwebm\mkvparser\mkvreader.cc">
       <Filter>external</Filter>
     </ClCompile>
-    <ClCompile Include="framework\src\sound\MultiBlockBufferInternal.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="framework\src\ConditionSaver.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="framework\src\StoryAnchor.cpp">
       <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\src\media_utility\WaveFileHolderInternal.cpp">
+      <Filter>MediaUtility</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\src\media_utility\MediaUtility.cpp">
+      <Filter>MediaUtility</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\src\media_utility\OpusFileHolderInternal.cpp">
+      <Filter>MediaUtility</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\src\media_utility\VideoFileHolderInternal.cpp">
+      <Filter>MediaUtility</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\src\media_utility\PreRenderThreadInternal.cpp">
+      <Filter>MediaUtility</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\src\media_utility\MultiBlockBufferInternal.cpp">
+      <Filter>MediaUtility</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\src\media_utility\MovieRendererInternal.cpp">
+      <Filter>MediaUtility</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -128,9 +146,6 @@
     <ClInclude Include="framework\src\MediaUtilityImpl.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="framework\src\sound\MultiBlockBufferInternal.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="framework\include\IStoryAnchor.h">
       <Filter>RoseAura Interface</Filter>
     </ClInclude>
@@ -142,6 +157,24 @@
     </ClInclude>
     <ClInclude Include="framework\src\ConditionSaver.h">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\src\media_utility\WaveFileHolderInternal.h">
+      <Filter>MediaUtility</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\src\media_utility\OpusFileHolderInternal.h">
+      <Filter>MediaUtility</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\src\media_utility\VideoFileHolderInternal.h">
+      <Filter>MediaUtility</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\src\media_utility\PreRenderThreadInternal.h">
+      <Filter>MediaUtility</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\src\media_utility\MultiBlockBufferInternal.h">
+      <Filter>MediaUtility</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\src\media_utility\MovieRendererInternal.h">
+      <Filter>MediaUtility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

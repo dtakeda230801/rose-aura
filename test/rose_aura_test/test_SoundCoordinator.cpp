@@ -11,7 +11,7 @@
 #include <RoseAura.h>
 #include "MediaUtility.h"
 #include "sound/SamplingRateConverter.h"
-#include "sound/MultiBlockBufferInternal.h"
+#include "media_utility/MultiBlockBufferInternal.h"
 
 
 using namespace RoseAuraMediaUtility;

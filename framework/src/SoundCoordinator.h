@@ -7,7 +7,7 @@
 
 #include "ISoundCoordinator.h"
 #include "sound/SamplingRateConverter.h"
-#include "sound/MultiBlockBufferInternal.h"
+#include "media_utility/MultiBlockBufferInternal.h"
 
 #include "Utility.h"
 

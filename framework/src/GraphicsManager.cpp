@@ -81,7 +81,7 @@ RARetCode GraphicsManager::setShaderFile(std::string vsfile
 									   , std::string fsfile
 									   , SHADER_ID& id)
 {	
-	SHADER_ID newId = mShaderHolders.size() + 1;
+	SHADER_ID newId = static_cast<SHADER_ID>(mShaderHolders.size() + 1);
 	mShaderHolders.emplace_back(ShaderHolder{ static_cast<void*>(new Shader()),newId, vsfile, fsfile });
 	id = newId;
 	return RARetCode::RET_OK;

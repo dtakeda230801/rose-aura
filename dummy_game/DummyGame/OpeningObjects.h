@@ -325,7 +325,7 @@ namespace OpeningObjects {
 		static constexpr uint32_t	AUDIO_BUFFER_BLOCK_NUM = 4;
 		static constexpr uint32_t	AUDIO_BUFFER_FRAME_LEN = 960;
 		static constexpr uint32_t	AUDIO_BUFFER_CHANNELS  = 2;
-		static constexpr uint32_t	VIDEO_BUFFER_FRAME_LEN = 3;
+		static constexpr uint32_t	VIDEO_BUFFER_FRAME_LEN = 5;
 
 		IGraphicsManager&  mGraphicsManager;
 		ISoundCoordinator& mSoundCoordinator;

@@ -34,11 +34,16 @@
     <ClCompile Include="framework\src\ConditionSaver.cpp" />
     <ClCompile Include="framework\src\GraphicsManager.cpp" />
     <ClCompile Include="framework\src\InputHandler.cpp" />
-    <ClCompile Include="framework\src\MediaUtility.cpp" />
+    <ClCompile Include="framework\src\media_utility\MediaUtility.cpp" />
+    <ClCompile Include="framework\src\media_utility\MovieRendererInternal.cpp" />
+    <ClCompile Include="framework\src\media_utility\MultiBlockBufferInternal.cpp" />
+    <ClCompile Include="framework\src\media_utility\OpusFileHolderInternal.cpp" />
+    <ClCompile Include="framework\src\media_utility\PreRenderThreadInternal.cpp" />
+    <ClCompile Include="framework\src\media_utility\VideoFileHolderInternal.cpp" />
+    <ClCompile Include="framework\src\media_utility\WaveFileHolderInternal.cpp" />
     <ClCompile Include="framework\src\SoundCoordinator.cpp" />
     <ClCompile Include="framework\src\ObjectActivator.cpp" />
     <ClCompile Include="framework\src\RoseAura.cpp" />
-    <ClCompile Include="framework\src\sound\MultiBlockBufferInternal.cpp" />
     <ClCompile Include="framework\src\sound\SamplingRateConverter.cpp" />
     <ClCompile Include="framework\src\StoryAnchor.cpp" />
     <ClCompile Include="framework\src\Utility.cpp" />
@@ -61,10 +66,15 @@
     <ClInclude Include="framework\src\GraphicsManager.h" />
     <ClInclude Include="framework\src\InputHandler.h" />
     <ClInclude Include="framework\src\MediaUtilityImpl.h" />
+    <ClInclude Include="framework\src\media_utility\MovieRendererInternal.h" />
+    <ClInclude Include="framework\src\media_utility\MultiBlockBufferInternal.h" />
+    <ClInclude Include="framework\src\media_utility\OpusFileHolderInternal.h" />
+    <ClInclude Include="framework\src\media_utility\PreRenderThreadInternal.h" />
+    <ClInclude Include="framework\src\media_utility\VideoFileHolderInternal.h" />
+    <ClInclude Include="framework\src\media_utility\WaveFileHolderInternal.h" />
     <ClInclude Include="framework\src\SoundCoordinator.h" />
     <ClInclude Include="framework\src\ObjectActivator.h" />
     <ClInclude Include="framework\src\RoseAuraImpl.h" />
-    <ClInclude Include="framework\src\sound\MultiBlockBufferInternal.h" />
     <ClInclude Include="framework\src\sound\SamplingRateConverter.h" />
     <ClInclude Include="framework\src\StoryAnchor.h" />
     <ClInclude Include="framework\src\Utility.h" />
@@ -133,7 +143,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>ho</OutDir>
+    <OutDir>ho\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>ho</OutDir>

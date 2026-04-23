@@ -1,10 +1,6 @@
 #pragma once
 
-#include <vector>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <semaphore>
+#include "RoseAura.h"
 
 namespace RoseAuraMediaUtility {
 
@@ -23,11 +19,7 @@ namespace RoseAuraMediaUtility {
 		virtual ~WaveFileHolder();
 
 	private:
-		uint32_t mChannels;
-		uint32_t mSamplingRate;
-		uint32_t mFrameLen;
-		uint32_t mCurrentFrame;
-		float*	 mData;
+		void*	 mImpl;
 	};
 
 	/////////////////////////////////////////////
@@ -41,21 +33,10 @@ namespace RoseAuraMediaUtility {
 		void	 setJumpPoint(uint64_t point, uint64_t to);
 		void	 reset();
 
-		virtual ~OpusFileHolder();
+		virtual  ~OpusFileHolder();
 
 	private:
-		static constexpr uint32_t BUFF_FRAME_LEN = 960;
-
-		void*		mFile;
-		uint32_t	mChannels;
-		float*		mBuffer;
-		uint32_t	mFrameLen;
-		uint32_t    mReadPointer;
-		bool        mNoFinish;
-		bool	    mJump;
-		uint64_t    mJumpTo;
-		uint64_t    mJumpPoint;
-		uint64_t    mFrameCounter;
+		void*	 mImpl;
 	};
 
 	/////////////////////////////////////////////
@@ -69,10 +50,6 @@ namespace RoseAuraMediaUtility {
 			uint8_t* mY;
 			uint8_t* mU;
 			uint8_t* mV;
-
-			uint32_t mStrideY;
-			uint32_t mStrideU;
-			uint32_t mStrideV;
 
 			uint64_t mTimestamp;
 		};
@@ -96,32 +73,27 @@ namespace RoseAuraMediaUtility {
 		uint32_t getSamplingRate();
 		uint32_t getChannels();
 
-		virtual ~VideoFileHolder() = default;
+		virtual ~VideoFileHolder();
 	private:
-		class VideoFileHolderImpl;
-		std::unique_ptr<VideoFileHolderImpl> mImpl;
+		void* mImpl;
 	};
 
 
 	/////////////////////////////////////////////
 	class PreRenderThread {
 	public:
-		bool start();
-		void wakeUp();
-		void finish();
-		void finishSelf();
+		bool	start();
+		void	wakeUp();
+		void	finish();
+		void	finishSelf();
 
 		virtual void doWork() = 0;
 
 		PreRenderThread();
-		virtual ~PreRenderThread() = default;
+		virtual ~PreRenderThread();
 	
 	private:
-		void threadFunc();
-
-		std::thread				mThread;
-		std::binary_semaphore	mSem;
-		std::atomic<bool>		mStarted;
+		void*	mImpl;
 	};
 
 	/////////////////////////////////////////////
@@ -137,6 +109,24 @@ namespace RoseAuraMediaUtility {
 
 
 		virtual ~MultiBlockBuffer();
+	private:
+		void* mImpl;
+	};
+
+	/////////////////////////////////////////////
+	class MovieRenderer {
+	public:
+		class IMovieRendererCallback {
+		public:
+			virtual void onVideoFinish() = 0;
+		};
+
+		MovieRenderer(RoseAura& ra, const int8_t* movieFile, IMovieRendererCallback* cb);
+
+		bool start();
+		bool stop();
+
+		virtual ~MovieRenderer();
 	private:
 		void* mImpl;
 	};

@@ -13,17 +13,17 @@ extern "C" {
 
 namespace RoseAuraMediaUtility {
 	//////////////////////////////////////
-	class VideoFileHolder::VideoFileHolderImpl
+	class VideoFileHolderImpl
 	{
 	public:
 		VideoFileHolderImpl(const char* path);
 
-		DecoderReturnCode decode();
+		VideoFileHolder::DecoderReturnCode decode();
 
-		bool     getAudioFrame(float** buff, unsigned int* returnFrameLen, unsigned int requestFrameLen);
+		bool     getAudioFrame(float** buff, uint32_t* returnFrameLen, uint32_t requestFrameLen);
 		bool     getVideoFrame(VideoFileHolder::VideoFrame& videoFrame);
 
-		void     releaseVideoFrame(VideoFrame& frame);
+		void     releaseVideoFrame(VideoFileHolder::VideoFrame& frame);
 
 		uint32_t getSamplingRate();
 		uint32_t getChannels();
@@ -32,8 +32,8 @@ namespace RoseAuraMediaUtility {
 		virtual ~VideoFileHolderImpl();
 	private:
 		std::vector<unsigned char>
-			extractSequenceHeaderOBU(const unsigned char* priv, unsigned int size);
-		void sendToDav1d(const unsigned char* data, unsigned int size);
+			extractSequenceHeaderOBU(const uint8_t* priv, uint32_t size);
+		void sendToDav1d(const uint8_t* data, uint32_t size);
 		VideoFileHolder::VideoFrame 
 			convertPictureFormat(const Dav1dPicture& pic);
 		bool getPicture();
@@ -61,4 +61,6 @@ namespace RoseAuraMediaUtility {
 		unsigned int				 mAudioReadPointer;
 		bool						 mAudioReady;
 	};
+
+	//////////////////////////////////////
 }

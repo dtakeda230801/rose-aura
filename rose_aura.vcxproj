@@ -78,15 +78,12 @@
     <ClInclude Include="framework\src\StoryAnchor.h" />
     <ClInclude Include="framework\src\Utility.h" />
     <ClInclude Include="framework\src\WorldNavigator.h" />
-    <ClInclude Include="resource.h" />
+    <ClInclude Include="resources\res.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\shader\ConvertPictureF.fs" />
     <None Include="resources\shader\ConvertPictureV.fs" />
     <None Include="vcpkg.json" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -190,7 +187,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);framework\include;framework\src;external\raylib-5.5_win64_msvc16\include;external/libwebm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>resources;framework\include;framework\src;external\raylib-5.5_win64_msvc16\include;external/libwebm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>

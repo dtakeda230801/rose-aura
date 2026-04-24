@@ -1,0 +1,1 @@
+powershell -ExecutionPolicy Bypass -File ./generate_resource.ps1

@@ -3,7 +3,7 @@
 #include "RoseAura.h"
 #include "RoseAuraReturnCode.h"
 
-#include "resource.h"
+#include "res.h"
 
 #include "Utility.h"
 
@@ -25,14 +25,9 @@ MovieRendererInternal::MovieRendererInternal(RoseAura& ra, const char* movieFile
 	, mFinish(false)
 	, mCallback(cb)
 {
-	std::string vShader = Utility::LoadResourceText(IDR_SHADER_VERT);
-	std::string fShader = Utility::LoadResourceText(IDR_SHADER_FRAG);
 
-	Utility::printLog(vShader.c_str());
-
-
-	mGraphicsManager.setShader(vShader
-							 , fShader
+	mGraphicsManager.setShader(RoseAuraResources::Res_ConvertPictureV
+							 , RoseAuraResources::Res_ConvertPictureF
 							 , mShaderId);
 }
 

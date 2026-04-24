@@ -173,8 +173,18 @@
     <ClInclude Include="framework\src\media_utility\MovieRendererInternal.h">
       <Filter>MediaUtility</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />
+    <None Include="resources\shader\ConvertPictureF.fs" />
+    <None Include="resources\shader\ConvertPictureV.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource.rc">
+      <Filter>リソース ファイル</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

@@ -30,3 +30,25 @@ uint64_t Utility::getCurrentTime()
         std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
+std::string Utility::LoadResourceText(int id)
+{
+	HRSRC hRes = FindResource(nullptr, MAKEINTRESOURCE(id), RT_RCDATA);
+	
+    if (!hRes)
+    {
+        DWORD err = GetLastError();
+        Utility::printLog("FindResource failed: %lu\n", err);
+    }
+    
+    if (!hRes) return {};
+
+	HGLOBAL hData = LoadResource(nullptr, hRes);
+	if (!hData) return {};
+
+	void* ptr = LockResource(hData);
+	DWORD size = SizeofResource(nullptr, hRes);
+
+	if (!ptr || size == 0) return {};
+
+	return std::string((char*)ptr, size);
+}

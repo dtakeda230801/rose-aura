@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 #include <cstdint>
 
 class Utility {
@@ -26,4 +27,6 @@ public:
 
 		return ret;
 	}
+
+	static std::string LoadResourceText(int id);
 };

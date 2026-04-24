@@ -182,6 +182,94 @@ TEST(testVideoFileHolder, BehaviourTest)
     }
     ROSE_AURA_TEST_FIN;
 };
+
+
+class TestMovieRenderer : 
+      public MovieRenderer::IMovieRendererCallback
+    , public ICentralLooper::ITask
+    , public ICentralLooper::IFrameSyncCallback {
+public:
+
+    void doTask()
+    {
+        mMr->playMovie();
+    }
+
+    void onTaskFinish()
+    {
+    }
+    
+    std::string getTaskName()
+    {
+        return "TestMovieRenderer";
+    }
+
+    void onFrameSync() {
+        ++mCount;
+
+        if (mCount > 100) {
+            mRa.getCentralLooper().enqueueTask(this);
+        }
+
+    }
+
+    void onVideoFinish() {
+        Utility::printLog("onVideoFinish");
+    }
+
+    TestMovieRenderer(RoseAura& ra) :
+          mRa(ra)
+        , mMr(nullptr)
+    {
+        mRa.getCentralLooper().registerFrameSyncCallback(this);
+        mMr = new MovieRenderer(mRa, "..\\..\\test\\rose_aura_test\\testColor.webm", 0, 0, this);
+    }
+    virtual ~TestMovieRenderer() {
+        mRa.getCentralLooper().unregisterFrameSyncCallback(this);
+        delete mMr;
+    }
+
+private:
+    RoseAura&       mRa;
+    uint32_t        mCount = 0;
+    MovieRenderer*  mMr;
+};
+
+
+
+TEST(testMovieRenderer, BehaviourTest)
+{
+    ROSE_AURA_TEST_BEGIN;
+    {
+        std::unique_ptr<RoseAura> ra = RoseAura::create();
+
+        ICentralLooper&    cl = ra->getCentralLooper();
+        IGraphicsManager&  gm = ra->getGraphicsManager();
+        ISoundCoordinator& sc = ra->getSoundCoordinator();
+
+        IGraphicsManager::Conf conf;
+        conf.mWindowWidth = 1280;
+        conf.mWindowHeight = 720;
+        conf.mWindowTitle = "testGraphicsManager";
+        conf.mFrameRate = 30;
+
+        TestMovieRenderer* tmr = new TestMovieRenderer(*ra);
+
+        cl.start(30);
+        sc.start();
+
+        gm.runUntilClosed(conf);
+
+        sc.stop();
+        cl.stop();
+
+        delete tmr;
+    }
+    ROSE_AURA_TEST_FIN;
+}
+
+
+
 TEST(testPreRenderThread, BehaviourTest)
 {
     ROSE_AURA_TEST_BEGIN;

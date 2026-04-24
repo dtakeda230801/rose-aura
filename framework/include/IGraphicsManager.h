@@ -38,5 +38,8 @@ public:
 	virtual RARetCode setShaderFile(std::string vsfile
 		                          , std::string fsfile
 		                          , SHADER_ID& id)                  = 0;
+	virtual RARetCode setShader(std::string vsString
+							  , std::string fsString
+							  , SHADER_ID& id)						= 0;
 	virtual void*	  getShader(SHADER_ID id)                       = 0;
 };

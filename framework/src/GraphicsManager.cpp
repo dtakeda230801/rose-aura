@@ -14,7 +14,11 @@ void GraphicsManager::runUntilClosed(Conf conf)
 
 	for (auto& holder : mShaderHolders) {
 		Shader* shader = static_cast<Shader*>(holder.mShader);
-		*(shader)      = LoadShader(holder.mVShaderFile.c_str(), holder.mFShaderFile.c_str());
+		if (holder.mIsFile){
+			*(shader) = LoadShader(holder.mVShader.c_str(), holder.mFShader.c_str());
+		} else {
+			*(shader) = LoadShaderFromMemory(holder.mVShader.c_str(), holder.mFShader.c_str());
+		}
 	}
 
 	while (!WindowShouldClose())
@@ -82,10 +86,22 @@ RARetCode GraphicsManager::setShaderFile(std::string vsfile
 									   , SHADER_ID& id)
 {	
 	SHADER_ID newId = static_cast<SHADER_ID>(mShaderHolders.size() + 1);
-	mShaderHolders.emplace_back(ShaderHolder{ static_cast<void*>(new Shader()),newId, vsfile, fsfile });
+	mShaderHolders.emplace_back(ShaderHolder{ static_cast<void*>(new Shader()),newId, vsfile, fsfile , true });
 	id = newId;
 	return RARetCode::RET_OK;
 }
+
+RARetCode GraphicsManager::setShader(std::string vsString
+	                               , std::string fsString
+	                               , SHADER_ID& id)
+{
+	SHADER_ID newId = static_cast<SHADER_ID>(mShaderHolders.size() + 1);
+	mShaderHolders.emplace_back(ShaderHolder{ static_cast<void*>(new Shader()),newId, vsString, fsString , false });
+	id = newId;
+	return RARetCode::RET_OK;
+
+}
+
 
 void* GraphicsManager::getShader(SHADER_ID id)
 {

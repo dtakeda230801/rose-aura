@@ -12,8 +12,9 @@ public:
 	struct ShaderHolder {
 		void*		mShader;
 		SHADER_ID	mId;
-		std::string mVShaderFile;
-		std::string mFShaderFile;
+		std::string mVShader;
+		std::string mFShader;
+		bool		mIsFile;
 	};
 
 	void	  runUntilClosed(Conf conf);
@@ -22,6 +23,10 @@ public:
 	RARetCode setShaderFile(std::string vsfile
 					      , std::string fsfile
 						  , SHADER_ID& id);
+	RARetCode setShader(std::string vsString
+					  , std::string fsString
+					  , SHADER_ID& id);
+
 	void*     getShader(SHADER_ID id);
 
 	GraphicsManager() = default;

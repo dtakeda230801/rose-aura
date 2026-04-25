@@ -26,8 +26,8 @@ MovieRendererInternal::MovieRendererInternal(RoseAura& ra, const char* movieFile
 	, mCallback(cb)
 {
 
-	mGraphicsManager.setShader(RoseAuraResources::Res_ConvertPictureV
-							 , RoseAuraResources::Res_ConvertPictureF
+	mGraphicsManager.setShader(RESOURCES->Res_ConvertPictureV
+							 , RESOURCES->Res_ConvertPictureF
 							 , mShaderId);
 }
 
@@ -77,9 +77,11 @@ void MovieRendererInternal::preprocess()
 		}
 		++mVideoPoolAvailable;
 		if (!mVideoWork.mInitialized) {
-			mVideoWork.mInitialized = true;
 
 			Shader* shader = SHADER_POINTER(mGraphicsManager.getShader(mShaderId));
+			if (!shader) {
+				return;
+			}
 
 			mVideoWork.mWidth = frame.mWidth;
 			mVideoWork.mHeight = frame.mHeight;
@@ -120,6 +122,8 @@ void MovieRendererInternal::preprocess()
 
 			mVideoWork.mTexV = LoadTextureFromImage(imgV);
 			free(imgV.data);
+
+			mVideoWork.mInitialized = true;
 		}
 
 		UpdateTexture(mVideoWork.mTexY, frame.mY);

@@ -1,10 +1,5 @@
 #pragma once
 
-#include <queue>
-#include <mutex>
-
-#include "raylib.h"
-
 #include "RoseAura.h"
 #include "RoseAuraReturnCode.h"
 #include "MediaUtility.h"
@@ -18,336 +13,38 @@ using namespace RoseAuraReturnCode;
 
 namespace OpeningObjects {
 
-	static const char*	CONVERT_PICTURE_F_SHADER = "ConvertPictureF.fs";
-	static const char*  CONVERT_PICTURE_V_SHADER = "ConvertPictureV.fs";
-
-	static IGraphicsManager::SHADER_ID OPENING_SHADER_ID = 0;
-
 	//////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////
-	class Movie : public IGraphicsManager::IGraphicsRenderer
-		        , public ISoundCoordinator::ISoundRenderer
-		        , public PreRenderThread
+	class Movie : public MovieRenderer::IMovieRendererCallback
 	{
 	public:
-		void preprocess()
+
+		void onVideoFinish()
 		{
-			std::lock_guard<std::mutex> lock(mMutex);
-
-			if (mVideoPoolAvailable < VIDEO_BUFFER_FRAME_LEN) {
-				VideoFileHolder::VideoFrame& frame = mVideoPool[mVideoPoolReadPointer];
-
-				uint64_t timming = frame.mTimestamp + mBaseTime;
-				if (Utility::getCurrentTime() < timming) {
-					return;
-				}
-
-				++mVideoPoolReadPointer;
-				if (mVideoPoolReadPointer == VIDEO_BUFFER_FRAME_LEN) {
-					mVideoPoolReadPointer = 0;
-				}
-				++mVideoPoolAvailable;
-				if (!mVideoWork.mInitialized) {
-					mVideoWork.mInitialized = true;
-
-					Shader* shader = SHADER_POINTER(mGraphicsManager.getShader(OPENING_SHADER_ID));
-
-					mVideoWork.mWidth  = frame.mWidth;
-					mVideoWork.mHeight = frame.mHeight;
-
-					mVideoWork.mDispX = (WIN_SIZE_W - mVideoWork.mWidth) / 2;
-					mVideoWork.mDispY = (WIN_SIZE_H - mVideoWork.mHeight) / 2;
-
-					mVideoWork.mLocY = GetShaderLocation(*shader, "texY");
-					mVideoWork.mLocU = GetShaderLocation(*shader, "texU");
-					mVideoWork.mLocV = GetShaderLocation(*shader, "texV");
-
-					Image imgY = {
-						.data    = malloc(mVideoWork.mWidth * mVideoWork.mHeight),
-						.width   = mVideoWork.mWidth,
-						.height  = mVideoWork.mHeight,
-						.mipmaps = 1,
-						.format  = PIXELFORMAT_UNCOMPRESSED_GRAYSCALE
-					};
-
-					mVideoWork.mTexY = LoadTextureFromImage(imgY);
-					free(imgY.data);
-
-					Image imgU = {
-						.data    = malloc(mVideoWork.mWidth /2 * mVideoWork.mHeight),
-						.width   = mVideoWork.mWidth /2,
-						.height  = mVideoWork.mHeight,
-						.mipmaps = 1,
-						.format  = PIXELFORMAT_UNCOMPRESSED_GRAYSCALE
-					};
-
-					mVideoWork.mTexU = LoadTextureFromImage(imgU);
-					free(imgU.data);
-
-					Image imgV = {
-						.data    = malloc(mVideoWork.mWidth / 2 * mVideoWork.mHeight),
-						.width   = mVideoWork.mWidth / 2,
-						.height  = mVideoWork.mHeight,
-						.mipmaps = 1,
-						.format  = PIXELFORMAT_UNCOMPRESSED_GRAYSCALE
-					};
-
-					mVideoWork.mTexV = LoadTextureFromImage(imgV);
-					free(imgV.data);
-				}
-
-				UpdateTexture(mVideoWork.mTexY, frame.mY);
-				UpdateTexture(mVideoWork.mTexU, frame.mU);
-				UpdateTexture(mVideoWork.mTexV, frame.mV);
-
-				mVideoFileHolder->releaseVideoFrame(frame);
-				wakeUp();
-			} else {
-				Utility::printLog("Video Buffer Under run");
-				wakeUp();
-			}
-		}
-
-		void render()
-		{
-			if (mVideoWork.mInitialized) {
-
-				Shader* shader = SHADER_POINTER(mGraphicsManager.getShader(OPENING_SHADER_ID));
-
-				BeginShaderMode(*shader);
-
-				SetShaderValueTexture(*shader, mVideoWork.mLocY, mVideoWork.mTexY);
-				SetShaderValueTexture(*shader, mVideoWork.mLocU, mVideoWork.mTexU);
-				SetShaderValueTexture(*shader, mVideoWork.mLocV, mVideoWork.mTexV);
-
-				DrawTexture(mVideoWork.mTexY, mVideoWork.mDispX, mVideoWork.mDispY, WHITE);
-
-				EndShaderMode();
-			}
-		};
-
-		RARetCode requestData(unsigned int requestFrameLen, unsigned int* returnFrameLen, ISoundCoordinator::IDataWriter& writer)
-		{
-			*(returnFrameLen) = 0;
-
-			while (*(returnFrameLen) < requestFrameLen) {
-				float*		readBuffer;
-				uint32_t	availFrameLen;
-
-				mMultiBlockBuffer->getReadBuffer(readBuffer, availFrameLen);
-
-				if (!readBuffer || availFrameLen == 0) {
-					if (mFinish) {
-						return RARetCode::RET_END_OF_CONTENT;
-					}
-					wakeUp();
-					continue;
-				}
-
-				uint32_t writeFrameLen;
-				if (requestFrameLen <= availFrameLen) {
-					writeFrameLen = requestFrameLen;
-				} else {
-					writeFrameLen = availFrameLen;
-				}
-
-				if (RARetCode::RET_OK != writer.write(readBuffer, writeFrameLen)) {
-					Utility::printLog("writer returned error");
-					continue;
-				}
-
-				mMultiBlockBuffer->updateReadBuffer(writeFrameLen,nullptr);
-				*(returnFrameLen) += writeFrameLen;
-			}
-			wakeUp();
-
-			if (mBaseTime == 0) {
-				mBaseTime = mSoundCoordinator.getDelayTime() + Utility::getCurrentTime();
-			}
-
-			return RARetCode::RET_OK;
-		}
-
-		void onAudioStreamFinish()
-		{
-			Utility::printLog("Movie onFinish");
-		}
-
-		void doWork()
-		{
-
-			if (mDecoderResult == VideoFileHolder::DecoderReturnCode::CONTINUE) {
-				mDecoderResult = mVideoFileHolder->decode();
-			}
-
-			if (mDecoderResult == VideoFileHolder::DecoderReturnCode::VIDEO) {
-				//Utility::printLog("VIDEO");
-				bool vFrameRet = true;
-				while (vFrameRet) {
-					if (mVideoPoolAvailable > 0) {
-						std::lock_guard<std::mutex> lock(mMutex);
-
-						VideoFileHolder::VideoFrame& frame = mVideoPool[mVideoPoolWritePointer];
-						vFrameRet = mVideoFileHolder->getVideoFrame(frame);
-						if (vFrameRet) {
-							++mVideoPoolWritePointer;
-							if (mVideoPoolWritePointer == VIDEO_BUFFER_FRAME_LEN) {
-								mVideoPoolWritePointer = 0;
-							}
-							--mVideoPoolAvailable;
-						}
-					} else {
-						break;
-					}
-				}
-				if (!vFrameRet) {
-					mDecoderResult = VideoFileHolder::DecoderReturnCode::CONTINUE;
-				}
-			}
-
-			if (mDecoderResult == VideoFileHolder::DecoderReturnCode::AUDIO) {
-				//Utility::printLog("AUDIO");
-				bool		aFrameRet = true;
-				float*      buffer;
-				uint32_t	returnFrameLen;
-				uint32_t    requestFrameLen;
-
-				while (aFrameRet) {
-
-					mMultiBlockBuffer->getWriteBuffer(buffer, requestFrameLen);
-
-					if (!buffer || requestFrameLen == 0) {
-						break;
-					}
-
-					aFrameRet = mVideoFileHolder->getAudioFrame(&buffer, &returnFrameLen, requestFrameLen);
-
-					if (aFrameRet) {
-						mMultiBlockBuffer->updateWriteBuffer(returnFrameLen, nullptr);
-					} else {
-						mDecoderResult = VideoFileHolder::DecoderReturnCode::CONTINUE;
-						break;
-					}
-				}
-			}
-
-			if (mDecoderResult == VideoFileHolder::DecoderReturnCode::FINISH) {
-				mFinish = true;
-				finishSelf();
-			}
-		}
-
-		void waitPreDecode() 
-		{
-			uint32_t count = 0;
-
-			while (count < AUDIO_BUFFER_BLOCK_NUM) {
-				wakeUp();
-				count = mMultiBlockBuffer->getAvailBlockNum();
-			}
-
-		}
-
-		void cleanUpVideoPool()
-		{
-			std::lock_guard<std::mutex> lock(mMutex);
-
-			while (mVideoPoolAvailable < VIDEO_BUFFER_FRAME_LEN) {
-				VideoFileHolder::VideoFrame& frame = mVideoPool[mVideoPoolReadPointer];
-
-				mVideoFileHolder->releaseVideoFrame(frame);
-
-				++mVideoPoolReadPointer;
-				if (mVideoPoolReadPointer == VIDEO_BUFFER_FRAME_LEN) {
-					mVideoPoolReadPointer = 0;
-				}
-				++mVideoPoolAvailable;
-			}
+			Utility::printLog("onVideoFinish");
 		}
 
 		void init()
 		{
-			mVideoWork.mInitialized = false;
-
-			start();
-			waitPreDecode();
-
-			mGraphicsManager.setRenderer(this);
-			mSoundCoordinator.registerRenderer(this);
+			mMovieRenderer->playMovie();
 		}
 
 		void fin()
 		{
-			mFinish = true;
-			finish();
-			cleanUpVideoPool();
-			mGraphicsManager.removeRenderer(this);
-			mSoundCoordinator.unregisterRenderer(this);
+			mMovieRenderer->stopPlaying();
 		}
 
 		Movie(RoseAura& ra) :
-			  mGraphicsManager(ra.getGraphicsManager())
-			, mSoundCoordinator(ra.getSoundCoordinator())
-			, mDecoderResult(VideoFileHolder::DecoderReturnCode::CONTINUE)
-			, mVideoFileHolder(std::make_unique<VideoFileHolder>("testColor.webm"))
-//			, mVideoFileHolder(std::make_unique<VideoFileHolder>("bluestone2.webm"))
-//			, mVideoFileHolder(std::make_unique<VideoFileHolder>("test.webm"))
-			, mMultiBlockBuffer(std::make_unique<MultiBlockBuffer>(AUDIO_BUFFER_BLOCK_NUM, AUDIO_BUFFER_FRAME_LEN, AUDIO_BUFFER_CHANNELS))
-			, mVideoPool{}
-			, mVideoPoolWritePointer(0)
-		    , mVideoPoolReadPointer(0)
-		    , mVideoPoolAvailable(VIDEO_BUFFER_FRAME_LEN)
-			, mVideoWork{}
-			, mBaseTime(0)
-			, mFinish(false)
+			  mMovieRenderer(std::make_unique<MovieRenderer>(ra, "testColor.webm", (WIN_SIZE_W - 1280)/2, (WIN_SIZE_H - 720)/2, this))
+			  //mMovieRenderer(std::make_unique<MovieRenderer>(ra, "bluestone2.webm", (WIN_SIZE_W - 1280)/2, (WIN_SIZE_H - 720)/2, this))
+			  //mMovieRenderer(std::make_unique<MovieRenderer>(ra, "test.webm"      , (WIN_SIZE_W - 1280)/2, (WIN_SIZE_H - 720)/2, this))
 		{
 		}
 
 		virtual ~Movie() = default;
 
 	private:
-		struct VideoWork {
-			int32_t		mLocY;
-			int32_t		mLocU;
-			int32_t		mLocV;
-			Texture2D	mTexY;
-			Texture2D	mTexU;
-			Texture2D	mTexV;
-			int32_t		mWidth;
-			int32_t		mHeight;
-			uint32_t    mDispX;
-			uint32_t    mDispY;
-			bool        mInitialized;
-		};
-
-		std::unique_ptr<MultiBlockBuffer>
-						mMultiBlockBuffer;
-
-		static constexpr uint32_t	AUDIO_BUFFER_BLOCK_NUM = 4;
-		static constexpr uint32_t	AUDIO_BUFFER_FRAME_LEN = 960;
-		static constexpr uint32_t	AUDIO_BUFFER_CHANNELS  = 2;
-		static constexpr uint32_t	VIDEO_BUFFER_FRAME_LEN = 5;
-
-		IGraphicsManager&  mGraphicsManager;
-		ISoundCoordinator& mSoundCoordinator;
-
-		std::unique_ptr<VideoFileHolder>
-						   mVideoFileHolder;
-
-		VideoFileHolder::VideoFrame 
-					      mVideoPool[VIDEO_BUFFER_FRAME_LEN];
-		uint32_t		  mVideoPoolWritePointer;
-		uint32_t		  mVideoPoolReadPointer;
-		uint32_t          mVideoPoolAvailable;
-
-		VideoFileHolder::DecoderReturnCode
-						  mDecoderResult;
-
-		VideoWork		  mVideoWork;
-
-		uint64_t		  mBaseTime;
-		bool			  mFinish;
-		std::mutex		  mMutex;
+		std::unique_ptr<MovieRenderer>	mMovieRenderer;
 	};
 
 	//////////////////////////////////////////////////////////////

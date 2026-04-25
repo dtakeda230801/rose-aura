@@ -3,12 +3,8 @@ $header = "res.h"
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 $writer = New-Object System.IO.StreamWriter($header, $false, $utf8NoBom)
 
-$writer.WriteLine("#pragma once")
-$writer.WriteLine("")
-$writer.WriteLine("#include <string>")
-$writer.WriteLine("")
-$writer.WriteLine("namespace RoseAuraResources {")
-$writer.WriteLine("")
+$content = Get-Content -Path "template_header.txt" -Raw
+$writer.Write($content)
 
 $dirs = Get-ChildItem -Directory
 
@@ -23,7 +19,7 @@ foreach ($d in $dirs) {
         $content = Get-Content -Path $f.FullName -Raw
 
         $writer.WriteLine("/////////////////////////////////")
-        $writer.WriteLine("inline const std::string Res_$($f.BaseName) = R`"(" )
+        $writer.WriteLine("    std::string Res_$($f.BaseName) = R`"(" )
 
         $writer.Write($content)
 
@@ -33,6 +29,7 @@ foreach ($d in $dirs) {
     }
 }
 
-$writer.WriteLine("}")
+$content = Get-Content -Path "template_footer.txt" -Raw
+$writer.Write($content)
 
 $writer.Close()

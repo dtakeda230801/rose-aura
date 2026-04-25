@@ -1,0 +1,27 @@
+    static void create()
+    {
+        if (!mIns) {
+            mIns = new RoseAuraResources();
+        }
+    };
+
+    static RoseAuraResources* get() 
+    {
+        return mIns;
+    };
+
+    static void destroy()
+    {
+        if (mIns) {
+            delete mIns;
+            mIns = nullptr;
+        }
+    };
+
+    RoseAuraResources() = default;
+private:
+    virtual ~RoseAuraResources() = default;
+
+    static RoseAuraResources* mIns;
+
+};

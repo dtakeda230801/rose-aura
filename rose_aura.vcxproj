@@ -81,9 +81,15 @@
     <ClInclude Include="resources\res.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="resources\generate_resource.bat" />
+    <None Include="resources\generate_resource.ps1" />
     <None Include="resources\shader\ConvertPictureF.fs" />
     <None Include="resources\shader\ConvertPictureV.fs" />
     <None Include="vcpkg.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="resources\template_footer.txt" />
+    <Text Include="resources\template_header.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

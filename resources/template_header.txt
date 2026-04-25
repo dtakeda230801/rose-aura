@@ -1,0 +1,8 @@
+#pragma once
+
+#include <string>
+
+#define RESOURCES RoseAuraResources::get()
+
+class RoseAuraResources {
+public:

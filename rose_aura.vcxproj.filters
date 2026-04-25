@@ -179,7 +179,25 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />
-    <None Include="resources\shader\ConvertPictureF.fs" />
-    <None Include="resources\shader\ConvertPictureV.fs" />
+    <None Include="resources\generate_resource.bat">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="resources\generate_resource.ps1">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="resources\shader\ConvertPictureF.fs">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="resources\shader\ConvertPictureV.fs">
+      <Filter>リソース ファイル</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="resources\template_footer.txt">
+      <Filter>リソース ファイル</Filter>
+    </Text>
+    <Text Include="resources\template_header.txt">
+      <Filter>リソース ファイル</Filter>
+    </Text>
   </ItemGroup>
 </Project>

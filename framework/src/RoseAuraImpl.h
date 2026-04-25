@@ -22,7 +22,7 @@ public:
 	IStoryAnchor&		getStoryAnchor();
 
 	RoseAuraImpl();
-	virtual ~RoseAuraImpl() = default;
+	virtual ~RoseAuraImpl();
 
 private:
 	std::unique_ptr<CentralLooper>		mCentralLooper;

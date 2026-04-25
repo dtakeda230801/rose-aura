@@ -193,6 +193,7 @@ public:
     void doTask()
     {
         mMr->playMovie();
+        mRa.getCentralLooper().unregisterFrameSyncCallback(this);
     }
 
     void onTaskFinish()
@@ -225,7 +226,7 @@ public:
         mMr = new MovieRenderer(mRa, "..\\..\\test\\rose_aura_test\\testColor.webm", 0, 0, this);
     }
     virtual ~TestMovieRenderer() {
-        mRa.getCentralLooper().unregisterFrameSyncCallback(this);
+        mMr->stopPlaying();
         delete mMr;
     }
 
@@ -267,7 +268,6 @@ TEST(testMovieRenderer, BehaviourTest)
     }
     ROSE_AURA_TEST_FIN;
 }
-
 
 
 TEST(testPreRenderThread, BehaviourTest)

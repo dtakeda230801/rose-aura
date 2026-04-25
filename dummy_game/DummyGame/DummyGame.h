@@ -6,7 +6,7 @@
 #define VIDEO_FRAME_RATE	30
 #define LOOPER_FRAME_RATE   30
 
-static const IObjectActivator::TAG_ID TAG_COMMON_OBJECT	= 0x1;
+static const IObjectActivator::TAG_ID TAG_COMMON_OBJECT	    = 0x1;
 static const IObjectActivator::TAG_ID TAG_GAME_OBJECT		= 0x2;
 static const IObjectActivator::TAG_ID TAG_OPENING_OBJECT	= 0x3;
 

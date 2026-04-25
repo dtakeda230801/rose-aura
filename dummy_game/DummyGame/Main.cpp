@@ -5,16 +5,11 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <cmath>
-#include <thread>
-#include <condition_variable>
 
 #include "RoseAura.h"
 #include "RoseAuraReturnCode.h"
-#include "MediaUtility.h"
 
 #include "Utility.h"
-#include "raylib.h"
 
 #include "CommonObjects.h"
 #include "GameObjects.h"
@@ -55,13 +50,13 @@ int main()
 		IInputHandler&	   inputHandler	    = rose_aura->getInputHandler();
 		IGraphicsManager&  graphicsManager  = rose_aura->getGraphicsManager();
 		IWorldNavigator&   worldNavigator   = rose_aura->getWorldNavigator();
-		IObjectActivator& objectRepository = rose_aura->getObjectRepository();
+		IObjectActivator&  objectRepository = rose_aura->getObjectRepository();
 		ISoundCoordinator& soundCoordinator = rose_aura->getSoundCoordinator();
-
+		
 		////////////////////////////////////////////
 		GameObjects::buildWorldConf();
 		IWorldNavigator::WORLD_ID wId = worldNavigator.createWorld(GameObjects::gWorldConf);
-
+		
 		std::vector<IObjectActivator::OBJECT_ID> commonObjIDs 
 			= CommonObjects::registerObjects(*rose_aura);
 
@@ -72,10 +67,6 @@ int main()
 			= OpeningObjects::registerObjects(*rose_aura);
 
 		inputHandler.setConf(readInputConf());
-
-		graphicsManager.setShaderFile(OpeningObjects::CONVERT_PICTURE_V_SHADER
-			                        , OpeningObjects::CONVERT_PICTURE_F_SHADER
-		                            , OpeningObjects::OPENING_SHADER_ID);
 
 		IGraphicsManager::Conf conf;
 		conf.mWindowWidth  = WIN_SIZE_W; 
@@ -100,7 +91,6 @@ int main()
 		objectRepository.deactivateByTag(TAG_GAME_OBJECT);
 		objectRepository.deactivateByTag(TAG_OPENING_OBJECT);
 		objectRepository.deactivateByTag(TAG_COMMON_OBJECT);
-
 	}
 	_CrtDumpMemoryLeaks();
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "raylib.h"
+
 #include "RoseAura.h"
 #include "RoseAuraReturnCode.h"
 

@@ -2,10 +2,12 @@
 
 #include <string>
 
-namespace RoseAuraResources {
+#define RESOURCES RoseAuraResources::get()
 
+class RoseAuraResources {
+public:
 /////////////////////////////////
-inline const std::string Res_ConvertPictureF = R"(
+    std::string Res_ConvertPictureF = R"(
 #version 330
 
 in vec2 fragTexCoord;
@@ -43,9 +45,8 @@ void main()
 }
 )";
 
-
 /////////////////////////////////
-inline const std::string Res_ConvertPictureV = R"(
+    std::string Res_ConvertPictureV = R"(
 #version 330
 
 in vec3 vertexPosition;
@@ -63,5 +64,30 @@ void main()
 }
 )";
 
+    static void create()
+    {
+        if (!mIns) {
+            mIns = new RoseAuraResources();
+        }
+    };
 
-}
+    static RoseAuraResources* get() 
+    {
+        return mIns;
+    };
+
+    static void destroy()
+    {
+        if (mIns) {
+            delete mIns;
+            mIns = nullptr;
+        }
+    };
+
+    RoseAuraResources() = default;
+private:
+    virtual ~RoseAuraResources() = default;
+
+    static RoseAuraResources* mIns;
+
+};

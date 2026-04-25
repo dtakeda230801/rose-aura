@@ -28,5 +28,5 @@ public:
 		return ret;
 	}
 
-	static std::string LoadResourceText(int id);
+	
 };

@@ -67,7 +67,7 @@ void MovieRendererInternal::preprocess()
 		VideoFileHolder::VideoFrame& frame = mVideoPool[mVideoPoolReadPointer];
 
 		uint64_t timming = frame.mTimestamp + mBaseTime;
-		if (Utility::getCurrentTime() < timming) {
+		if (Utility::getCurrentTimeUs() < timming) {
 			return;
 		}
 
@@ -193,7 +193,7 @@ RARetCode MovieRendererInternal::requestData(uint32_t requestFrameLen, uint32_t*
 	wakeUp();
 
 	if (mBaseTime == 0) {
-		mBaseTime = mSoundCoordinator.getDelayTime() + Utility::getCurrentTime();
+		mBaseTime = mSoundCoordinator.getDelayTime() + Utility::getCurrentTimeUs();
 	}
 
 	return RARetCode::RET_OK;

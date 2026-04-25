@@ -24,7 +24,7 @@ void Utility::printLog(const char* format, ...) {
     OutputDebugStringA("\n");
 }
 
-uint64_t Utility::getCurrentTime()
+uint64_t Utility::getCurrentTimeUs()
 {
     return std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::steady_clock::now().time_since_epoch()).count();

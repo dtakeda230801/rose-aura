@@ -9,7 +9,7 @@ public:
 
 	/////////////////////////////////////////////
 	static void		printLog(const char* format, ...);
-	static uint64_t getCurrentTime();
+	static uint64_t getCurrentTimeUs();
 
 	/////////////////////////////////////////////
 	template<class T>

@@ -339,7 +339,7 @@ uint32_t SoundCoordinator::requestDataInternal(float** buff, uint32_t frameNum)
                 updateSize = retFrameMax;
                 mMutex.unlock();
             }
-            currentTime = Utility::getCurrentTime();
+            currentTime = Utility::getCurrentTimeUs();
             if (!mSCBuffer->updateWriteBuffer(updateSize, &currentTime)) {
                 Utility::printLog("updateWriteBuffer failed");
             }
@@ -377,7 +377,7 @@ uint32_t SoundCoordinator::requestDataInternal(float** buff, uint32_t frameNum)
                 if (!mSCBuffer->updateReadBuffer(readFrameCount, &timeFromBuffer)) {
                     Utility::printLog("updateReadBuffer failed");
                 }
-                calcAverageDelayTime(Utility::getCurrentTime() - timeFromBuffer);
+                calcAverageDelayTime(Utility::getCurrentTimeUs() - timeFromBuffer);
 
             }
         } else { //mSystemSamplingRate != SC_SAMPLING_RATE

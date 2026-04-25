@@ -22,8 +22,6 @@
   <ItemGroup>
     <None Include="input_map.json" />
     <None Include="Seeker.opus" />
-    <None Include="ConvertPictureF.fs" />
-    <None Include="ConvertPictureV.fs" />
     <None Include="story.json" />
   </ItemGroup>
   <ItemGroup>
@@ -41,6 +39,9 @@
       <Filter>ソース ファイル</Filter>
     </ClInclude>
     <ClInclude Include="DummyGame.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="TitleObjects.h">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
   </ItemGroup>

@@ -27,8 +27,6 @@ void GraphicsManager::runUntilClosed(Conf conf)
 			}
 		}
 
-
-
 		mMutex.lock();
 		std::vector<IGraphicsRenderer*> renderers = mRenderers;
 		mMutex.unlock();

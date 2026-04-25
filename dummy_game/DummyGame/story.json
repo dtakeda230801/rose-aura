@@ -12,10 +12,24 @@
       "auto_disabled": false
     },
     {
-      "name": "Game",
+      "name": "Title",
       "available_req": [
         {
           "story_point": "Opening",
+          "state": "completed"
+        }
+      ],
+      "disabled_req": [
+
+      ],
+      "auto_available": true,
+      "auto_disabled": false
+    },
+    {
+      "name": "Game",
+      "available_req": [
+        {
+          "story_point": "Title",
           "state": "completed"
         }
       ],

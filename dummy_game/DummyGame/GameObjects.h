@@ -48,56 +48,6 @@ namespace GameObjects {
 	}
 
 	//////////////////////////////////////////////////////////////
-	class ContinuousInputTask :
-		  public ICentralLooper::ITask
-		, public ICentralLooper::IFrameSyncCallback {
-	public:
-		//ITask
-		void doTask()
-		{
-			mInputHandler.update();
-		};
-
-		void onTaskFinish()
-		{
-		};
-
-		std::string getTaskName()
-		{
-			return "ContinuousInputTask";
-		}
-
-		//IFrameSyncCallback
-		void onFrameSync()
-		{
-			mCentralLooper.enqueueTask(this);
-		}
-
-		void init()
-		{
-			mCentralLooper.registerFrameSyncCallback(this);
-			mCentralLooper.enqueueTask(this);
-		}
-
-		void fin()
-		{
-			mCentralLooper.unregisterFrameSyncCallback(this);
-		}
-
-		ContinuousInputTask(RoseAura& ra) :
-			  mCentralLooper(ra.getCentralLooper())
-			, mInputHandler(ra.getInputHandler())
-		{
-		}
-
-		virtual ~ContinuousInputTask() = default;
-	private:
-		ICentralLooper& mCentralLooper;
-		IInputHandler&  mInputHandler;
-	};
-
-
-	//////////////////////////////////////////////////////////////
 	class BackGround3D : public IGraphicsManager::IGraphicsRenderer
  		               , public ICentralLooper::ITask
 		               , public ICentralLooper::IFrameSyncCallback
@@ -299,7 +249,7 @@ namespace GameObjects {
 		{
 			std::lock_guard<std::mutex> lock(mMutex);
 			if (mDisplay) {
-				DrawText("Rose Aura Dummy Game", TXT_POS_X, TXT_POS_Y, 30, DARKGRAY);
+				DrawText("Rose Aura Dummy Game", TXT_POS_X, TXT_POS_Y, 30, RAYWHITE);
 			}
 		};
 
@@ -474,7 +424,7 @@ namespace GameObjects {
 
 		std::string getTaskName()
 		{
-			return "Test DotTrigger";
+			return "Target";
 		}
 
 		//IFrameSyncCallback
@@ -779,13 +729,6 @@ namespace GameObjects {
 		IObjectActivator& objectRepository = ra.getObjectActivator();
 
 		//////////////////////////////////
-		ids.push_back(
-			objectRepository.registerObject(
-				objectRepository.makeObjectBinder<ContinuousInputTask, RoseAura&>(
-					&ContinuousInputTask::init, &ContinuousInputTask::fin, ra)
-				, tags
-			));
-
 		ids.push_back(
 			objectRepository.registerObject(
 				objectRepository.makeObjectBinder<BackGround3D, RoseAura&>(

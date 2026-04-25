@@ -12,8 +12,9 @@
 #include "Utility.h"
 
 #include "CommonObjects.h"
-#include "GameObjects.h"
 #include "OpeningObjects.h"
+#include "TitleObjects.h"
+#include "GameObjects.h"
 
 #include "DummyGame.h"
 
@@ -60,11 +61,15 @@ int main()
 		std::vector<IObjectActivator::OBJECT_ID> commonObjIDs 
 			= CommonObjects::registerObjects(*rose_aura);
 
+		std::vector<IObjectActivator::OBJECT_ID> OpeningObjIDs
+			= OpeningObjects::registerObjects(*rose_aura);
+
+		std::vector<IObjectActivator::OBJECT_ID> TitleObjIDs
+			= TitleObjects::registerObjects(*rose_aura);
+
 		std::vector<IObjectActivator::OBJECT_ID> gameObjIDs
 			= GameObjects::registerObjects(*rose_aura);
 
-		std::vector<IObjectActivator::OBJECT_ID> OpeningObjIDs
-			= OpeningObjects::registerObjects(*rose_aura);
 
 		inputHandler.setConf(readInputConf());
 

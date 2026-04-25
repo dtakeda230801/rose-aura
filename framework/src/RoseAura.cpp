@@ -45,7 +45,7 @@ IInputHandler& RoseAuraImpl::getInputHandler()
 	return *mInputHandler;
 }
 
-IObjectActivator& RoseAuraImpl::getObjectRepository()
+IObjectActivator& RoseAuraImpl::getObjectActivator()
 {
 	return *mObjectRepository;
 }

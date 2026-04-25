@@ -1,12 +1,9 @@
 #pragma once
 
 #include "RoseAura.h"
-#include "RoseAuraReturnCode.h"
 #include "MediaUtility.h"
-#include "Utility.h"
-
 #include "DummyGame.h"
-
+#include "Utility.h"
 
 using namespace RoseAuraMediaUtility;
 using namespace RoseAuraReturnCode;
@@ -16,45 +13,77 @@ namespace OpeningObjects {
 	//////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////
 	class Movie : public MovieRenderer::IMovieRendererCallback
+		        , public ICentralLooper::ITask
 	{
 	public:
+
+		void doTask()
+		{
+			if (mPlaying) {
+				mMovieRenderer->stopPlaying();
+				mPlaying = false;
+
+				mStoryAnchor.changeState("Opening", IStoryAnchor::StoryPointState::COMPLETED);
+			}
+		};
+
+		void onTaskFinish()
+		{
+		};
+
+		std::string getTaskName()
+		{
+			return "Finish Movie Task";
+		};
+
 
 		void onVideoFinish()
 		{
 			Utility::printLog("onVideoFinish");
+			mCentralLooper.enqueueTask(this);
 		}
 
 		void init()
 		{
 			mMovieRenderer->playMovie();
+			mPlaying = true;
 		}
 
 		void fin()
 		{
-			mMovieRenderer->stopPlaying();
+			if (mPlaying) {
+				mMovieRenderer->stopPlaying();
+				mPlaying = false;
+			}
 		}
 
 		Movie(RoseAura& ra) :
-			  mMovieRenderer(std::make_unique<MovieRenderer>(ra, "testColor.webm", (WIN_SIZE_W - 1280)/2, (WIN_SIZE_H - 720)/2, this))
-			  //mMovieRenderer(std::make_unique<MovieRenderer>(ra, "bluestone2.webm", (WIN_SIZE_W - 1280)/2, (WIN_SIZE_H - 720)/2, this))
+			  mCentralLooper(ra.getCentralLooper())
+			, mStoryAnchor(ra.getStoryAnchor())
+			, mMovieRenderer(std::make_unique<MovieRenderer>(ra, "bluestone2.webm", (WIN_SIZE_W - 1280)/2, (WIN_SIZE_H - 720)/2, this))
 			  //mMovieRenderer(std::make_unique<MovieRenderer>(ra, "test.webm"      , (WIN_SIZE_W - 1280)/2, (WIN_SIZE_H - 720)/2, this))
+			//, mMovieRenderer(std::make_unique<MovieRenderer>(ra, "testColor.webm" , (WIN_SIZE_W - 1280)/2, (WIN_SIZE_H - 720)/2, this))
+			, mPlaying(false)
 		{
 		}
 
 		virtual ~Movie() = default;
 
 	private:
+		ICentralLooper&					mCentralLooper;
+		IStoryAnchor&					mStoryAnchor;
 		std::unique_ptr<MovieRenderer>	mMovieRenderer;
+		bool							mPlaying;
 	};
 
 	//////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////
 	std::vector<IObjectActivator::OBJECT_ID> registerObjects(RoseAura& ra)
 	{
-		std::vector<IObjectActivator::OBJECT_ID> ids;
+		std::vector<IObjectActivator::OBJECT_ID>  ids;
 		std::vector<IObjectActivator::TAG_ID>	  tags = { TAG_OPENING_OBJECT };
 
-		IObjectActivator& objectRepository = ra.getObjectRepository();
+		IObjectActivator& objectRepository = ra.getObjectActivator();
 
 		//////////////////////////////////
 		ids.push_back(

@@ -50,7 +50,7 @@ int main()
 		IInputHandler&	   inputHandler	    = rose_aura->getInputHandler();
 		IGraphicsManager&  graphicsManager  = rose_aura->getGraphicsManager();
 		IWorldNavigator&   worldNavigator   = rose_aura->getWorldNavigator();
-		IObjectActivator&  objectRepository = rose_aura->getObjectRepository();
+		IObjectActivator&  objectRepository = rose_aura->getObjectActivator();
 		ISoundCoordinator& soundCoordinator = rose_aura->getSoundCoordinator();
 		
 		////////////////////////////////////////////
@@ -77,7 +77,7 @@ int main()
 		////////////////////////////////////////////
 
 		objectRepository.activateByTag(TAG_COMMON_OBJECT);
-		objectRepository.activateByTag(TAG_GAME_OBJECT);
+		//objectRepository.activateByTag(TAG_GAME_OBJECT);
 		//objectRepository.activateByTag(TAG_OPENING_OBJECT);
 
 		////////////////////////////////////////////

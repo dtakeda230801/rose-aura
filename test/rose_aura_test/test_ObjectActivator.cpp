@@ -57,7 +57,7 @@ TEST(testObjectActivator, APITest)
 		//////////////////////////////////
 		std::unique_ptr<RoseAura> ra = RoseAura::create();
 
-		IObjectActivator& objR = ra->getObjectRepository();
+		IObjectActivator& objR = ra->getObjectActivator();
 
 		//////////////////////////////////
 		id1 = objR.registerObject(

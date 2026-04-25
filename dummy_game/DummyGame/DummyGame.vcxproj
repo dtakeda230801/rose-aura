@@ -167,6 +167,7 @@ kernel32.lib;opus.lib;opusfile.lib;ogg.lib;dav1d.lib;%(AdditionalDependencies)</
     <None Include="ConvertPictureV.fs" />
     <None Include="input_map.json" />
     <None Include="Seeker.opus" />
+    <None Include="story.json" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="bluestone.webm" />

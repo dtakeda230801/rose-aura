@@ -8,16 +8,14 @@
 #include "MediaUtility.h"
 #include "Utility.h"
 
+#include "DummyGame.h"
+
 using namespace RoseAuraMediaUtility;
 using namespace RoseAuraReturnCode;
 
-#include "DummyGame.h"
-
 #define TXT_POS_X	10
 #define TXT_POS_Y	10
-
 #define CIRCLE_SIZE 20
-
 #define MOVE_DELTA  10
 
 namespace GameObjects {
@@ -50,9 +48,59 @@ namespace GameObjects {
 	}
 
 	//////////////////////////////////////////////////////////////
-	class Test3DModel : public IGraphicsManager::IGraphicsRenderer
- 		              , public ICentralLooper::ITask
-		              , public ICentralLooper::IFrameSyncCallback
+	class ContinuousInputTask :
+		  public ICentralLooper::ITask
+		, public ICentralLooper::IFrameSyncCallback {
+	public:
+		//ITask
+		void doTask()
+		{
+			mInputHandler.update();
+		};
+
+		void onTaskFinish()
+		{
+		};
+
+		std::string getTaskName()
+		{
+			return "ContinuousInputTask";
+		}
+
+		//IFrameSyncCallback
+		void onFrameSync()
+		{
+			mCentralLooper.enqueueTask(this);
+		}
+
+		void init()
+		{
+			mCentralLooper.registerFrameSyncCallback(this);
+			mCentralLooper.enqueueTask(this);
+		}
+
+		void fin()
+		{
+			mCentralLooper.unregisterFrameSyncCallback(this);
+		}
+
+		ContinuousInputTask(RoseAura& ra) :
+			  mCentralLooper(ra.getCentralLooper())
+			, mInputHandler(ra.getInputHandler())
+		{
+		}
+
+		virtual ~ContinuousInputTask() = default;
+	private:
+		ICentralLooper& mCentralLooper;
+		IInputHandler&  mInputHandler;
+	};
+
+
+	//////////////////////////////////////////////////////////////
+	class BackGround3D : public IGraphicsManager::IGraphicsRenderer
+ 		               , public ICentralLooper::ITask
+		               , public ICentralLooper::IFrameSyncCallback
 	{
 	public:
 		void doTask()
@@ -74,7 +122,7 @@ namespace GameObjects {
 
 		std::string getTaskName()
 		{
-			return "Test 3D Model";
+			return "BackGround3D";
 		}
 
 		void onFrameSync()
@@ -118,7 +166,7 @@ namespace GameObjects {
 			mCentralLooper.unregisterFrameSyncCallback(this);
 		}
 
-		Test3DModel(RoseAura& ra) :
+		BackGround3D(RoseAura& ra) :
 			  mCentralLooper(ra.getCentralLooper())
 			, mGraphicsManager(ra.getGraphicsManager())
 			, mAngle(0.0f)
@@ -130,7 +178,7 @@ namespace GameObjects {
 			mCamera.projection = CAMERA_PERSPECTIVE; 
 		}
 
-		virtual ~Test3DModel() = default;
+		virtual ~BackGround3D() = default;
 
 	private:
 		ICentralLooper&    mCentralLooper;
@@ -231,10 +279,10 @@ namespace GameObjects {
 		IWorldNavigator&  mWorldNavigator;
 
 		std::mutex mMutex;
-		unsigned int mX = gWorldConf.mPosition.mX - gWorldConf.mActiveRange.mX;
-		unsigned int mY = gWorldConf.mPosition.mY - gWorldConf.mActiveRange.mY;
-		unsigned int mW = gWorldConf.mActiveRange.mX * 2;
-		unsigned int mH = gWorldConf.mActiveRange.mY * 2;
+		uint32_t mX = gWorldConf.mPosition.mX - gWorldConf.mActiveRange.mX;
+		uint32_t mY = gWorldConf.mPosition.mY - gWorldConf.mActiveRange.mY;
+		uint32_t mW = gWorldConf.mActiveRange.mX * 2;
+		uint32_t mH = gWorldConf.mActiveRange.mY * 2;
 	};
 
 	//////////////////////////////////////////////////////////////
@@ -320,9 +368,8 @@ namespace GameObjects {
 		void onInputEvent(std::vector<std::pair<InputState, InputType>>& events)
 		{
 			for (auto event : events) {
-				//Utility::printLog("MyDot Input(%d / %d)", event.first, event.second);
 				InputState state = event.first;
-				InputType  type = event.second;
+				InputType  type  = event.second;
 
 				IWorldNavigator::Vec3 pos = mWorldNavigator.getPosition();
 
@@ -729,13 +776,20 @@ namespace GameObjects {
 		std::vector<IObjectActivator::OBJECT_ID> ids;
 		std::vector<IObjectActivator::TAG_ID>	  tags = { TAG_GAME_OBJECT };
 
-		IObjectActivator& objectRepository = ra.getObjectRepository();
+		IObjectActivator& objectRepository = ra.getObjectActivator();
 
 		//////////////////////////////////
 		ids.push_back(
 			objectRepository.registerObject(
-				objectRepository.makeObjectBinder<Test3DModel, RoseAura&>(
-					&Test3DModel::init, &Test3DModel::fin, ra)
+				objectRepository.makeObjectBinder<ContinuousInputTask, RoseAura&>(
+					&ContinuousInputTask::init, &ContinuousInputTask::fin, ra)
+				, tags
+			));
+
+		ids.push_back(
+			objectRepository.registerObject(
+				objectRepository.makeObjectBinder<BackGround3D, RoseAura&>(
+					&BackGround3D::init, &BackGround3D::fin, ra)
 				, tags
 			));
 

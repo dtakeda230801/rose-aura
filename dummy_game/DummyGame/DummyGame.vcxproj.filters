@@ -24,6 +24,7 @@
     <None Include="Seeker.opus" />
     <None Include="ConvertPictureF.fs" />
     <None Include="ConvertPictureV.fs" />
+    <None Include="story.json" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="test.wav" />

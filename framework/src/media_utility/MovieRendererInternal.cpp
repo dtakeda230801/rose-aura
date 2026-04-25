@@ -134,7 +134,6 @@ void MovieRendererInternal::preprocess()
 		wakeUp();
 	}
 	else {
-		Utility::printLog("Video Buffer Under run");
 		wakeUp();
 	}
 }

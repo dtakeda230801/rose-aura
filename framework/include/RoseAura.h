@@ -17,7 +17,7 @@ public:
 	virtual ICentralLooper&		getCentralLooper()		= 0;
 	virtual IGraphicsManager&	getGraphicsManager()	= 0;
 	virtual IInputHandler&		getInputHandler()		= 0;
-	virtual IObjectActivator&	getObjectRepository()	= 0;
+	virtual IObjectActivator&	getObjectActivator()	= 0;
 	virtual IWorldNavigator&	getWorldNavigator()		= 0;
 	virtual ISoundCoordinator&  getSoundCoordinator()   = 0;
 	virtual IConditionSaver&    getConditionSaver()     = 0;

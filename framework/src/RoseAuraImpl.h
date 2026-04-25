@@ -15,7 +15,7 @@ public:
 	ICentralLooper&		getCentralLooper();
 	IGraphicsManager& 	getGraphicsManager();
 	IInputHandler& 		getInputHandler();
-	IObjectActivator& 	getObjectRepository();
+	IObjectActivator& 	getObjectActivator();
 	IWorldNavigator&	getWorldNavigator();
 	ISoundCoordinator&  getSoundCoordinator();
 	IConditionSaver&    getConditionSaver();

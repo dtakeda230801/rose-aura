@@ -18,6 +18,8 @@ public:
 	};
 
 	void	  runUntilClosed(Conf conf);
+	void      exit();
+
 	RARetCode setRenderer(IGraphicsRenderer* renderer);
 	RARetCode removeRenderer(IGraphicsRenderer* renderer);
 	RARetCode setShaderFile(std::string vsfile
@@ -36,5 +38,6 @@ private:
 	std::mutex						mMutex;
 	std::vector<IGraphicsRenderer*>	mRenderers;
 	std::vector<ShaderHolder>	    mShaderHolders;
+	std::atomic<bool>				mRunning;
 };
 

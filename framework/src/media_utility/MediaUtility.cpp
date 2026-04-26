@@ -6,6 +6,9 @@
 #include "MultiBlockBufferInternal.h"
 #include "PreRenderThreadInternal.h"
 #include "MovieRendererInternal.h"
+#include "SoundSnapshotRendererInternal.h"
+#include "MusicRendererInternal.h"
+
 
 using namespace RoseAuraMediaUtility;
 
@@ -230,9 +233,8 @@ MultiBlockBuffer::~MultiBlockBuffer()
 ////////////////////////////////////////////////////
 #define MVR_INSTANCE static_cast<MovieRendererInternal*>(mImpl)
 
-
 MovieRenderer::MovieRenderer(RoseAura& ra, const char* movieFile, uint32_t x, uint32_t y, IMovieRendererCallback* cb) :
-    mImpl(static_cast<void*>(new MovieRendererInternal(ra, movieFile,x,y, cb)))
+    mImpl(static_cast<void*>(new MovieRendererInternal(ra, movieFile,x,y,cb)))
 {
 }
 
@@ -249,4 +251,52 @@ bool MovieRenderer::stopPlaying()
 MovieRenderer::~MovieRenderer()
 {
     delete MVR_INSTANCE;
+}
+
+////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+#define SSR_INSTANCE static_cast<SoundSnapshotRendererInternal*>(mImpl)
+
+SoundSnapshotRenderer::SoundSnapshotRenderer(RoseAura& ra, const char* waveFile) :
+    mImpl(static_cast<void*>(new SoundSnapshotRendererInternal(ra, waveFile)))
+{
+}
+
+bool SoundSnapshotRenderer::playSound()
+{
+    return SSR_INSTANCE->playSound();
+}
+
+SoundSnapshotRenderer::~SoundSnapshotRenderer()
+{
+    delete SSR_INSTANCE;
+}
+
+////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+#define MUR_INSTANCE static_cast<MusicRendererInternal*>(mImpl)
+
+MusicRenderer::MusicRenderer(RoseAura& ra, const char* musicFile) :
+    mImpl(static_cast<void*>(new MusicRendererInternal(ra, musicFile)))
+{
+}
+
+bool MusicRenderer::playMusic()
+{
+    return MUR_INSTANCE->playMusic();
+}
+
+bool MusicRenderer::stopPlaying()
+{
+    return MUR_INSTANCE->stopPlaying();
+}
+
+void MusicRenderer::setJumpPoint(uint64_t point, uint64_t to)
+{
+    MUR_INSTANCE->setJumpPoint(point,to);
+}
+
+MusicRenderer::~MusicRenderer()
+{
+    delete MUR_INSTANCE;
 }

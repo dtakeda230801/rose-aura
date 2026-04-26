@@ -9,10 +9,12 @@
 ////////////////////////////////////
 void GraphicsManager::runUntilClosed(Conf conf)
 {
+	mRunning.store(true);
+
 	InitWindow(conf.mWindowWidth, conf.mWindowHeight, conf.mWindowTitle);
 	SetTargetFPS(conf.mFrameRate);
 
-	while (!WindowShouldClose())
+	while (!WindowShouldClose() && mRunning)
 	{
 		for (auto& holder : mShaderHolders) {
 			if (!holder.mShader) {
@@ -53,6 +55,11 @@ void GraphicsManager::runUntilClosed(Conf conf)
 	}
 
 	CloseWindow();
+}
+
+void GraphicsManager::exit()
+{
+	mRunning.store(false);
 }
 
 RARetCode GraphicsManager::setRenderer(IGraphicsRenderer* renderer)

@@ -33,6 +33,7 @@ public:
 	// APIs
 	//////////////////////////////////////////////////////////
 	virtual void      runUntilClosed(Conf conf)					    = 0;
+	virtual void      exit()                                        = 0;
 	virtual RARetCode setRenderer(IGraphicsRenderer* renderer)	    = 0;
 	virtual RARetCode removeRenderer(IGraphicsRenderer* renderer)	= 0;
 	virtual RARetCode setShaderFile(std::string vsfile

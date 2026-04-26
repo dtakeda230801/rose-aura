@@ -37,8 +37,10 @@
     <ClCompile Include="framework\src\media_utility\MediaUtility.cpp" />
     <ClCompile Include="framework\src\media_utility\MovieRendererInternal.cpp" />
     <ClCompile Include="framework\src\media_utility\MultiBlockBufferInternal.cpp" />
+    <ClCompile Include="framework\src\media_utility\MusicRendererInternal.cpp" />
     <ClCompile Include="framework\src\media_utility\OpusFileHolderInternal.cpp" />
     <ClCompile Include="framework\src\media_utility\PreRenderThreadInternal.cpp" />
+    <ClCompile Include="framework\src\media_utility\SoundSnapshotRendererInternal.cpp" />
     <ClCompile Include="framework\src\media_utility\VideoFileHolderInternal.cpp" />
     <ClCompile Include="framework\src\media_utility\WaveFileHolderInternal.cpp" />
     <ClCompile Include="framework\src\SoundCoordinator.cpp" />
@@ -67,8 +69,10 @@
     <ClInclude Include="framework\src\InputHandler.h" />
     <ClInclude Include="framework\src\media_utility\MovieRendererInternal.h" />
     <ClInclude Include="framework\src\media_utility\MultiBlockBufferInternal.h" />
+    <ClInclude Include="framework\src\media_utility\MusicRendererInternal.h" />
     <ClInclude Include="framework\src\media_utility\OpusFileHolderInternal.h" />
     <ClInclude Include="framework\src\media_utility\PreRenderThreadInternal.h" />
+    <ClInclude Include="framework\src\media_utility\SoundSnapshotRendererInternal.h" />
     <ClInclude Include="framework\src\media_utility\VideoFileHolderInternal.h" />
     <ClInclude Include="framework\src\media_utility\WaveFileHolderInternal.h" />
     <ClInclude Include="framework\src\SoundCoordinator.h" />

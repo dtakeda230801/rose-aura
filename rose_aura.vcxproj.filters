@@ -87,6 +87,12 @@
     <ClCompile Include="framework\src\media_utility\MovieRendererInternal.cpp">
       <Filter>MediaUtility</Filter>
     </ClCompile>
+    <ClCompile Include="framework\src\media_utility\SoundSnapshotRendererInternal.cpp">
+      <Filter>MediaUtility</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\src\media_utility\MusicRendererInternal.cpp">
+      <Filter>MediaUtility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework\src\CentralLooper.h">
@@ -175,6 +181,12 @@
     </ClInclude>
     <ClInclude Include="resources\res.h">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\src\media_utility\SoundSnapshotRendererInternal.h">
+      <Filter>MediaUtility</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\src\media_utility\MusicRendererInternal.h">
+      <Filter>MediaUtility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

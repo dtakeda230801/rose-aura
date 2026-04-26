@@ -518,7 +518,6 @@ namespace GameObjects {
 
 	//////////////////////////////////////////////////////////////
 	class SoundEffect01 : public IInputHandler::IInputHandlerCallback
-		                , public ISoundCoordinator::ISoundRenderer
 	{
 	public:
 		//IInputHandlerCallback
@@ -526,74 +525,43 @@ namespace GameObjects {
 		{
 			for (auto event : events) {
 				InputState state = event.first;
-				InputType  type = event.second;
+				InputType  type  = event.second;
 
 				if (state == InputState::PUSHED && type == InputType::ACTION2) {
-					Utility::printLog("Buffer Delay:%d", mSoundCoordinator.getDelayTime());
-					mSoundCoordinator.registerRenderer(this);
+					mSoundSnapshotRenderer->playSound();
 				}
 			}
 		}
 
 		void init()
 		{
-			mInputHandler.registerCallback(this);
-			mWaveFileHolder = new WaveFileHolder("test.wav");
+			IInputHandler& ih = mRa.getInputHandler();
+			ih.registerCallback(this);
+			mSoundSnapshotRenderer = new SoundSnapshotRenderer(mRa,"test.wav");
 		}
 
 		void fin()
 		{
-			mSoundCoordinator.unregisterRenderer(this);
-
-			delete mWaveFileHolder;
-			mInputHandler.unregisterCallback(this);
-		}
-
-		RARetCode requestData(unsigned int requestFrameLen, unsigned int* returnFrameLen, ISoundCoordinator::IDataWriter& writer)
-		{
-
-			if (requestFrameLen <= mWaveFileHolder->getRemainFrameLen()) {
-				*returnFrameLen = requestFrameLen;
-			}
-			else {
-				*returnFrameLen = mWaveFileHolder->getRemainFrameLen();
-			}
-
-			writer.write(mWaveFileHolder->getCurrentFramePointer(), *returnFrameLen);
-
-			mWaveFileHolder->moveCurrentFramePointer(*returnFrameLen);
-
-			if (mWaveFileHolder->getRemainFrameLen() == 0) {
-				mWaveFileHolder->reset();
-				return RARetCode::RET_END_OF_CONTENT;
-			}
-
-			return RARetCode::RET_OK;
-		}
-
-		void onAudioStreamFinish()
-		{
-			Utility::printLog("SoundEffect01 onFinish");
+			delete mSoundSnapshotRenderer;
+			IInputHandler& ih = mRa.getInputHandler();
+			ih.unregisterCallback(this);
 		}
 
 		SoundEffect01(RoseAura& ra) :
-			  mInputHandler(ra.getInputHandler())
-			, mSoundCoordinator(ra.getSoundCoordinator())
-			, mWaveFileHolder(nullptr)
+			  mRa(ra)
+			, mSoundSnapshotRenderer(nullptr)
 		{
 		}
 		virtual ~SoundEffect01() = default;
 
 	private:
-		IInputHandler&     mInputHandler;
-		ISoundCoordinator& mSoundCoordinator;
-		WaveFileHolder*    mWaveFileHolder;
+		RoseAura&				mRa;
+		SoundSnapshotRenderer*  mSoundSnapshotRenderer;
+							
 	};
 
 	//////////////////////////////////////////////////////////////
 	class Music : public IInputHandler::IInputHandlerCallback
-		        , public ISoundCoordinator::ISoundRenderer
-		        , public PreRenderThread
 	{
 	public:
 		//IInputHandlerCallback
@@ -606,117 +574,46 @@ namespace GameObjects {
 				if (state == InputState::PUSHED && type == InputType::ACTION3) {
 
 					if (!mPlay) {
-						startDecodeThread();
-						mSoundCoordinator.registerRenderer(this);
+						mPlay = true;
+						mMusicRenderer->playMusic();
 					}
 					else {
 						mPlay = false;
-						termDecodeThread();
+						mMusicRenderer->stopPlaying();
 					}
 				}
 			}
-		}
-
-		void doWork()
-		{
-			mNoFinish = mOpusFileHolder->decode();
 		}
 
 		void init()
 		{
-			mInputHandler.registerCallback(this);
-			mOpusFileHolder = new OpusFileHolder("Seeker.opus");
+			mMusicRenderer = new MusicRenderer(mRa, "Seeker.opus");
+			mMusicRenderer->setJumpPoint(6101808, 2602800);
+
+			IInputHandler& ih = mRa.getInputHandler();
+			ih.registerCallback(this);
 		}
 
 		void fin()
 		{
-			mSoundCoordinator.unregisterRenderer(this);
-
-			termDecodeThread();
-			delete mOpusFileHolder;
-			mInputHandler.unregisterCallback(this);
+			mMusicRenderer->stopPlaying();
+			delete mMusicRenderer;
+			IInputHandler& ih = mRa.getInputHandler();
+			ih.unregisterCallback(this);
 		}
-
-		void startDecodeThread()
-		{
-			mPlay = true;
-			mOpusFileHolder->setJumpPoint(6101808, 2602800);
-			mNoFinish = mOpusFileHolder->decode();
-			start();
-		}
-
-		void termDecodeThread()
-		{
-			mPlay = false;
-			mNoFinish = false;
-			mOpusFileHolder->reset();
-			finish();
-		}
-
-		RARetCode requestData(unsigned int requestFrameLen, unsigned int* returnFrameLen, ISoundCoordinator::IDataWriter& writer)
-		{
-			RARetCode ret = RARetCode::RET_OK;
-
-			*returnFrameLen = 0;
-
-			while (*returnFrameLen < requestFrameLen) {
-
-				float* decoded;
-				unsigned int	decodedFrameLen;
-				unsigned int    writeFrameLen = 0;
-
-				mOpusFileHolder->getCurrentPointer(decoded, &decodedFrameLen);
-
-				if (decodedFrameLen > 0) {
-					if (decodedFrameLen >= requestFrameLen - *returnFrameLen) {
-						writeFrameLen = requestFrameLen - *returnFrameLen;
-					}
-					else {
-						writeFrameLen = decodedFrameLen;
-					}
-
-					writer.write(decoded, writeFrameLen);
-
-					mOpusFileHolder->moveReadPointer(writeFrameLen);
-
-					*returnFrameLen += writeFrameLen;
-
-				}
-				else if (mNoFinish) {
-					wakeUp();
-				}
-
-				if (!mPlay || (!mNoFinish && decodedFrameLen == 0)) {
-					ret = RARetCode::RET_END_OF_CONTENT;
-					break;
-				}
-			}
-			return ret;
-		}
-
-		void onAudioStreamFinish()
-		{
-			Utility::printLog("Music onFinish");
-		}
-
 
 		Music(RoseAura& ra) :
-			  mInputHandler(ra.getInputHandler())
-			, mSoundCoordinator(ra.getSoundCoordinator())
-			, mOpusFileHolder(nullptr)
+			mRa(ra)
+			, mMusicRenderer(nullptr)
 			, mPlay(false)
-			, mNoFinish(true)
 		{
 		}
 		virtual ~Music() = default;
 
 	private:
-		IInputHandler&     mInputHandler;
-		ISoundCoordinator& mSoundCoordinator;
-		OpusFileHolder*    mOpusFileHolder;
-
-		bool               mPlay;
-		bool               mNoFinish;
+		RoseAura&		   mRa;
+		MusicRenderer*	   mMusicRenderer;
+		bool			   mPlay;
 	};
 
 	//////////////////////////////////////////////////////////////

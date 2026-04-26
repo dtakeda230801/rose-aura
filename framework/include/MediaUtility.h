@@ -130,4 +130,31 @@ namespace RoseAuraMediaUtility {
 	private:
 		void* mImpl;
 	};
+
+	/////////////////////////////////////////////
+	class SoundSnapshotRenderer {
+	public:
+		SoundSnapshotRenderer(RoseAura& ra, const char* waveFile);
+
+		bool playSound();
+
+		virtual ~SoundSnapshotRenderer();
+	private:
+		void* mImpl;
+	};
+
+	/////////////////////////////////////////////
+	class MusicRenderer {
+	public:
+		MusicRenderer(RoseAura& ra, const char* musicFile);
+
+		bool playMusic();
+		bool stopPlaying();
+		void setJumpPoint(uint64_t point, uint64_t to);
+
+		virtual ~MusicRenderer();
+	private:
+		void* mImpl;
+	};
+
 }

@@ -16,7 +16,6 @@ namespace TitleObjects {
 	//////////////////////////////////////////////////////////////
 	class TitleMenu : public IGraphicsManager::IGraphicsRenderer
 		            , public IInputHandler::IInputHandlerCallback
-		            , public ISoundCoordinator::ISoundRenderer
 	{
 	public:
 
@@ -43,16 +42,16 @@ namespace TitleObjects {
 					if (type == InputType::UP) {
 						--mCursor;
 						if (mCursor <  0) {
-							mCursor = MENU_NUM;
+							mCursor = MENU_NUM - 1;
 						}
-						mSoundCoordinator.registerRenderer(this);
+						mSoundSnapshotRenderer->playSound();
 					} else if (type == InputType::DOWN) {
 						++mCursor;
-						if (mCursor == MENU_NUM) {
+						if (mCursor >= MENU_NUM) {
 							mCursor = 0;
 						}
-						mSoundCoordinator.registerRenderer(this);
-					} else if (type == InputType::ACTION2) {
+						mSoundSnapshotRenderer->playSound();
+					} else if (type == InputType::ACTION1) {
 						switch (mCursor) {
 						case 0:
 							startGame();
@@ -62,6 +61,7 @@ namespace TitleObjects {
 							break;
 						case 2:
 							exit();
+							break;
 						default:
 							break;
 						}
@@ -70,53 +70,29 @@ namespace TitleObjects {
 			}
 		}
 
-		RARetCode requestData(unsigned int requestFrameLen, unsigned int* returnFrameLen, ISoundCoordinator::IDataWriter& writer)
-		{
-
-			if (requestFrameLen <= mWaveFileHolder->getRemainFrameLen()) {
-				*returnFrameLen = requestFrameLen;
-			}
-			else {
-				*returnFrameLen = mWaveFileHolder->getRemainFrameLen();
-			}
-
-			writer.write(mWaveFileHolder->getCurrentFramePointer(), *returnFrameLen);
-
-			mWaveFileHolder->moveCurrentFramePointer(*returnFrameLen);
-
-			if (mWaveFileHolder->getRemainFrameLen() == 0) {
-				mWaveFileHolder->reset();
-				return RARetCode::RET_END_OF_CONTENT;
-			}
-
-			return RARetCode::RET_OK;
-		}
-
-		void onAudioStreamFinish()
-		{
-			Utility::printLog("TitleMenu onFinish");
-		}
-
 		void init()
 		{
-			mWaveFileHolder = new WaveFileHolder("test.wav");
-			mGraphicsManager.setRenderer(this);
-			mInputHandler.registerCallback(this);
+			IGraphicsManager& gm = mRa.getGraphicsManager();
+			IInputHandler&    ih = mRa.getInputHandler();
+
+			mSoundSnapshotRenderer = new SoundSnapshotRenderer(mRa, "test.wav");
+			gm.setRenderer(this);
+			ih.registerCallback(this);
 		}
 
 		void fin()
 		{
-			mInputHandler.unregisterCallback(this);
-			mGraphicsManager.removeRenderer(this);
-			delete mWaveFileHolder;
+			IGraphicsManager& gm = mRa.getGraphicsManager();
+			IInputHandler&    ih = mRa.getInputHandler();
+
+			ih.unregisterCallback(this);
+			gm.removeRenderer(this);
+			delete mSoundSnapshotRenderer;
 		}
 
 		TitleMenu(RoseAura& ra) :
-			  mGraphicsManager(ra.getGraphicsManager())
-			, mInputHandler(ra.getInputHandler())
-			, mSoundCoordinator(ra.getSoundCoordinator())
-			, mStoryAnchor(ra.getStoryAnchor())
-			, mWaveFileHolder(nullptr)
+			  mRa(ra)
+			, mSoundSnapshotRenderer(nullptr)
 		{
 		}
 
@@ -125,7 +101,8 @@ namespace TitleObjects {
 	private:
 		void startGame()
 		{
-			mStoryAnchor.changeState("Title", IStoryAnchor::StoryPointState::COMPLETED);
+			IStoryAnchor& sa = mRa.getStoryAnchor();
+			sa.changeState("Title", IStoryAnchor::StoryPointState::COMPLETED);
 		}
 
 		void openSetting()
@@ -134,23 +111,20 @@ namespace TitleObjects {
 
 		void exit()
 		{
+			IGraphicsManager& gm = mRa.getGraphicsManager();
+			gm.exit();
 		}
-
-		IGraphicsManager&	mGraphicsManager;
-		IInputHandler&		mInputHandler;
-		ISoundCoordinator&  mSoundCoordinator;
-		IStoryAnchor&		mStoryAnchor;
 
 		Color mColor = { 123, 200, 50, 255 };
 
-		int32_t			    mCursor            = 0;
-		WaveFileHolder*		mWaveFileHolder;
+		RoseAura&				mRa;
+		int32_t					mCursor = 0;
+		SoundSnapshotRenderer*	mSoundSnapshotRenderer;
 
-		static constexpr uint32_t MENU_NUM   = 3;
-
-		static constexpr const char* TITLE_MENU_START   = "Game Start";
-		static constexpr const char* TITLE_MENU_SETTING = "SETTING";
-		static constexpr const char* TITLE_MENU_EXIT    = "Exit";
+		static constexpr uint32_t		MENU_NUM		   = 3;
+		static constexpr const char*	TITLE_MENU_START   = "Game Start";
+		static constexpr const char*	TITLE_MENU_SETTING = "SETTING";
+		static constexpr const char*	TITLE_MENU_EXIT    = "Exit";
 	};
 
 	//////////////////////////////////////////////////////////////

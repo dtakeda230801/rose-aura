@@ -178,6 +178,11 @@ kernel32.lib;opus.lib;opusfile.lib;ogg.lib;dav1d.lib;%(AdditionalDependencies)</
     <ClInclude Include="DummyGame.h" />
     <ClInclude Include="TitleObjects.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="Title001.png" />
+    <Image Include="Title002.png" />
+    <Image Include="Title003.png" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

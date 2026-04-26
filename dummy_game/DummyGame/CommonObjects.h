@@ -8,7 +8,7 @@ namespace CommonObjects {
 
 	//////////////////////////////////////////////////////////////
 	class ContinuousInputTask :
-		public ICentralLooper::ITask
+		  public ICentralLooper::ITask
 		, public ICentralLooper::IFrameSyncCallback {
 	public:
 		//ITask

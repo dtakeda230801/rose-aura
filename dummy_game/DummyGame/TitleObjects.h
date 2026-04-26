@@ -14,6 +14,202 @@ namespace TitleObjects {
 
 	//////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////
+	class TitleBG001 : public IGraphicsManager::IGraphicsRenderer
+	{
+	public:
+		void preprocess()
+		{
+			if (!mInitialized) {
+				mTex = LoadTexture("Title001.png");
+				mInitialized = true;
+			}
+		}
+
+		void render()
+		{
+			DrawTexture(mTex, 0, 0, WHITE);
+		}
+
+		void init()
+		{
+			IGraphicsManager& gm = mRa.getGraphicsManager();
+			gm.setRenderer(this);
+		}
+
+		void fin()
+		{
+			IGraphicsManager& gm = mRa.getGraphicsManager();
+			gm.removeRenderer(this);
+		}
+
+
+		TitleBG001(RoseAura& ra) :
+			  mRa(ra)
+			, mInitialized(false)
+			, mTex{}
+		{
+		}
+
+		virtual ~TitleBG001() = default;
+
+	private:
+		RoseAura& mRa;
+		bool      mInitialized;
+		Texture2D mTex;
+
+	};
+
+	//////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////
+	class TitleBG002 : public ICentralLooper::IFrameSyncCallback
+				     , public IGraphicsManager::IGraphicsRenderer
+	{
+	public:
+
+		void onFrameSync()
+		{
+			mRotation += 1.2f;
+			if (mRotation == 360.0f) {
+				mRotation = 0.0f;
+			}
+
+		}
+
+		void preprocess()
+		{
+			if (!mInitialized) {
+				mTex            = LoadTexture("Title002.png");
+				mRotationCenter = { mTex.width / 2.0f, mTex.height / 2.0f };
+				mSrcRectangle   = { 0, 0, (float)mTex.width, (float)mTex.height };
+				mDstRectangle   = { mTex.width / 2.0f, mTex.height / 2.0f, (float)mTex.width, (float)mTex.height };
+				mInitialized    = true;
+			}
+		}
+
+		void render()
+		{
+			DrawTexturePro(mTex, mSrcRectangle, mDstRectangle, mRotationCenter, mRotation, WHITE);
+		}
+
+		void init()
+		{
+			IGraphicsManager& gm = mRa.getGraphicsManager();
+			gm.setRenderer(this);
+
+			ICentralLooper& cl = mRa.getCentralLooper();
+			cl.registerFrameSyncCallback(this);
+		}
+
+		void fin()
+		{
+			IGraphicsManager& gm = mRa.getGraphicsManager();
+			gm.removeRenderer(this);
+
+			ICentralLooper& cl = mRa.getCentralLooper();
+			cl.unregisterFrameSyncCallback(this);
+		}
+
+
+		TitleBG002(RoseAura& ra) :
+			  mRa(ra)
+			, mInitialized(false)
+			, mTex{}
+			, mRotation(0.0f)
+			, mRotationCenter{}
+			, mSrcRectangle{}
+			, mDstRectangle{}
+		{
+		}
+
+		virtual ~TitleBG002() = default;
+
+	private:
+		RoseAura& mRa;
+		bool      mInitialized;
+		Texture2D mTex;
+		float     mRotation;
+		Vector2   mRotationCenter;
+		Rectangle mSrcRectangle;
+		Rectangle mDstRectangle;
+
+	};
+
+	class TitleBG003 : public ICentralLooper::IFrameSyncCallback
+		, public IGraphicsManager::IGraphicsRenderer
+	{
+	public:
+
+		void onFrameSync()
+		{
+			mRotation -= 0.5f;
+			if (mRotation == -360.0f) {
+				mRotation = 0.0f;
+			}
+
+		}
+
+		void preprocess()
+		{
+			if (!mInitialized) {
+				mTex = LoadTexture("Title003.png");
+				mRotationCenter = { mTex.width / 2.0f, mTex.height / 2.0f };
+				mSrcRectangle = { 0, 0, (float)mTex.width, (float)mTex.height };
+				mDstRectangle = { mTex.width / 2.0f, mTex.height / 2.0f, (float)mTex.width, (float)mTex.height };
+				mInitialized = true;
+			}
+		}
+
+		void render()
+		{
+			DrawTexturePro(mTex, mSrcRectangle, mDstRectangle, mRotationCenter, mRotation, WHITE);
+		}
+
+		void init()
+		{
+			IGraphicsManager& gm = mRa.getGraphicsManager();
+			gm.setRenderer(this);
+
+			ICentralLooper& cl = mRa.getCentralLooper();
+			cl.registerFrameSyncCallback(this);
+		}
+
+		void fin()
+		{
+			IGraphicsManager& gm = mRa.getGraphicsManager();
+			gm.removeRenderer(this);
+
+			ICentralLooper& cl = mRa.getCentralLooper();
+			cl.unregisterFrameSyncCallback(this);
+		}
+
+
+		TitleBG003(RoseAura& ra) :
+			mRa(ra)
+			, mInitialized(false)
+			, mTex{}
+			, mRotation(0.0f)
+			, mRotationCenter{}
+			, mSrcRectangle{}
+			, mDstRectangle{}
+		{
+		}
+
+		virtual ~TitleBG003() = default;
+
+	private:
+		RoseAura& mRa;
+		bool      mInitialized;
+		Texture2D mTex;
+		float     mRotation;
+		Vector2   mRotationCenter;
+		Rectangle mSrcRectangle;
+		Rectangle mDstRectangle;
+
+	};
+
+
+	//////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////
 	class TitleMenu : public IGraphicsManager::IGraphicsRenderer
 		            , public IInputHandler::IInputHandlerCallback
 	{
@@ -25,11 +221,11 @@ namespace TitleObjects {
 
 		void render()
 		{
-			DrawText(TITLE_MENU_START   , WIN_SIZE_W / 2 - 85, 500, 30, RAYWHITE);
-			DrawText(TITLE_MENU_SETTING , WIN_SIZE_W / 2 - 65, 540, 30, RAYWHITE);
-			DrawText(TITLE_MENU_EXIT    , WIN_SIZE_W / 2 - 25, 580, 30, RAYWHITE);
+			DrawText(TITLE_MENU_START   , 100 , 580, 30, RAYWHITE);
+			DrawText(TITLE_MENU_SETTING , 100 , 620, 30, RAYWHITE);
+			DrawText(TITLE_MENU_EXIT    , 100 , 660, 30, RAYWHITE);
 
-			DrawLine(WIN_SIZE_W / 2 - 100, 530 + mCursor * 40, WIN_SIZE_W / 2 + 100, 530 + mCursor * 40, mColor);
+			DrawLine(100, 610 + mCursor * 40, 300, 610 + mCursor * 40, mColor);
 		}
 
 		void onInputEvent(std::vector<std::pair<InputState, InputType>>& events)
@@ -137,6 +333,27 @@ namespace TitleObjects {
 		IObjectActivator& objectRepository = ra.getObjectActivator();
 
 		//////////////////////////////////
+		ids.push_back(
+			objectRepository.registerObject(
+				objectRepository.makeObjectBinder<TitleBG003, RoseAura&>(
+					&TitleBG003::init, &TitleBG003::fin, ra)
+				, tags
+			));
+
+		ids.push_back(
+			objectRepository.registerObject(
+				objectRepository.makeObjectBinder<TitleBG002, RoseAura&>(
+					&TitleBG002::init, &TitleBG002::fin, ra)
+				, tags
+			));
+
+		ids.push_back(
+			objectRepository.registerObject(
+				objectRepository.makeObjectBinder<TitleBG001, RoseAura&>(
+					&TitleBG001::init, &TitleBG001::fin, ra)
+				, tags
+			));
+
 		ids.push_back(
 			objectRepository.registerObject(
 				objectRepository.makeObjectBinder<TitleMenu, RoseAura&>(

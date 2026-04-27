@@ -17,6 +17,12 @@ public:
 		bool		mIsFile;
 	};
 
+	struct FontHolder {
+		void*		mFont;
+		FONT_ID		mId;
+		std::string mFontFile;
+	};
+
 	void	  runUntilClosed(Conf conf);
 	void      exit();
 
@@ -28,8 +34,11 @@ public:
 	RARetCode setShader(std::string vsString
 					  , std::string fsString
 					  , SHADER_ID& id);
-
 	void*     getShader(SHADER_ID id);
+	RARetCode setFont(std::string file, FONT_ID& id);
+	void*     getFont(FONT_ID id);
+
+
 
 	GraphicsManager() = default;
 	virtual ~GraphicsManager() = default;
@@ -38,6 +47,7 @@ private:
 	std::mutex						mMutex;
 	std::vector<IGraphicsRenderer*>	mRenderers;
 	std::vector<ShaderHolder>	    mShaderHolders;
+	std::vector<FontHolder>			mFontHolders;
 	std::atomic<bool>				mRunning;
 };
 

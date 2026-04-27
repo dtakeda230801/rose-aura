@@ -216,13 +216,18 @@ namespace TitleObjects {
 
 		void preprocess()
 		{
+			if (!mInitialized) {
+				IGraphicsManager& gm = mRa.getGraphicsManager();
+				mFont = static_cast<Font*>(gm.getFont(mFontId));
+				mInitialized = true;
+			}
 		}
 
 		void render()
 		{
-			DrawText(TITLE_MENU_START   , 100 , 580, 30, RAYWHITE);
-			DrawText(TITLE_MENU_SETTING , 100 , 620, 30, RAYWHITE);
-			DrawText(TITLE_MENU_EXIT    , 100 , 660, 30, RAYWHITE);
+			DrawTextEx(*mFont, TITLE_MENU_START,   { 100, 580 }, 30, 5, WHITE);
+			DrawTextEx(*mFont, TITLE_MENU_SETTING, { 100, 620 }, 30, 5, WHITE);
+			DrawTextEx(*mFont, TITLE_MENU_EXIT,    { 100, 660 }, 30, 5, WHITE);
 
 			DrawLine(100, 610 + mCursor * 40, 300, 610 + mCursor * 40, mColor);
 		}
@@ -270,6 +275,8 @@ namespace TitleObjects {
 			IGraphicsManager& gm = mRa.getGraphicsManager();
 			IInputHandler&    ih = mRa.getInputHandler();
 
+			gm.setFont("NotoSerifJP-Regular.ttf", mFontId);
+
 			mSoundSnapshotRenderer = new SoundSnapshotRenderer(mRa, "test.wav");
 			gm.setRenderer(this);
 			ih.registerCallback(this);
@@ -288,6 +295,9 @@ namespace TitleObjects {
 		TitleMenu(RoseAura& ra) :
 			  mRa(ra)
 			, mSoundSnapshotRenderer(nullptr)
+			, mFontId(0)
+			, mFont(nullptr)
+			, mInitialized(false)
 		{
 		}
 
@@ -312,13 +322,18 @@ namespace TitleObjects {
 
 		Color mColor = { 123, 200, 50, 255 };
 
-		RoseAura&				mRa;
-		int32_t					mCursor = 0;
-		SoundSnapshotRenderer*	mSoundSnapshotRenderer;
+		RoseAura&				  mRa;
+		bool					  mInitialized;
+		int32_t					  mCursor = 0;
+		SoundSnapshotRenderer*	  mSoundSnapshotRenderer;
+
+		IGraphicsManager::FONT_ID mFontId;
+		Font*					  mFont;
+
 
 		static constexpr uint32_t		MENU_NUM		   = 3;
 		static constexpr const char*	TITLE_MENU_START   = "Game Start";
-		static constexpr const char*	TITLE_MENU_SETTING = "SETTING";
+		static constexpr const char*	TITLE_MENU_SETTING = "Setting";
 		static constexpr const char*	TITLE_MENU_EXIT    = "Exit";
 	};
 

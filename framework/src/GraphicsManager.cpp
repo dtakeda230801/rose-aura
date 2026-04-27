@@ -29,6 +29,14 @@ void GraphicsManager::runUntilClosed(Conf conf)
 			}
 		}
 
+		for (auto& holder : mFontHolders) {
+			if (!holder.mFont) {
+				Font* font = new Font();
+				*(font) = LoadFont(holder.mFontFile.c_str());
+				holder.mFont = static_cast<void*>(font);
+			}
+		}
+
 		mMutex.lock();
 		std::vector<IGraphicsRenderer*> renderers = mRenderers;
 		mMutex.unlock();
@@ -46,6 +54,12 @@ void GraphicsManager::runUntilClosed(Conf conf)
 		}
 
 		EndDrawing();
+	}
+
+	for (auto& holder : mFontHolders) {
+		Font* font = static_cast<Font*>(holder.mFont);
+		UnloadFont(*font);
+		delete font;
 	}
 
 	for (auto& holder : mShaderHolders) {
@@ -110,7 +124,6 @@ RARetCode GraphicsManager::setShader(std::string vsString
 	mShaderHolders.emplace_back(ShaderHolder{ nullptr, newId, vsString, fsString , false });
 	id = newId;
 	return RARetCode::RET_OK;
-
 }
 
 
@@ -128,6 +141,32 @@ void* GraphicsManager::getShader(SHADER_ID id)
 	}
 	return nullptr;
 }
+
+RARetCode GraphicsManager::setFont(std::string file, FONT_ID& id)
+{
+	FONT_ID newId = static_cast<FONT_ID>(mFontHolders.size() + 1);
+	mFontHolders.emplace_back(FontHolder{ nullptr, newId, file });
+	id = newId;
+	return RARetCode::RET_OK;
+}
+
+void* GraphicsManager::getFont(FONT_ID id)
+{
+	for (auto& fontHolder : mFontHolders) {
+		if (fontHolder.mId == id) {
+			if (fontHolder.mFont) {
+				return fontHolder.mFont;
+			}
+			else {
+				Utility::printLog("Font not readly");
+				return nullptr;
+			}
+		}
+	}
+	return nullptr;
+
+}
+
 
 ////////////////////////////////////
 // Private

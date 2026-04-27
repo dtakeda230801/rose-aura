@@ -50,4 +50,7 @@
     <Image Include="Title002.png" />
     <Image Include="Title003.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Font Include="NotoSerifJP-Regular.ttf" />
+  </ItemGroup>
 </Project>

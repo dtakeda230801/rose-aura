@@ -9,6 +9,7 @@
 class IGraphicsManager {
 public:
 	using SHADER_ID = uint32_t;
+	using FONT_ID   = uint32_t;
 
 	struct Conf {
 		uint32_t		mWindowWidth;
@@ -41,4 +42,6 @@ public:
 							  , std::string fsString
 							  , SHADER_ID& id)						= 0;
 	virtual void*	  getShader(SHADER_ID id)                       = 0;
+	virtual RARetCode setFont(std::string file, FONT_ID& id)        = 0;
+	virtual void*     getFont(FONT_ID id)                           = 0;
 };

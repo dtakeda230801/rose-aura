@@ -5,8 +5,6 @@
 #include "RoseAuraReturnCode.h"
 #include "raylib.h"
 
-using namespace RoseAuraReturnCode;
-
 class TestRenderer : public IGraphicsManager::IGraphicsRenderer {
 public:
 

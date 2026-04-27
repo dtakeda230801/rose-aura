@@ -2,8 +2,6 @@
 
 #include "RoseAuraReturnCode.h"
 
-using namespace RoseAuraReturnCode;
-
 class IWorldNavigator {
 public:
 	using WORLD_ID   = uint32_t;

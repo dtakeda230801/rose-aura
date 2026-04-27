@@ -5,8 +5,6 @@
 #include "IStoryAnchor.h"
 #include "RoseAuraReturnCode.h"
 
-using namespace RoseAuraReturnCode;
-
 class StoryAnchor : public IStoryAnchor
 {
 public:

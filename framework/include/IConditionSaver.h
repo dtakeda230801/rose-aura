@@ -8,8 +8,6 @@
 
 #include "RoseAuraReturnCode.h"
 
-using namespace RoseAuraReturnCode;
-
 class IConditionSaver {
 public:
 

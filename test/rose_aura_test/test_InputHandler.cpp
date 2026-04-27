@@ -4,8 +4,6 @@
 #include "RoseAura.h"
 #include "RoseAuraReturnCode.h"
 
-using namespace RoseAuraReturnCode;
-
 class TestCallback : public IInputHandler::IInputHandlerCallback {
 public:
 	void onInputEvent(std::vector<std::pair<InputState, InputType>>& events)

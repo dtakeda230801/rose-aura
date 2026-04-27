@@ -6,7 +6,6 @@
 #include "Utility.h"
 
 using namespace RoseAuraMediaUtility;
-using namespace RoseAuraReturnCode;
 
 namespace OpeningObjects {
 

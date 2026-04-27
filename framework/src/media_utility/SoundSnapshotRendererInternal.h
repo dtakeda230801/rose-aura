@@ -3,21 +3,22 @@
 #include "RoseAura.h"
 #include "WaveFileHolderInternal.h"
 
+namespace RoseAuraMediaUtility {
 
-class SoundSnapshotRendererInternal : public ISoundCoordinator::ISoundRenderer{
-public:
-	SoundSnapshotRendererInternal(RoseAura& ra, const char* waveFile);
+	class SoundSnapshotRendererInternal : public ISoundCoordinator::ISoundRenderer {
+	public:
+		SoundSnapshotRendererInternal(RoseAura& ra, const char* waveFile);
 
-	bool playSound();
+		bool playSound();
 
-	RARetCode requestData(unsigned int requestFrameLen, unsigned int* returnFrameLen, ISoundCoordinator::IDataWriter& writer);
+		RARetCode requestData(unsigned int requestFrameLen, unsigned int* returnFrameLen, ISoundCoordinator::IDataWriter& writer);
 
-	void onAudioStreamFinish();
+		void onAudioStreamFinish();
 
-	virtual ~SoundSnapshotRendererInternal() = default;
+		virtual ~SoundSnapshotRendererInternal() = default;
 
-private:
-	ISoundCoordinator&						mSoundCoordinator;
-	std::unique_ptr<WaveFileHolderInternal> mWaveFileHolder;
+	private:
+		ISoundCoordinator& mSoundCoordinator;
+		std::unique_ptr<WaveFileHolderInternal> mWaveFileHolder;
+	};
 };
-

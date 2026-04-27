@@ -4,8 +4,6 @@
 #include "RoseAura.h"
 #include "RoseAuraReturnCode.h"
 
-using namespace RoseAuraReturnCode;
-
 IWorldNavigator::WorldConfig conf1;
 
 void buildConf1()

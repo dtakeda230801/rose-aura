@@ -4,6 +4,8 @@
 
 //#define __BUFFER_DEBUG__
 
+using namespace RoseAuraMediaUtility;
+
 MultiBlockBufferInternal::MultiBlockBufferInternal(uint32_t numberOfBlocks, uint32_t framePerBlock, uint32_t elmPerFrame) :
 	  mBufferHolder{}
     , mSelectedWriteBuffer(nullptr)

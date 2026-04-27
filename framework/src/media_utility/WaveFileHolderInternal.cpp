@@ -3,6 +3,7 @@
 
 #include "WaveFileHolderInternal.h"
 
+using namespace RoseAuraMediaUtility;
 
 WaveFileHolderInternal::WaveFileHolderInternal(const char* path) :
     mChannels(0)

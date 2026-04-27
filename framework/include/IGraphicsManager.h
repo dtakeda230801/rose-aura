@@ -4,8 +4,6 @@
 
 #include "RoseAuraReturnCode.h"
 
-using namespace RoseAuraReturnCode;
-
 #define SHADER_POINTER(x) static_cast<Shader*>(x)
 
 class IGraphicsManager {

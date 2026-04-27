@@ -7,6 +7,8 @@
 
 #include "Utility.h"
 
+using namespace RoseAuraMediaUtility;
+
 MovieRendererInternal::MovieRendererInternal(RoseAura& ra, const char* movieFile, uint32_t x, uint32_t y, MovieRenderer::IMovieRendererCallback* cb) :
 	  mGraphicsManager(ra.getGraphicsManager())
 	, mSoundCoordinator(ra.getSoundCoordinator())

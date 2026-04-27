@@ -3,6 +3,7 @@
 #include "OpusFileHolderInternal.h"
 #include "Utility.h"
 
+using namespace RoseAuraMediaUtility;
 
 OpusFileHolderInternal::OpusFileHolderInternal(const char* path) :
     mFile(nullptr)

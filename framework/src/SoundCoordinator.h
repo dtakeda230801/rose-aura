@@ -147,7 +147,7 @@ private:
 
     DataWriter      mDataWriter;
 
-    std::unique_ptr<MultiBlockBufferInternal>
+    std::unique_ptr <RoseAuraMediaUtility::MultiBlockBufferInternal>
                     mSCBuffer;
 
     SamplingRateConverter

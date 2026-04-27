@@ -4,8 +4,6 @@
 
 #include "RoseAuraReturnCode.h"
 
-using namespace RoseAuraReturnCode;
-
 class ISoundCoordinator {
 public:
 	//////////////////////////////////////////////////////////

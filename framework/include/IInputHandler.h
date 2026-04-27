@@ -4,8 +4,6 @@
 #include <vector>
 #include "RoseAuraReturnCode.h"
 
-using namespace RoseAuraReturnCode;
-
 class IInputHandler {
 public:
 	class IInputHandlerCallback {

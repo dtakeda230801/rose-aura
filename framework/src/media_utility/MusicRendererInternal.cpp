@@ -2,6 +2,9 @@
 #include "RoseAura.h"
 #include "Utility.h"
 
+using namespace RoseAuraMediaUtility;
+
+
 bool MusicRendererInternal::playMusic()
 {
 	ISoundCoordinator& sc = mRa.getSoundCoordinator();

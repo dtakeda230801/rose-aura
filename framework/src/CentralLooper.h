@@ -7,8 +7,6 @@
 #include "ICentralLooper.h"
 #include "RoseAuraReturnCode.h"
 
-using namespace RoseAuraReturnCode;
-
 class CentralLooper : public ICentralLooper {
 public:
 	//////////////////////////////////////////////////////////

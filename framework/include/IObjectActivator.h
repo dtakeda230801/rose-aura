@@ -6,8 +6,6 @@
 
 #include "RoseAuraReturnCode.h"
 
-using namespace RoseAuraReturnCode;
-
 class IObjectActivator {
 public:
 

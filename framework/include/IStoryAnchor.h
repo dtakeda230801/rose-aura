@@ -3,10 +3,7 @@
 #include <string>
 #include <vector>
 
-
 #include "RoseAuraReturnCode.h"
-
-using namespace RoseAuraReturnCode;
 
 class IStoryAnchor
 {

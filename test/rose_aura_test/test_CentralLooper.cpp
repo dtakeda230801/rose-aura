@@ -4,8 +4,6 @@
 #include "RoseAura.h"
 #include "RoseAuraReturnCode.h"
 
-using namespace RoseAuraReturnCode;
-
 class TestTask : public ICentralLooper::ITask {
 public:
 	void doTask()

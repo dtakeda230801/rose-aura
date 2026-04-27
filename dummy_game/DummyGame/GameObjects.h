@@ -11,7 +11,6 @@
 #include "DummyGame.h"
 
 using namespace RoseAuraMediaUtility;
-using namespace RoseAuraReturnCode;
 
 #define TXT_POS_X	10
 #define TXT_POS_Y	10

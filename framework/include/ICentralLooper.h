@@ -3,8 +3,6 @@
 #include <string>
 #include "RoseAuraReturnCode.h"
 
-using namespace RoseAuraReturnCode;
-
 class ICentralLooper {
 public:
 	//////////////////////////////////////////////////////////

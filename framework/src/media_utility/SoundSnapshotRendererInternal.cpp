@@ -2,6 +2,8 @@
 #include "RoseAura.h"
 #include "Utility.h"
 
+using namespace RoseAuraMediaUtility;
+
 SoundSnapshotRendererInternal::SoundSnapshotRendererInternal(RoseAura& ra, const char* waveFile) :
 	  mSoundCoordinator(ra.getSoundCoordinator())
 	, mWaveFileHolder(std::make_unique<WaveFileHolderInternal>(waveFile))

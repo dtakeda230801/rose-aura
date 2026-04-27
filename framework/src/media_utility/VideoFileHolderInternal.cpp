@@ -10,6 +10,8 @@ extern "C" {
 #include "VideoFileHolderInternal.h"
 #include "Utility.h"
 
+using namespace RoseAuraMediaUtility;
+
 VideoFileHolderInternal::VideoFileHolderInternal(const char* path) :
       mOpusDecoder(nullptr)
     , mSegment(nullptr)

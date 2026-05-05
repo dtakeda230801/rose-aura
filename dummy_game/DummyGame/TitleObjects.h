@@ -99,9 +99,12 @@ namespace TitleObjects {
 							startGame();
 							break;
 						case 1:
-							openSetting();
+							selectContinue();
 							break;
 						case 2:
+							openSetting();
+							break;
+						case 3:
 							exit();
 							break;
 						default:
@@ -243,19 +246,25 @@ namespace TitleObjects {
 			DrawTexturePro(mTex2, mSrcRectangle, mDstRectangle, mRotationCenter, mRotation2, WHITE);
 			DrawTexturePro(mTex3, mSrcRectangle, mDstRectangle, mRotationCenter, mRotation3, WHITE);
 
-			DrawTextEx(*mFont, TITLE_MENU_START,   { 100, 580 }, 30, 5, WHITE);
-			DrawTextEx(*mFont, TITLE_MENU_SETTING, { 100, 620 }, 30, 5, WHITE);
-			DrawTextEx(*mFont, TITLE_MENU_EXIT,    { 100, 660 }, 30, 5, WHITE);
+			DrawTextEx(*mFont, TITLE_MENU_START,    { 100, 540 }, 30, 5, WHITE);
+			DrawTextEx(*mFont, TITLE_MENU_CONTINUE, { 100, 580 }, 30, 5, WHITE);
+			DrawTextEx(*mFont, TITLE_MENU_SETTING,  { 100, 620 }, 30, 5, WHITE);
+			DrawTextEx(*mFont, TITLE_MENU_EXIT,     { 100, 660 }, 30, 5, WHITE);
 
-			DrawLine(100, 610 + mCursor * 40, 300, 610 + mCursor * 40, { 123, 200, 50, 255 });
+			DrawLine(100, 570 + mCursor * 40, 300, 570 + mCursor * 40, { 123, 200, 50, 255 });
 
 			return false;
 		}
 
+		/////////////////////////////////////////////
 		void startGame()
 		{
 			IStoryAnchor& sa = mRa.getStoryAnchor();
 			sa.changeState("Title", IStoryAnchor::StoryPointState::COMPLETED);
+		}
+
+		void selectContinue()
+		{
 		}
 
 		void openSetting()
@@ -283,12 +292,13 @@ namespace TitleObjects {
 
 		bool					  mInputEnable;
 
-		static constexpr const char* GAME_TITLE         = "Wizard's Escape";
+		static constexpr const char* GAME_TITLE          = "Wizard's Escape";
 
-		static constexpr uint32_t	 MENU_NUM			= 3;
-		static constexpr const char* TITLE_MENU_START	= "Game Start";
-		static constexpr const char* TITLE_MENU_SETTING = "Setting";
-		static constexpr const char* TITLE_MENU_EXIT	= "Exit";
+		static constexpr uint32_t	 MENU_NUM			 = 4;
+		static constexpr const char* TITLE_MENU_START	 = "Game Start";
+		static constexpr const char* TITLE_MENU_CONTINUE = "Continue";
+		static constexpr const char* TITLE_MENU_SETTING  = "Setting";
+		static constexpr const char* TITLE_MENU_EXIT	 = "Exit";
 
 		std::vector<bool (Title::*)()> mPhase;
 		uint32_t					   mCurrentPhase;

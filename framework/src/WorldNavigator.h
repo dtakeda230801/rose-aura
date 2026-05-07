@@ -18,39 +18,38 @@ public:
 	Vec3         getActiveSpacePosition();
 	RARetCode    moveActiveSpace(Vec3& pos);
 	void		 resetActiveSpace();
-	RARetCode    movePosition(Vec3& pos);
-	Vec3		 getPosition();
+	RARetCode    movePrimaryEntityPosition(Vec3& pos);
+	Vec3		 getPrimaryEntityPosition();
 
-	RARetCode	 registerTrigger(TRIGGER_ID id, Vec3& location, float distance, ITriggerCallback* cb);
-	RARetCode	 removeTrigger(TRIGGER_ID id);
-	RARetCode	 moveTrigger(TRIGGER_ID id, Vec3& location);
-	RARetCode    getTriggerLocation(TRIGGER_ID id, Vec3* location);
+	RARetCode	 registerCollisionCallback(ICollisionCallback* cb);
+	RARetCode	 unregisterCollisionCallback();
 
+	RARetCode	 registerEntity(ENTITY_ID id, Vec3& location, float distance, ICollisionCallback* cb);
+	RARetCode	 removeEntity(ENTITY_ID id);
+	RARetCode	 moveEntity(ENTITY_ID id, Vec3& location);
+	RARetCode    getEntityLocation(ENTITY_ID id, Vec3* location);
 
 	RARetCode	 registerActiveSpaceCallback(IActiveSpaceCallback* cb);
 	RARetCode	 unregisterActiveSpaceCallback();
 
-
 	WorldNavigator();
 	virtual ~WorldNavigator() = default;
 private:
-	struct Trigger {
-		TRIGGER_ID	mId;
+	struct Entity {
+		ENTITY_ID	mId;
 		Vec3		mLocation;
 		float		mDistance;
-		ITriggerCallback*
-			mCb;
+
+		ICollisionCallback*	mCb;
 	};
 
-	float    calcDistance(Vec3& a, Vec3& b);
 	Vec3     calcCenter(Bounds& bounds);
 	Bounds   calcBounds(Vec3& center, Extent& range);
 	bool     fitWithin(Bounds& base, Bounds& target);
 	bool     fitWithin(Bounds& base, Vec3& target);
 	Vec3     adjustPosition(Bounds& base, Vec3& pos);
 	int      selectBoundaryPosition(int max, int min, int val);
-	Trigger* findTrigger(TRIGGER_ID id);
-
+	Entity* findEntity(ENTITY_ID id);
 
 	struct World {
 		WORLD_ID	mId;
@@ -61,14 +60,16 @@ private:
 		Bounds      mNonScrollSpace;
 		bool        mEnableFollowing;
 		bool		mLimitScrolling;
-		Vec3		mPosition;
+		Vec3		mPrimaryEntityPosition;
 		Vec3        mScrollPosition;
 
 		IActiveSpaceCallback*
 					mActiveSpaceCb;
 
-		std::vector<Trigger>
-					mTriggers;
+		ICollisionCallback*
+					mCollisionCb;
+		std::vector<Entity>
+			mEntities;
 	};
 
 	std::mutex      mMutex;

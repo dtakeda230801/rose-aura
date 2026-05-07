@@ -5,6 +5,7 @@
 
 #include "RoseAura.h"
 #include "RoseAuraReturnCode.h"
+#include "MathematicalUtility.h"
 #include "MediaUtility.h"
 #include "Utility.h"
 
@@ -38,9 +39,9 @@ namespace GameObjects {
 		gWorldConf.mNonScrollRange.mY = 50;
 		gWorldConf.mNonScrollRange.mZ = 50;
 
-		gWorldConf.mPosition.mX = 400;
-		gWorldConf.mPosition.mY = 300;
-		gWorldConf.mPosition.mZ = 0;
+		gWorldConf.mPrimaryEntityPosition.mX = 400;
+		gWorldConf.mPrimaryEntityPosition.mY = 300;
+		gWorldConf.mPrimaryEntityPosition.mZ = 0;
 
 		gWorldConf.mEnableFollowing = true;
 		gWorldConf.mLimitScrolling  = true;
@@ -228,8 +229,8 @@ namespace GameObjects {
 		IWorldNavigator&  mWorldNavigator;
 
 		std::mutex mMutex;
-		uint32_t mX = gWorldConf.mPosition.mX - gWorldConf.mActiveRange.mX;
-		uint32_t mY = gWorldConf.mPosition.mY - gWorldConf.mActiveRange.mY;
+		uint32_t mX = gWorldConf.mPrimaryEntityPosition.mX - gWorldConf.mActiveRange.mX;
+		uint32_t mY = gWorldConf.mPrimaryEntityPosition.mY - gWorldConf.mActiveRange.mY;
 		uint32_t mW = gWorldConf.mActiveRange.mX * 2;
 		uint32_t mH = gWorldConf.mActiveRange.mY * 2;
 	};
@@ -310,7 +311,7 @@ namespace GameObjects {
 
 		void render()
 		{
-			IWorldNavigator::Vec3 pos = mWorldNavigator.getPosition();
+			IWorldNavigator::Vec3 pos = mWorldNavigator.getPrimaryEntityPosition();
 			DrawCircle(pos.mX, pos.mY, CIRCLE_SIZE, SKYBLUE);
 		};
 
@@ -320,7 +321,7 @@ namespace GameObjects {
 				InputState state = event.first;
 				InputType  type  = event.second;
 
-				IWorldNavigator::Vec3 pos = mWorldNavigator.getPosition();
+				IWorldNavigator::Vec3 pos = mWorldNavigator.getPrimaryEntityPosition();
 
 				if (state == InputState::PUSHED || state == InputState::PRESSED) {
 					if (type == InputType::UP) {
@@ -335,7 +336,7 @@ namespace GameObjects {
 					else if (type == InputType::RIGHT) {
 						pos.mX += MOVE_DELTA;
 					}
-					mWorldNavigator.movePosition(pos);
+					mWorldNavigator.movePrimaryEntityPosition(pos);
 				}
 			}
 		}
@@ -373,7 +374,7 @@ namespace GameObjects {
 	class Target : public ICentralLooper::ITask
 		         , public ICentralLooper::IFrameSyncCallback
 		         , public IGraphicsManager::IGraphicsRenderer
-		         , public IWorldNavigator::ITriggerCallback
+		         , public IWorldNavigator::ICollisionCallback
 	{
 	public:
 		//ITask
@@ -391,14 +392,14 @@ namespace GameObjects {
 										   , mPosition.mY + mYDelta
 										   , mPosition.mZ };
 
-			ret = mWorldNavigator.moveTrigger(mId, newPos);
+			ret = mWorldNavigator.moveEntity(mId, newPos);
 
 			if (RARetCode::RET_OK == ret) {
 				mPosition = newPos;
 			}
 			else if (RARetCode::RET_ADJUSTED == ret) {
 
-				if (RARetCode::RET_OK != mWorldNavigator.getTriggerLocation(mId, &mPosition)) {
+				if (RARetCode::RET_OK != mWorldNavigator.getEntityLocation(mId, &mPosition)) {
 					Utility::printLog("getTriggerLocation fails");
 					return;
 				}
@@ -444,23 +445,24 @@ namespace GameObjects {
 		};
 
 		//ITriggerCallback
-		bool onApproaching(IWorldNavigator::WORLD_ID	worldId
-			, IWorldNavigator::TRIGGER_ID	eventId
-			, IWorldNavigator::Vec3& trigerLocation
-			, IWorldNavigator::Vec3& position)
+		CollisionResult onApproaching(IWorldNavigator::WORLD_ID	worldId
+			, IWorldNavigator::ENTITY_ID	eventId
+			, IWorldNavigator::Vec3 from
+			, IWorldNavigator::Vec3& to)
 		{
 			//Utility::printLog("Approaching...");
 
-			bool ret = false;
-			if (CIRCLE_SIZE > calcDistance(trigerLocation, position)) {
-				ret = true;
+			CollisionResult ret = CollisionResult::NO_COLLISION;
+
+			if (CIRCLE_SIZE > MathematicalUtility::calcDistance(mPosition, to)) {
+				ret = CollisionResult::HIT;
 				mAfterHit = 3;
 			}
 			return ret;
 		};
 
-		void onTrigger(IWorldNavigator::WORLD_ID	worldId
-			, IWorldNavigator::TRIGGER_ID	eventId)
+		void onHit(IWorldNavigator::WORLD_ID	worldId
+			     , IWorldNavigator::ENTITY_ID	entityId)
 		{
 			std::lock_guard<std::mutex> lock(mMutex);
 			mColor = YELLOW;
@@ -469,7 +471,7 @@ namespace GameObjects {
 		void init()
 		{
 			mGraphicsManager.setRenderer(this);
-			mWorldNavigator.registerTrigger(mId, mPosition, mDistance, this);
+			mWorldNavigator.registerEntity(mId, mPosition, mDistance, this);
 			mCentralLooper.registerFrameSyncCallback(this);
 			mCentralLooper.enqueueTask(this);
 		}
@@ -477,11 +479,9 @@ namespace GameObjects {
 		void fin()
 		{
 			mCentralLooper.unregisterFrameSyncCallback(this);
-			mWorldNavigator.removeTrigger(mId);
+			mWorldNavigator.removeEntity(mId);
 			mGraphicsManager.removeRenderer(this);
 		}
-
-
 
 		Target(RoseAura& ra) :
 			  mCentralLooper(ra.getCentralLooper())
@@ -505,7 +505,7 @@ namespace GameObjects {
 		IWorldNavigator&  mWorldNavigator;
 
 		std::mutex					mMutex;
-		IWorldNavigator::TRIGGER_ID mId = 1;
+		IWorldNavigator::ENTITY_ID mId = 1;
 		IWorldNavigator::Vec3		mPosition = { 200,200, 0 };
 		int							mXDelta   = -MOVE_DELTA;
 		int							mYDelta   = -MOVE_DELTA;

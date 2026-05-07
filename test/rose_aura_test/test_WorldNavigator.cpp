@@ -23,30 +23,33 @@ void buildConf1()
 	conf1.mNonScrollRange.mY = 20;
 	conf1.mNonScrollRange.mZ = 20;
 
-	conf1.mPosition.mX = 0;
-	conf1.mPosition.mY = 0;
-	conf1.mPosition.mZ = 0;
+	conf1.mPrimaryEntityPosition.mX = 0;
+	conf1.mPrimaryEntityPosition.mY = 0;
+	conf1.mPrimaryEntityPosition.mZ = 0;
 
 	conf1.mEnableFollowing = true;
 	conf1.mLimitScrolling  = true;
 }
 
-class TriggerCallback : public IWorldNavigator::ITriggerCallback
+class EntityCallback : public IWorldNavigator::ICollisionCallback
 {
 public:
-	bool onApproaching(IWorldNavigator::WORLD_ID	worldId
-		             , IWorldNavigator::TRIGGER_ID	eventId
-					 , IWorldNavigator::Vec3&		trigerLocation
-		             , IWorldNavigator::Vec3&		position)
+	ICollisionCallback::CollisionResult onApproaching(
+		               IWorldNavigator::WORLD_ID	worldId
+		             , IWorldNavigator::ENTITY_ID	entityId
+					 , IWorldNavigator::Vec3		from
+		             , IWorldNavigator::Vec3&		to)
 	{
-		return false;
+		Utility::printLog("[EntityCallback::onApproaching] World:%d Entity:%d", worldId, entityId);
+		return CollisionResult::NO_COLLISION;
 	}
-	void onTrigger(IWorldNavigator::WORLD_ID worldId
-		         , IWorldNavigator::TRIGGER_ID eventId)
+	void onHit(IWorldNavigator::WORLD_ID  worldId
+		     , IWorldNavigator::ENTITY_ID entityId)
 	{
+		Utility::printLog("[EntityCallback::onHit] World:%d Entity:%d", worldId, entityId);
 	}
-	TriggerCallback() = default;
-	virtual ~TriggerCallback() = default;
+	EntityCallback() = default;
+	virtual ~EntityCallback() = default;
 };
 
 class ActiveSpaceCallback : public IWorldNavigator::IActiveSpaceCallback
@@ -67,7 +70,7 @@ TEST(testWorldNavigator, APITest)
 		bool		check;
 
 		ActiveSpaceCallback* asCb = new ActiveSpaceCallback();
-		TriggerCallback*     trCb = new TriggerCallback();
+		EntityCallback*      trCb = new EntityCallback();
 
 		buildConf1();
 
@@ -140,34 +143,35 @@ TEST(testWorldNavigator, APITest)
 		v.mX = 10;
 		v.mY = 10;
 		v.mZ = 10;
-		EXPECT_EQ(wn.movePosition(v), RARetCode::RET_OK);
-		v = wn.getPosition();
+		EXPECT_EQ(wn.movePrimaryEntityPosition(v), RARetCode::RET_OK);
+		v = wn.getPrimaryEntityPosition();
 		check = (v.mX == 10) && (v.mY == 10) && (v.mZ == 10);
 		EXPECT_TRUE(check);
 
 		v.mX = 500;
 		v.mY = 500;
 		v.mZ = 500;
-		EXPECT_EQ(wn.movePosition(v), RARetCode::RET_ADJUSTED);
-		v = wn.getPosition();
+		EXPECT_EQ(wn.movePrimaryEntityPosition(v), RARetCode::RET_ADJUSTED);
+		v = wn.getPrimaryEntityPosition();
 		check = (v.mX == 200) && (v.mY == 200) && (v.mZ == 200);
 		EXPECT_TRUE(check);
+
 		///////////////////////////////////////////
 		v.mX = 100;
 		v.mY = 100;
 		v.mZ = 100;
-		EXPECT_EQ(wn.registerTrigger(0x0001, v, 30.0f, nullptr), RARetCode::RET_ERR_INVALID_PARAMS);
-		EXPECT_EQ(wn.registerTrigger(0x0001, v, 30.0f, trCb)   , RARetCode::RET_OK);
-		EXPECT_EQ(wn.registerTrigger(0x0001, v, 30.0f, trCb)   , RARetCode::RET_ERR_INVALID_PARAMS);
+		EXPECT_EQ(wn.registerEntity(0x0001, v, 30.0f, nullptr), RARetCode::RET_ERR_INVALID_PARAMS);
+		EXPECT_EQ(wn.registerEntity(0x0001, v, 30.0f, trCb)   , RARetCode::RET_OK);
+		EXPECT_EQ(wn.registerEntity(0x0001, v, 30.0f, trCb)   , RARetCode::RET_ERR_INVALID_PARAMS);
 
 		v.mX = 150;
 		v.mY = 150;
 		v.mZ = 150;
 
-		EXPECT_EQ(wn.moveTrigger(0x0001, v), RARetCode::RET_OK);
-		EXPECT_EQ(wn.moveTrigger(0x0002, v), RARetCode::RET_ERR_INVALID_ARG);
+		EXPECT_EQ(wn.moveEntity(0x0001, v), RARetCode::RET_OK);
+		EXPECT_EQ(wn.moveEntity(0x0002, v), RARetCode::RET_ERR_INVALID_ARG);
 
-		EXPECT_EQ(wn.getTriggerLocation(0x0001, &vResult), RARetCode::RET_OK);
+		EXPECT_EQ(wn.getEntityLocation(0x0001, &vResult), RARetCode::RET_OK);
 		EXPECT_EQ(vResult.mX, 150);
 		EXPECT_EQ(vResult.mY, 150);
 		EXPECT_EQ(vResult.mZ, 150);
@@ -176,13 +180,24 @@ TEST(testWorldNavigator, APITest)
 		v.mY = 300;
 		v.mZ = 300;
 
-		EXPECT_EQ(wn.moveTrigger(0x0001, v), RARetCode::RET_ADJUSTED);
+		EXPECT_EQ(wn.moveEntity(0x0001, v), RARetCode::RET_ADJUSTED);
 
-		EXPECT_EQ(wn.getTriggerLocation(0x0002, &vResult), RARetCode::RET_ERR_INVALID_ARG);
-		EXPECT_EQ(wn.getTriggerLocation(0x0001, nullptr) , RARetCode::RET_ERR_INVALID_ARG);
+		EXPECT_EQ(wn.getEntityLocation(0x0002, &vResult), RARetCode::RET_ERR_INVALID_ARG);
+		EXPECT_EQ(wn.getEntityLocation(0x0001, nullptr) , RARetCode::RET_ERR_INVALID_ARG);
+		///////////////////////////////////////////
+		v.mX = 0;
+		v.mY = 0;
+		v.mZ = 0;
+		EXPECT_EQ(wn.movePrimaryEntityPosition(v), RARetCode::RET_OK);
 
-		EXPECT_EQ(wn.removeTrigger(0x0001), RARetCode::RET_OK);
-		EXPECT_EQ(wn.removeTrigger(0x0001), RARetCode::RET_ERR_INVALID_ARG);
+		v.mX = 3;
+		v.mY = 3;
+		v.mZ = 3;
+		EXPECT_EQ(wn.moveEntity(0x0001, v), RARetCode::RET_OK);
+
+		///////////////////////////////////////////
+		EXPECT_EQ(wn.removeEntity(0x0001), RARetCode::RET_OK);
+		EXPECT_EQ(wn.removeEntity(0x0001), RARetCode::RET_ERR_INVALID_ARG);
 
 		///////////////////////////////////////////
 		delete trCb;

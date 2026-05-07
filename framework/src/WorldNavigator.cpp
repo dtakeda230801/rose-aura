@@ -1,6 +1,7 @@
 #include <cmath>
 
 #include "WorldNavigator.h"
+#include "MathematicalUtility.h"
 #include "Utility.h"
 
 //////////////////////////////////////////////////////////
@@ -11,17 +12,18 @@ WorldNavigator::WORLD_ID WorldNavigator::createWorld(WorldConfig& conf)
 	std::lock_guard<std::mutex> lock(mMutex);
 	World world;
 
-	world.mId               = static_cast<unsigned int>(mWorlds.size()) + 1;
-	world.mWorldSpace       = conf.mWorldSpace;
-	world.mActiveRange      = conf.mActiveRange;
-	world.mActiveSpace      = calcBounds(conf.mPosition, conf.mActiveRange);
-	world.mNonScrollRange   = conf.mNonScrollRange;
-	world.mNonScrollSpace   = calcBounds(conf.mPosition, conf.mNonScrollRange);
-	world.mEnableFollowing  = conf.mEnableFollowing;
-	world.mLimitScrolling   = conf.mLimitScrolling;
-	world.mPosition         = conf.mPosition;
-	world.mScrollPosition   = conf.mPosition;
-	world.mActiveSpaceCb    = nullptr;
+	world.mId						= static_cast<unsigned int>(mWorlds.size()) + 1;
+	world.mWorldSpace				= conf.mWorldSpace;
+	world.mActiveRange				= conf.mActiveRange;
+	world.mActiveSpace				= calcBounds(conf.mPrimaryEntityPosition, conf.mActiveRange);
+	world.mNonScrollRange			= conf.mNonScrollRange;
+	world.mNonScrollSpace			= calcBounds(conf.mPrimaryEntityPosition, conf.mNonScrollRange);
+	world.mEnableFollowing			= conf.mEnableFollowing;
+	world.mLimitScrolling			= conf.mLimitScrolling;
+	world.mPrimaryEntityPosition    = conf.mPrimaryEntityPosition;
+	world.mScrollPosition			= conf.mPrimaryEntityPosition;
+	world.mActiveSpaceCb			= nullptr;
+	world.mCollisionCb				= nullptr;
 
 	mWorlds.push_back(world);
 
@@ -78,74 +80,129 @@ void WorldNavigator::resetActiveSpace()
 {
 	std::lock_guard<std::mutex> lock(mMutex);
 	World& world = mWorlds[mCurrentWorldIndex];
-	world.mActiveSpace = calcBounds(world.mPosition, world.mActiveRange);
+	world.mActiveSpace = calcBounds(world.mPrimaryEntityPosition, world.mActiveRange);
 
 	world.mActiveSpaceCb->onUpdate(world.mId, world.mActiveSpace);
 }
 
-RARetCode WorldNavigator::movePosition(Vec3& pos)
+RARetCode WorldNavigator::movePrimaryEntityPosition(Vec3& pos)
 {
-	RARetCode ret		 = RARetCode::RET_OK;
-	bool	  doCallback = false;
+	RARetCode ret = RARetCode::RET_OK;
+
+	bool doActiveAreaCallback = false;
 
 	std::lock_guard<std::mutex> lock(mMutex);
-	World& world  = mWorlds[mCurrentWorldIndex];
-	Vec3 previous = world.mPosition;
+	World& currentWorld = mWorlds[mCurrentWorldIndex];
+	Vec3 previous       = currentWorld.mPrimaryEntityPosition;
 
-	if (!fitWithin(world.mWorldSpace, pos)) {
-		world.mPosition	= adjustPosition(world.mWorldSpace, pos);
+	if (!fitWithin(currentWorld.mWorldSpace, pos)) {
+		currentWorld.mPrimaryEntityPosition	= adjustPosition(currentWorld.mWorldSpace, pos);
 		ret = RARetCode::RET_ADJUSTED;
-	}
-	else {
-		world.mPosition = pos;
+	} else {
+		currentWorld.mPrimaryEntityPosition = pos;
 	}
 
-	if (world.mLimitScrolling)
+	for (Entity& entity : currentWorld.mEntities) {
+		if (entity.mDistance >= MathematicalUtility::calcDistance(entity.mLocation, pos)) {
+
+			if (entity.mCb) {
+				Vec3 to = currentWorld.mPrimaryEntityPosition;
+
+				ICollisionCallback::CollisionResult colRret = entity.mCb->onApproaching(currentWorld.mId, PRIMARY_ENTITY_ID, previous, to);
+
+				if (colRret == ICollisionCallback::CollisionResult::INHIBITED) {
+					if (MathematicalUtility::calcDistance(previous, to) < MathematicalUtility::calcDistance(previous, currentWorld.mPrimaryEntityPosition)) {
+						currentWorld.mPrimaryEntityPosition = to;
+						ret = RARetCode::RET_ADJUSTED;
+					}
+				} else if (colRret == ICollisionCallback::CollisionResult::HIT){
+					entity.mCb->onHit(currentWorld.mId, PRIMARY_ENTITY_ID);
+				}
+			}
+
+			if (currentWorld.mCollisionCb) {
+				Vec3 entityLocation = entity.mLocation;
+
+				ICollisionCallback::CollisionResult colRret = currentWorld.mCollisionCb->onApproaching(currentWorld.mId, entity.mId, entityLocation, entityLocation);
+				if (colRret == ICollisionCallback::CollisionResult::INHIBITED) {
+					Utility::printLog("Ignore INHIBITED");
+				} else if (colRret == ICollisionCallback::CollisionResult::HIT) {
+					currentWorld.mCollisionCb->onHit(currentWorld.mId, PRIMARY_ENTITY_ID);
+				}
+			}
+		}
+	}
+
+	if (currentWorld.mLimitScrolling)
 	{
-		if (!fitWithin(world.mNonScrollSpace, pos)) {
-			Vec3& scrollPos = world.mScrollPosition;
-			Vec3& current   = world.mPosition;
+		if (!fitWithin(currentWorld.mNonScrollSpace, pos)) {
+			Vec3& scrollPos = currentWorld.mScrollPosition;
+			Vec3& current   = currentWorld.mPrimaryEntityPosition;
 
 			scrollPos.mX = scrollPos.mX + (current.mX - previous.mX);
 			scrollPos.mY = scrollPos.mY + (current.mY - previous.mY);
 			scrollPos.mZ = scrollPos.mZ + (current.mZ - previous.mZ);
 
-			world.mNonScrollSpace
-				= calcBounds(scrollPos, world.mNonScrollRange);
+			currentWorld.mNonScrollSpace
+				= calcBounds(scrollPos, currentWorld.mNonScrollRange);
 
-			if (world.mEnableFollowing) {
-				world.mActiveSpace = calcBounds(scrollPos, world.mActiveRange);
-				doCallback = true;
+			if (currentWorld.mEnableFollowing) {
+				currentWorld.mActiveSpace = calcBounds(scrollPos, currentWorld.mActiveRange);
+				doActiveAreaCallback = true;
 			}
 		}
-	} else if (world.mEnableFollowing) {
-		world.mActiveSpace
-			= calcBounds(world.mPosition, world.mActiveRange);
-		doCallback = true;
+	} else if (currentWorld.mEnableFollowing) {
+		currentWorld.mActiveSpace
+			= calcBounds(currentWorld.mPrimaryEntityPosition, currentWorld.mActiveRange);
+		doActiveAreaCallback = true;
 	}
 
-	if (doCallback) {
-		world.mActiveSpaceCb->onUpdate(world.mId, world.mActiveSpace);
-	}
-
-	for (Trigger t : world.mTriggers) {
-		if (t.mDistance >= calcDistance(t.mLocation, world.mPosition)) {
-			if (t.mCb->onApproaching(world.mId, t.mId, world.mPosition, t.mLocation)) {
-				t.mCb->onTrigger(world.mId, t.mId);
-			}
-		}
+	if (doActiveAreaCallback) {
+		currentWorld.mActiveSpaceCb->onUpdate(currentWorld.mId, currentWorld.mActiveSpace);
 	}
 
 	return ret;
 }
 
-WorldNavigator::Vec3 WorldNavigator::getPosition()
+WorldNavigator::Vec3 WorldNavigator::getPrimaryEntityPosition()
 {
 	std::lock_guard<std::mutex> lock(mMutex);
-	return mWorlds[mCurrentWorldIndex].mPosition;
+	return mWorlds[mCurrentWorldIndex].mPrimaryEntityPosition;
 }
 
-RARetCode WorldNavigator::registerTrigger(TRIGGER_ID id, Vec3& location, float distance, ITriggerCallback* cb)
+RARetCode WorldNavigator::registerCollisionCallback(ICollisionCallback* cb)
+{
+	if (!cb) {
+		return RARetCode::RET_ERR_INVALID_ARG;
+	}
+
+	std::lock_guard<std::mutex> lock(mMutex);
+	World& currentWorld = mWorlds[mCurrentWorldIndex];
+
+	if (currentWorld.mCollisionCb) {
+		return RARetCode::RET_ERR_INVALID_STATE;
+	}
+
+	currentWorld.mCollisionCb = cb;
+
+	return RARetCode::RET_OK;
+}
+
+RARetCode WorldNavigator::unregisterCollisionCallback()
+{
+	std::lock_guard<std::mutex> lock(mMutex);
+	World& currentWorld = mWorlds[mCurrentWorldIndex];
+
+	if (!currentWorld.mActiveSpaceCb) {
+		return RARetCode::RET_ERR_INVALID_STATE;
+	}
+
+	currentWorld.mCollisionCb = nullptr;
+
+	return RARetCode::RET_OK;
+}
+
+RARetCode WorldNavigator::registerEntity(ENTITY_ID id, Vec3& location, float distance, ICollisionCallback* cb)
 {
 	if (!fitWithin(mWorlds[mCurrentWorldIndex].mWorldSpace, location)) {
 		return RARetCode::RET_ERR_INVALID_PARAMS;
@@ -157,31 +214,31 @@ RARetCode WorldNavigator::registerTrigger(TRIGGER_ID id, Vec3& location, float d
 
 	std::lock_guard<std::mutex> lock(mMutex);
 
-	for (auto trigger : mWorlds[mCurrentWorldIndex].mTriggers)
+	for (auto& entity : mWorlds[mCurrentWorldIndex].mEntities)
 	{
-		if (trigger.mId == id) {
+		if (entity.mId == id) {
 			return RARetCode::RET_ERR_INVALID_PARAMS;
 		}
 	}
 
-	mWorlds[mCurrentWorldIndex].mTriggers.emplace_back(id, location, distance,cb);
+	mWorlds[mCurrentWorldIndex].mEntities.emplace_back(id, location, distance, cb);
 	return RARetCode::RET_OK;
 }
 
-RARetCode WorldNavigator::removeTrigger(TRIGGER_ID id)
+RARetCode WorldNavigator::removeEntity(ENTITY_ID id)
 {
 	std::lock_guard<std::mutex> lock(mMutex);
 
 	RARetCode ret                  = RARetCode::RET_OK;
-	std::vector<Trigger>& triggers = mWorlds[mCurrentWorldIndex].mTriggers;
+	std::vector<Entity>& entities = mWorlds[mCurrentWorldIndex].mEntities;
 
-	auto newEnd = std::remove_if(triggers.begin(), triggers.end(),
-		[id](const Trigger& trigger) {
-			return trigger.mId == id;
+	auto newEnd = std::remove_if(entities.begin(), entities.end(),
+		[id](const Entity& entity) {
+			return entity.mId == id;
 		});
-	if (newEnd != triggers.end()) {
+	if (newEnd != entities.end()) {
 
-		triggers.erase(newEnd, triggers.end());
+		entities.erase(newEnd, entities.end());
 	}
 	else {
 		ret = RARetCode::RET_ERR_INVALID_ARG;
@@ -190,30 +247,72 @@ RARetCode WorldNavigator::removeTrigger(TRIGGER_ID id)
 	return ret;
 }
 
-RARetCode	 WorldNavigator::moveTrigger(TRIGGER_ID id, Vec3& location) {
+RARetCode	 WorldNavigator::moveEntity(ENTITY_ID id, Vec3& location) {
 	std::lock_guard<std::mutex> lock(mMutex);
 
 	RARetCode ret          = RARetCode::RET_OK;
-	Trigger* targetTrigger = findTrigger(id);
+	Entity*   targetEntity = findEntity(id);
 
-	if (targetTrigger == nullptr) {
+	if (targetEntity == nullptr) {
 		return RARetCode::RET_ERR_INVALID_ARG;
 	}
 
+	Vec3 previous = targetEntity->mLocation;
+
 	World& currentWorld = mWorlds[mCurrentWorldIndex];
-	std::vector<Trigger>& triggers = currentWorld.mTriggers;
 
 	if (!fitWithin(currentWorld.mWorldSpace, location)) {
-		targetTrigger->mLocation = adjustPosition(currentWorld.mWorldSpace, location);
+		targetEntity->mLocation = adjustPosition(currentWorld.mWorldSpace, location);
 		ret = RARetCode::RET_ADJUSTED;
 	} else {
-		targetTrigger->mLocation = location;
+		targetEntity->mLocation = location;
 	}
 
-	for (Trigger t : triggers) {
-		if (t.mDistance >= calcDistance(t.mLocation, currentWorld.mPosition)) {
-			if (t.mCb->onApproaching(currentWorld.mId, t.mId, currentWorld.mPosition, t.mLocation)) {
-				t.mCb->onTrigger(currentWorld.mId, t.mId);
+	//////////////////////////
+	if (targetEntity->mDistance >= MathematicalUtility::calcDistance(targetEntity->mLocation, currentWorld.mPrimaryEntityPosition)) {
+		if (currentWorld.mCollisionCb) {
+			Vec3 entityLocation = targetEntity->mLocation;
+
+			ICollisionCallback::CollisionResult colRet
+				= currentWorld.mCollisionCb->onApproaching(currentWorld.mId, targetEntity->mId, previous, entityLocation);
+			if (colRet == ICollisionCallback::CollisionResult::INHIBITED) {
+				targetEntity->mLocation = entityLocation;
+				ret = RARetCode::RET_ADJUSTED;
+			} else if (colRet == ICollisionCallback::CollisionResult::HIT) {
+				currentWorld.mCollisionCb->onHit(currentWorld.mId, targetEntity->mId);
+			}
+		}
+
+		if (targetEntity->mCb) {
+			ICollisionCallback::CollisionResult colRet
+				= targetEntity->mCb->onApproaching(currentWorld.mId, PRIMARY_ENTITY_ID, currentWorld.mPrimaryEntityPosition, currentWorld.mPrimaryEntityPosition);
+			if (colRet == ICollisionCallback::CollisionResult::INHIBITED) {
+				Utility::printLog("(%d) Ignore INHIBITED", targetEntity->mId);
+			} else if (colRet == ICollisionCallback::CollisionResult::HIT) {
+				targetEntity->mCb->onHit(currentWorld.mId, PRIMARY_ENTITY_ID);
+			}
+		}
+	}
+
+	//////////////////////////
+	for (Entity& entity : currentWorld.mEntities) {
+		if (entity.mId != targetEntity->mId &&
+			entity.mDistance >= MathematicalUtility::calcDistance(targetEntity->mLocation, entity.mLocation)) {
+
+			if (entity.mCb) {
+				Vec3 to = targetEntity->mLocation;
+
+				ICollisionCallback::CollisionResult colRet = entity.mCb->onApproaching(currentWorld.mId, targetEntity->mId, previous, to);
+
+				if (colRet == ICollisionCallback::CollisionResult::INHIBITED) {
+					if (MathematicalUtility::calcDistance(previous, to) < MathematicalUtility::calcDistance(previous, targetEntity->mLocation)) {
+						targetEntity->mLocation = to;
+						ret = RARetCode::RET_ADJUSTED;
+					}
+				}
+				else if (colRet == ICollisionCallback::CollisionResult::HIT) {
+					entity.mCb->onHit(currentWorld.mId, targetEntity->mId);
+				}
 			}
 		}
 	}
@@ -221,7 +320,7 @@ RARetCode	 WorldNavigator::moveTrigger(TRIGGER_ID id, Vec3& location) {
 	return ret;
 }
 
-RARetCode WorldNavigator::getTriggerLocation(TRIGGER_ID	id, Vec3* location)
+RARetCode WorldNavigator::getEntityLocation(ENTITY_ID	id, Vec3* location)
 {
 	std::lock_guard<std::mutex> lock(mMutex);
 
@@ -229,20 +328,23 @@ RARetCode WorldNavigator::getTriggerLocation(TRIGGER_ID	id, Vec3* location)
 		return RARetCode::RET_ERR_INVALID_ARG;
 	}
 
-	Trigger* targetTrigger = findTrigger(id);
+	Entity* targetEntity = findEntity(id);
 
-	if (targetTrigger == nullptr) {
+	if (targetEntity == nullptr) {
 		return RARetCode::RET_ERR_INVALID_ARG;
 	}
 
-	*location = targetTrigger->mLocation;
+	*location = targetEntity->mLocation;
 
 	return RARetCode::RET_OK;
 }
 
-
 RARetCode WorldNavigator::registerActiveSpaceCallback(IActiveSpaceCallback* cb)
 {
+	if (!cb) {
+		return RARetCode::RET_ERR_INVALID_ARG;
+	}
+
 	std::lock_guard<std::mutex> lock(mMutex);
 	World& currentWorld = mWorlds[mCurrentWorldIndex];
 
@@ -267,7 +369,6 @@ RARetCode	 WorldNavigator::unregisterActiveSpaceCallback()
 	currentWorld.mActiveSpaceCb = nullptr;
 
 	return RARetCode::RET_OK;
-
 }
 
 
@@ -280,13 +381,6 @@ WorldNavigator::WorldNavigator()
 //////////////////////////////////////////////////////////
 // Private
 //////////////////////////////////////////////////////////
-
-float WorldNavigator::calcDistance(Vec3& a, Vec3& b)
-{
-	return static_cast<float>(std::sqrt( (static_cast<double>(b.mX - a.mX) * static_cast<double>(b.mX - a.mX))
-		                               + (static_cast<double>(b.mY - a.mY) * static_cast<double>(b.mY - a.mY))
-							           + (static_cast<double>(b.mZ - a.mZ) * static_cast<double>(b.mZ - a.mZ)) ));
-}
 
 WorldNavigator::Vec3 WorldNavigator::calcCenter(Bounds& bounds)
 {
@@ -373,18 +467,18 @@ int WorldNavigator::selectBoundaryPosition(int min, int max, int val)
 	return val;
 }
 
-WorldNavigator::Trigger* WorldNavigator::findTrigger(TRIGGER_ID id)
+WorldNavigator::Entity* WorldNavigator::findEntity(ENTITY_ID id)
 {
 	World& currentWorld = mWorlds[mCurrentWorldIndex];
-	std::vector<Trigger>& triggers = currentWorld.mTriggers;
+	std::vector<Entity>& entities = currentWorld.mEntities;
 
-	Trigger* targetTrigger = nullptr;
+	Entity* targetEntity = nullptr;
 
-	for (auto& trigger : triggers) {
-		if (trigger.mId == id) {
-			targetTrigger = &trigger;
+	for (auto& entity : entities) {
+		if (entity.mId == id) {
+			targetEntity = &entity;
 		}
 	}
 
-	return targetTrigger;
+	return targetEntity;
 }

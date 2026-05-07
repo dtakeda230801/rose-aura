@@ -34,6 +34,7 @@
     <ClCompile Include="framework\src\ConditionSaver.cpp" />
     <ClCompile Include="framework\src\GraphicsManager.cpp" />
     <ClCompile Include="framework\src\InputHandler.cpp" />
+    <ClCompile Include="framework\src\MathematicalUtility.cpp" />
     <ClCompile Include="framework\src\media_utility\MediaUtility.cpp" />
     <ClCompile Include="framework\src\media_utility\MovieRendererInternal.cpp" />
     <ClCompile Include="framework\src\media_utility\MultiBlockBufferInternal.cpp" />
@@ -60,6 +61,7 @@
     <ClInclude Include="framework\include\IObjectActivator.h" />
     <ClInclude Include="framework\include\IStoryAnchor.h" />
     <ClInclude Include="framework\include\IWorldNavigator.h" />
+    <ClInclude Include="framework\include\MathematicalUtility.h" />
     <ClInclude Include="framework\include\MediaUtility.h" />
     <ClInclude Include="framework\include\RoseAura.h" />
     <ClInclude Include="framework\include\RoseAuraReturnCode.h" />

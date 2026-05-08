@@ -125,7 +125,8 @@ TEST(testWorldNavigator, APITest)
 	ROSE_AURA_TEST_BEGIN;
 	{
 		ActiveSpaceCallback* activeSpaceCb   = new ActiveSpaceCallback();
-		EntityCallback*      entityCb        = new EntityCallback();
+		EntityCallback*      entityCb1       = new EntityCallback();
+		EntityCallback*		 entityCb2  	 = new EntityCallback();
 		EntityCallback*      primaryEntityCb = new EntityCallback();
 
 		buildConf1();
@@ -212,8 +213,8 @@ TEST(testWorldNavigator, APITest)
 
 		SET_VEC(v, 100, 100, 100);
 		EXPECT_EQ(wn.registerEntity(0x0001, v, 30.0f, nullptr)    , RARetCode::RET_ERR_INVALID_ARG);
-		EXPECT_EQ(wn.registerEntity(0x0001, v, 30.0f, entityCb)   , RARetCode::RET_OK);
-		EXPECT_EQ(wn.registerEntity(0x0001, v, 30.0f, entityCb)   , RARetCode::RET_ERR_INVALID_PARAMS);
+		EXPECT_EQ(wn.registerEntity(0x0001, v, 30.0f, entityCb1)   , RARetCode::RET_OK);
+		EXPECT_EQ(wn.registerEntity(0x0001, v, 30.0f, entityCb1)   , RARetCode::RET_ERR_INVALID_PARAMS);
 
 		SET_VEC(v, 150, 150, 150);
 
@@ -230,15 +231,15 @@ TEST(testWorldNavigator, APITest)
 		EXPECT_EQ(wn.getEntityLocation(0x0001, nullptr) , RARetCode::RET_ERR_INVALID_ARG);
 
 		///////////////////////////////////////////
-		entityCb->setBehaiviorWithReset(IWorldNavigator::ICollisionCallback::CollisionResult::NO_COLLISION, v);
+		entityCb1->setBehaiviorWithReset(IWorldNavigator::ICollisionCallback::CollisionResult::NO_COLLISION, v);
 		SET_VEC(v, 3, 3, 3);
 		EXPECT_EQ(wn.moveEntity(0x0001, v), RARetCode::RET_OK);
-		EXPECT_TRUE(entityCb->checkResult(true,false));
+		EXPECT_TRUE(entityCb1->checkResult(true,false));
 
-		entityCb->setBehaiviorWithReset(IWorldNavigator::ICollisionCallback::CollisionResult::HIT, v);
+		entityCb1->setBehaiviorWithReset(IWorldNavigator::ICollisionCallback::CollisionResult::HIT, v);
 		SET_VEC(v, 2, 2, 2);
 		EXPECT_EQ(wn.moveEntity(0x0001, v), RARetCode::RET_OK);
-		EXPECT_TRUE(entityCb->checkResult(true, true));
+		EXPECT_TRUE(entityCb1->checkResult(true, true));
 
 		SET_VEC(v, 2, 2, 2);
 		primaryEntityCb->setBehaiviorWithReset(IWorldNavigator::ICollisionCallback::CollisionResult::INHIBITED, v);
@@ -250,6 +251,21 @@ TEST(testWorldNavigator, APITest)
 		EXPECT_EQ(wn.getEntityLocation(0x0001, &vResult), RARetCode::RET_OK);
 		EXPECT_TRUE(CHECK_VEC(vResult, 2, 2, 2));
 
+		///////////////////////////////////////////
+		SET_VEC(v, 10, 10, 10);
+		EXPECT_EQ(wn.moveEntity(0x0001, v), RARetCode::RET_ADJUSTED);
+
+		SET_VEC(v, 100, 100, 100);
+		EXPECT_EQ(wn.registerEntity(0x0002, v, 30.0f, entityCb2), RARetCode::RET_OK);
+
+		SET_VEC(v, 90, 90, 90);
+		entityCb2->setBehaiviorWithReset(IWorldNavigator::ICollisionCallback::CollisionResult::INHIBITED, v);
+		SET_VEC(v, 95, 95, 95);
+		EXPECT_EQ(wn.moveEntity(0x0001, v), RARetCode::RET_ADJUSTED);
+		EXPECT_TRUE(entityCb2->checkResult(true, false));
+
+		EXPECT_EQ(wn.getEntityLocation(0x0001, &vResult), RARetCode::RET_OK);
+		EXPECT_TRUE(CHECK_VEC(vResult, 90, 90, 90));
 
 		///////////////////////////////////////////
 		EXPECT_EQ(wn.removeEntity(0x0001), RARetCode::RET_OK);
@@ -257,7 +273,8 @@ TEST(testWorldNavigator, APITest)
 
 		///////////////////////////////////////////
 		delete primaryEntityCb;
-		delete entityCb;
+		delete entityCb2;
+		delete entityCb1;
 		delete activeSpaceCb;
 	}
 	ROSE_AURA_TEST_FIN;

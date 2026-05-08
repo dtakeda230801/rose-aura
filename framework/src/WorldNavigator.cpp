@@ -193,7 +193,7 @@ RARetCode WorldNavigator::unregisterCollisionCallback()
 	std::lock_guard<std::mutex> lock(mMutex);
 	World& currentWorld = mWorlds[mCurrentWorldIndex];
 
-	if (!currentWorld.mActiveSpaceCb) {
+	if (!currentWorld.mCollisionCb) {
 		return RARetCode::RET_ERR_INVALID_STATE;
 	}
 
@@ -209,7 +209,7 @@ RARetCode WorldNavigator::registerEntity(ENTITY_ID id, Vec3& location, float dis
 	}
 
 	if (!cb) {
-		return RARetCode::RET_ERR_INVALID_PARAMS;
+		return RARetCode::RET_ERR_INVALID_ARG;
 	}
 
 	std::lock_guard<std::mutex> lock(mMutex);
@@ -324,7 +324,7 @@ RARetCode WorldNavigator::getEntityLocation(ENTITY_ID	id, Vec3* location)
 {
 	std::lock_guard<std::mutex> lock(mMutex);
 
-	if (location == nullptr) {
+	if (!location) {
 		return RARetCode::RET_ERR_INVALID_ARG;
 	}
 

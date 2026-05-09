@@ -5,7 +5,7 @@
 
 #include "RoseAura.h"
 #include "RoseAuraReturnCode.h"
-#include "MathematicalUtility.h"
+#include "GeometricalUtility.h"
 #include "MediaUtility.h"
 #include "Utility.h"
 
@@ -24,12 +24,12 @@ namespace GameObjects {
 
 	void buildWorldConf()
 	{
-		gWorldConf.mWorldSpace.mMin.mX = 100;
-		gWorldConf.mWorldSpace.mMin.mY = 100;
-		gWorldConf.mWorldSpace.mMin.mZ = 0;
-		gWorldConf.mWorldSpace.mMax.mX = WIN_SIZE_W - 100;
-		gWorldConf.mWorldSpace.mMax.mY = WIN_SIZE_H - 100;
-		gWorldConf.mWorldSpace.mMax.mZ = 0;
+		gWorldConf.mWorldSpace.mMin.mX =  100;
+		gWorldConf.mWorldSpace.mMin.mY =  100;
+		gWorldConf.mWorldSpace.mMin.mZ = -100;
+		gWorldConf.mWorldSpace.mMax.mX = WIN_SIZE_W - 100; // 1300
+		gWorldConf.mWorldSpace.mMax.mY = WIN_SIZE_H - 100; // 700
+		gWorldConf.mWorldSpace.mMax.mZ =  100;
 
 		gWorldConf.mActiveRange.mX = 150;
 		gWorldConf.mActiveRange.mY = 100;
@@ -300,7 +300,7 @@ namespace GameObjects {
 	};
 
 	//////////////////////////////////////////////////////////////
-	class MyCharacter :
+	class MyBall :
 		  public IGraphicsManager::IGraphicsRenderer
 		, public IInputHandler::IInputHandlerCallback
 	{
@@ -353,14 +353,14 @@ namespace GameObjects {
 			mGraphicsManager.removeRenderer(this);
 		}
 
-		MyCharacter(RoseAura& ra) :
+		MyBall(RoseAura& ra) :
 			  mWorldNavigator(ra.getWorldNavigator())
 			, mGraphicsManager(ra.getGraphicsManager())
 			, mInputHandler(ra.getInputHandler())
 		{
 		};
 
-		virtual ~MyCharacter() = default;
+		virtual ~MyBall() = default;
 
 	private:
 		IWorldNavigator&  mWorldNavigator;
@@ -371,10 +371,10 @@ namespace GameObjects {
 	};
 
 	//////////////////////////////////////////////////////////////
-	class Target : public ICentralLooper::ITask
-		         , public ICentralLooper::IFrameSyncCallback
-		         , public IGraphicsManager::IGraphicsRenderer
-		         , public IWorldNavigator::ICollisionCallback
+	class MovingBall : public ICentralLooper::ITask
+		             , public ICentralLooper::IFrameSyncCallback
+		             , public IGraphicsManager::IGraphicsRenderer
+		             , public IWorldNavigator::ICollisionCallback
 	{
 	public:
 		//ITask
@@ -424,7 +424,7 @@ namespace GameObjects {
 
 		std::string getTaskName()
 		{
-			return "Target";
+			return "Moving Ball";
 		}
 
 		//IFrameSyncCallback
@@ -454,7 +454,7 @@ namespace GameObjects {
 
 			CollisionResult ret = CollisionResult::NO_COLLISION;
 
-			if (CIRCLE_SIZE > MathematicalUtility::calcDistance(mPosition, to)) {
+			if (CIRCLE_SIZE > GeometricalUtility::calcDistance(mPosition, to)) {
 				ret = CollisionResult::HIT;
 				mAfterHit = 3;
 			}
@@ -483,22 +483,15 @@ namespace GameObjects {
 			mGraphicsManager.removeRenderer(this);
 		}
 
-		Target(RoseAura& ra) :
+		MovingBall(RoseAura& ra) :
 			  mCentralLooper(ra.getCentralLooper())
 			, mGraphicsManager(ra.getGraphicsManager())
 			, mWorldNavigator(ra.getWorldNavigator())
 		{
 		};
-		virtual ~Target() = default;
+		virtual ~MovingBall() = default;
 
 	private:
-		float calcDistance(IWorldNavigator::Vec3& a, IWorldNavigator::Vec3& b)
-		{
-			return static_cast<float>(std::sqrt(
-				(static_cast<double>(b.mX - a.mX) * static_cast<double>(b.mX - a.mX))
-				+ (static_cast<double>(b.mY - a.mY) * static_cast<double>(b.mY - a.mY))
-				+ (static_cast<double>(b.mZ - a.mZ) * static_cast<double>(b.mZ - a.mZ))));
-		}
 
 		ICentralLooper&   mCentralLooper;
 		IGraphicsManager& mGraphicsManager;
@@ -512,6 +505,94 @@ namespace GameObjects {
 		float						mDistance = 30.f;
 		Color						mColor    = RED;
 		int							mAfterHit = 0;
+	};
+
+	//////////////////////////////////////////////////////////////
+	class Wall : public IGraphicsManager::IGraphicsRenderer
+		       , public IWorldNavigator::ICollisionCallback
+	{
+	public:
+		//IObjectRenderer
+		void preprocess()
+		{
+		}
+
+		void render()
+		{
+			DrawRectangle(mMin.mX, mMin.mY, mMax.mX - mMin.mX, mMax.mY - mMin.mY, GRAY);
+		};
+
+		//ITriggerCallback
+		CollisionResult onApproaching(IWorldNavigator::WORLD_ID		worldId
+			                        , IWorldNavigator::ENTITY_ID	entityId
+  			                        , IWorldNavigator::Vec3 from
+			                        , IWorldNavigator::Vec3& to)
+		{
+			Utility::printLog("Approaching... %d/%d/%d",to.mX,to.mY,to.mZ);
+
+			CollisionResult ret = CollisionResult::NO_COLLISION;
+
+			IWorldNavigator::Vec3 intersection;
+
+			if (GeometricalUtility::detectCollision(mVertex, mIndices, from, to, intersection)) {
+				GeometricalUtility::adjustPosition(from, intersection, MOVE_DELTA,to);
+				ret = CollisionResult::INHIBITED;
+			}
+
+			return ret;
+		};
+
+		void onHit(IWorldNavigator::WORLD_ID	worldId
+			, IWorldNavigator::ENTITY_ID	    entityId)
+		{
+		};
+
+		void init()
+		{
+			mGraphicsManager.setRenderer(this);
+			mWorldNavigator.registerEntity(mId, mPosition, mDistance, this);
+		}
+
+		void fin()
+		{
+			mWorldNavigator.removeEntity(mId);
+			mGraphicsManager.removeRenderer(this);
+		}
+
+		Wall(RoseAura& ra) :
+			  mGraphicsManager(ra.getGraphicsManager())
+			, mWorldNavigator(ra.getWorldNavigator())
+		{
+		};
+		virtual ~Wall() = default;
+
+	private:
+		IGraphicsManager& mGraphicsManager;
+		IWorldNavigator&  mWorldNavigator;
+
+		IWorldNavigator::ENTITY_ID  mId = 2;
+
+		IWorldNavigator::Vec3		mPosition = { 650
+			                                    , 500
+			                                    , 0 };
+		IWorldNavigator::Vec3		mMin      = { 600
+											    , 499
+			                                    , -10 };
+		IWorldNavigator::Vec3		mMax      = { 700
+												, 501
+												, 10 };
+		float						mDistance = 100.0f;
+
+		std::vector<IWorldNavigator::Vec3> mVertex = 
+		{ {600,500, -10}
+     	 ,{700,500, -10}
+		 ,{700,500,  10}
+		 ,{600,500,  10}
+		};
+		std::vector<uint32_t> mIndices =
+		{ 0, 1, 2
+		 ,2, 3, 0
+		};
 
 	};
 
@@ -641,6 +722,13 @@ namespace GameObjects {
 
 		ids.push_back(
 			objectRepository.registerObject(
+				objectRepository.makeObjectBinder<Wall, RoseAura&>(
+					&Wall::init, &Wall::fin, ra)
+				, tags
+			));
+
+		ids.push_back(
+			objectRepository.registerObject(
 				objectRepository.makeObjectBinder<ActiveSpace, RoseAura&>(
 					&ActiveSpace::init, &ActiveSpace::fin, ra)
 				, tags
@@ -655,15 +743,15 @@ namespace GameObjects {
 
 		ids.push_back(
 			objectRepository.registerObject(
-				objectRepository.makeObjectBinder<MyCharacter, RoseAura&>(
-					&MyCharacter::init, &MyCharacter::fin, ra)
+				objectRepository.makeObjectBinder<MyBall, RoseAura&>(
+					&MyBall::init, &MyBall::fin, ra)
 				, tags
 			));
 
 		ids.push_back(
 			objectRepository.registerObject(
-				objectRepository.makeObjectBinder<Target, RoseAura&>(
-					&Target::init, &Target::fin, ra)
+				objectRepository.makeObjectBinder<MovingBall, RoseAura&>(
+					&MovingBall::init, &MovingBall::fin, ra)
 				, tags
 			));
 

@@ -93,7 +93,7 @@
     <ClCompile Include="framework\src\media_utility\MusicRendererInternal.cpp">
       <Filter>MediaUtility</Filter>
     </ClCompile>
-    <ClCompile Include="framework\src\MathematicalUtility.cpp">
+    <ClCompile Include="framework\src\GeometricalUtility.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -191,7 +191,7 @@
     <ClInclude Include="framework\src\media_utility\MusicRendererInternal.h">
       <Filter>MediaUtility</Filter>
     </ClInclude>
-    <ClInclude Include="framework\include\MathematicalUtility.h">
+    <ClInclude Include="framework\include\GeometricalUtility.h">
       <Filter>RoseAura Interface</Filter>
     </ClInclude>
   </ItemGroup>

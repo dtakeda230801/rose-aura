@@ -1,7 +1,7 @@
 #include <cmath>
 
 #include "WorldNavigator.h"
-#include "MathematicalUtility.h"
+#include "GeometricalUtility.h"
 #include "Utility.h"
 
 //////////////////////////////////////////////////////////
@@ -103,7 +103,7 @@ RARetCode WorldNavigator::movePrimaryEntityPosition(Vec3& pos)
 	}
 
 	for (Entity& entity : currentWorld.mEntities) {
-		if (entity.mDistance >= MathematicalUtility::calcDistance(entity.mLocation, pos)) {
+		if (entity.mDistance >= GeometricalUtility::calcDistance(entity.mLocation, pos)) {
 
 			if (entity.mCb) {
 				Vec3 to = currentWorld.mPrimaryEntityPosition;
@@ -111,7 +111,7 @@ RARetCode WorldNavigator::movePrimaryEntityPosition(Vec3& pos)
 				ICollisionCallback::CollisionResult colRret = entity.mCb->onApproaching(currentWorld.mId, PRIMARY_ENTITY_ID, previous, to);
 
 				if (colRret == ICollisionCallback::CollisionResult::INHIBITED) {
-					if (MathematicalUtility::calcDistance(previous, to) < MathematicalUtility::calcDistance(previous, currentWorld.mPrimaryEntityPosition)) {
+					if (GeometricalUtility::calcDistance(previous, to) <= GeometricalUtility::calcDistance(previous, currentWorld.mPrimaryEntityPosition)) {
 						currentWorld.mPrimaryEntityPosition = to;
 						ret = RARetCode::RET_ADJUSTED;
 					}
@@ -269,7 +269,7 @@ RARetCode	 WorldNavigator::moveEntity(ENTITY_ID id, Vec3& location) {
 	}
 
 	//////////////////////////
-	if (targetEntity->mDistance >= MathematicalUtility::calcDistance(targetEntity->mLocation, currentWorld.mPrimaryEntityPosition)) {
+	if (targetEntity->mDistance >= GeometricalUtility::calcDistance(targetEntity->mLocation, currentWorld.mPrimaryEntityPosition)) {
 		if (currentWorld.mCollisionCb) {
 			Vec3 entityLocation = targetEntity->mLocation;
 
@@ -297,7 +297,7 @@ RARetCode	 WorldNavigator::moveEntity(ENTITY_ID id, Vec3& location) {
 	//////////////////////////
 	for (Entity& entity : currentWorld.mEntities) {
 		if (entity.mId != targetEntity->mId &&
-			entity.mDistance >= MathematicalUtility::calcDistance(targetEntity->mLocation, entity.mLocation)) {
+			entity.mDistance >= GeometricalUtility::calcDistance(targetEntity->mLocation, entity.mLocation)) {
 
 			if (entity.mCb) {
 				Vec3 to = targetEntity->mLocation;
@@ -305,7 +305,7 @@ RARetCode	 WorldNavigator::moveEntity(ENTITY_ID id, Vec3& location) {
 				ICollisionCallback::CollisionResult colRet = entity.mCb->onApproaching(currentWorld.mId, targetEntity->mId, previous, to);
 
 				if (colRet == ICollisionCallback::CollisionResult::INHIBITED) {
-					if (MathematicalUtility::calcDistance(previous, to) < MathematicalUtility::calcDistance(previous, targetEntity->mLocation)) {
+					if (GeometricalUtility::calcDistance(previous, to) < GeometricalUtility::calcDistance(previous, targetEntity->mLocation)) {
 						targetEntity->mLocation = to;
 						ret = RARetCode::RET_ADJUSTED;
 					}

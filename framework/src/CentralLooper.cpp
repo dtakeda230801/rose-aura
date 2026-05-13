@@ -98,7 +98,7 @@ void CentralLooper::run() {
 			}
 		}
 
-		for (IFrameSyncCallback* frameSyncCallback : mFrameSyncCallbacks) {
+		for (auto frameSyncCallback : mFrameSyncCallbacks) {
 			frameSyncCallback->onFrameSync();
 		}
 
@@ -111,7 +111,7 @@ void CentralLooper::run() {
 }
 
 CentralLooper::ITask* CentralLooper::dequeue() {
-	ITask* task = NULL;
+	ITask* task = nullptr;
 
 	std::lock_guard<std::mutex> lock(mMutex);
 

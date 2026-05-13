@@ -10,6 +10,7 @@ class IGraphicsManager {
 public:
 	using SHADER_ID = uint32_t;
 	using FONT_ID   = uint32_t;
+	using MODEL_ID  = uint32_t;
 
 	struct Conf {
 		uint32_t		mWindowWidth;
@@ -35,6 +36,7 @@ public:
 	virtual void      exit()                                        = 0;
 	virtual RARetCode setRenderer(IGraphicsRenderer* renderer)	    = 0;
 	virtual RARetCode removeRenderer(IGraphicsRenderer* renderer)	= 0;
+
 	virtual RARetCode setShaderFile(std::string vsfile
 		                          , std::string fsfile
 		                          , SHADER_ID& id)                  = 0;
@@ -42,6 +44,15 @@ public:
 							  , std::string fsString
 							  , SHADER_ID& id)						= 0;
 	virtual void*	  getShader(SHADER_ID id)                       = 0;
+	virtual RARetCode removeShader(SHADER_ID id)					= 0;
+
+
 	virtual RARetCode setFont(std::string file, FONT_ID& id)        = 0;
 	virtual void*     getFont(FONT_ID id)                           = 0;
+	virtual RARetCode      removeFont(FONT_ID id) = 0;
+
+	virtual RARetCode setModel(std::string file, MODEL_ID& id)      = 0;
+	virtual void*	  getModel(MODEL_ID id)                         = 0;
+	virtual RARetCode removeModel(MODEL_ID id) = 0;
+
 };

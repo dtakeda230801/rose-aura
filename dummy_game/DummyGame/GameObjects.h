@@ -53,7 +53,7 @@ namespace GameObjects {
 		               , public ICentralLooper::IFrameSyncCallback
 	{
 	public:
-		void doTask()
+		void doTask() 
 		{
 			float angle = mAngle;
 
@@ -66,7 +66,7 @@ namespace GameObjects {
 
 		};
 
-		void onTaskFinish()
+		void onTaskFinish() 
 		{
 		};
 
@@ -75,19 +75,41 @@ namespace GameObjects {
 			return "BackGround3D";
 		}
 
-		void onFrameSync()
+		void onFrameSync() 
 		{
 			mCentralLooper.enqueueTask(this);
 		}
 
 		void preprocess()
 		{
+			if (!mLoaded) {
+				mModel     = static_cast<Model*>(mGraphicsManager.getModel(mModelId));
+				mAnimation = LoadModelAnimations("main.glb", &mAnimationCount);
+
+				for (int i = 0; i < mAnimationCount; i++) {
+					Utility::printLog("Animation Name:%s", mAnimation[i].name);
+				}
+
+				mLoaded    = true;
+			}
 		}
 
 		void render()
 		{
 			BeginMode3D(mCamera);
 
+			if (mLoaded) {
+				mAnimationFrame += 2;
+
+				mAnimationFrame %= mAnimation[1].keyframeCount;
+
+				UpdateModelAnimation(*mModel, mAnimation[1], mAnimationFrame);
+
+				rlDisableBackfaceCulling();
+				DrawModel(*mModel, { 0,0,0 }, 1.0f, WHITE);
+				rlEnableBackfaceCulling();
+			}
+			/*
 			rlPushMatrix();
 
 			rlTranslatef(0.0f, 0.0f, 0.0f);
@@ -97,7 +119,7 @@ namespace GameObjects {
 			DrawCubeWiresV({ 0, 0, 0 }, { 2, 2, 2 }, BLACK);
 
 			rlPopMatrix();
-
+			*/
 			DrawGrid(10, 1.0f);
 
 			EndMode3D();
@@ -105,6 +127,7 @@ namespace GameObjects {
 
 		void init()
 		{
+			mGraphicsManager.setModel("main.glb", mModelId);
 			mGraphicsManager.setRenderer(this);
 			mCentralLooper.registerFrameSyncCallback(this);
 			mCentralLooper.enqueueTask(this);
@@ -113,6 +136,7 @@ namespace GameObjects {
 		void fin()
 		{
 			mGraphicsManager.removeRenderer(this);
+			mGraphicsManager.removeModel(mModelId);
 			mCentralLooper.unregisterFrameSyncCallback(this);
 		}
 
@@ -120,8 +144,15 @@ namespace GameObjects {
 			  mCentralLooper(ra.getCentralLooper())
 			, mGraphicsManager(ra.getGraphicsManager())
 			, mAngle(0.0f)
+			, mModelId(0)
+			, mLoaded(false)
+			, mModel(nullptr)
+			, mAnimation(nullptr)
+			, mAnimationCount(0)
+			, mAnimationFrame(0)
+
 		{
-			mCamera.position = { 5.0f, 5.0f, 5.0f };
+			mCamera.position = { 3.0f, 3.0f, 3.0f };
 			mCamera.target   = { 0.0f, 0.0f, 0.0f };
 			mCamera.up       = { 0.0f, 1.0f, 0.0f };
 			mCamera.fovy     = 45.0f;
@@ -135,6 +166,16 @@ namespace GameObjects {
 		IGraphicsManager&  mGraphicsManager;
 		Camera			   mCamera;
 		std::atomic<float> mAngle;
+		bool			   mLoaded;
+
+		IGraphicsManager::MODEL_ID
+						   mModelId;
+		Model*			   mModel;
+
+		ModelAnimation*	   mAnimation;
+		int				   mAnimationCount;
+		int				   mAnimationFrame;
+
 	};
 
 	//////////////////////////////////////////////////////////////
@@ -296,7 +337,6 @@ namespace GameObjects {
 
 		std::mutex		  mMutex;
 		bool			  mDisplay = true;
-
 	};
 
 	//////////////////////////////////////////////////////////////

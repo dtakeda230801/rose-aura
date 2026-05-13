@@ -86,7 +86,7 @@ bool GeometricalUtility::detectCollision(const Vertex& vertex
 
 		IntVec3 as = subtract(s, a);
 
-		float m = -1.0 * dot(n, as);
+		float m = -1.0f * dot(n, as);
 
 		float t = m / d;
 

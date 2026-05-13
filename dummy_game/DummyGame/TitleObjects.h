@@ -128,8 +128,8 @@ namespace TitleObjects {
 
 			mSoundSnapshotRenderer = new SoundSnapshotRenderer(mRa, "test.wav");
 
-			gm.setRenderer(this);
 			gm.setFont("NotoSerifJP-Regular.ttf", mFontId);
+			gm.setRenderer(this);
 
 			ih.registerCallback(this);
 			cl.registerFrameSyncCallback(this);
@@ -142,6 +142,7 @@ namespace TitleObjects {
 			IInputHandler& ih    = mRa.getInputHandler();
 
 			gm.removeRenderer(this);
+			gm.removeFont(mFontId);
 
 			cl.unregisterFrameSyncCallback(this);
 			ih.unregisterCallback(this);

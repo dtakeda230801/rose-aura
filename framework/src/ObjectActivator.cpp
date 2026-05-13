@@ -46,8 +46,7 @@ RARetCode ObjectActivator::unregisterObject(OBJECT_ID id)
 		});
 	if (newEnd != mObjects.end()) {
 		mObjects.erase(newEnd, mObjects.end());
-	}
-	else {
+	} else {
 		ret = RARetCode::RET_ERR_NOT_FOUND;
 	}
 	return ret;

@@ -199,7 +199,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>resources;framework\include;framework\src;external\raylib-5.5_win64_msvc16\include;external/libwebm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>resources;framework\include;framework\src;external\raylib-6.0_win64_msvc16\include;external/libwebm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -214,7 +214,7 @@ user32.lib
 ;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(SolutionDir)external\raylib-5.5_win64_msvc16\lib\raylib.dll" "$(OutDir)" 
+      <Command>copy /Y "$(SolutionDir)external\raylib-6.0_win64_msvc16\lib\raylib.dll" "$(OutDir)" 
 copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\x64-windows\bin\*.dll" "$(OutDir)" 
 
 

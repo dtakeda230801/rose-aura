@@ -81,9 +81,9 @@ public:
 	virtual RARetCode registerCollisionCallback(ICollisionCallback* cb) = 0;
 	virtual RARetCode unregisterCollisionCallback()                     = 0;
 
-	virtual RARetCode registerEntity(ENTITY_ID			id
-		                            , Vec3&				location
-		                            , float				distance
+	virtual RARetCode registerEntity(ENTITY_ID			  id
+		                            , Vec3&				  location
+		                            , float				  distance
 		                            , ICollisionCallback* cb)			= 0;
 	virtual RARetCode removeEntity(ENTITY_ID id)					    = 0;
 	virtual RARetCode moveEntity(ENTITY_ID id, Vec3& location)	        = 0;

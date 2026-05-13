@@ -26,16 +26,15 @@ private:
 	ITask* dequeue();
 
 	std::queue<ITask*> mTaskQueue;
-	std::mutex		   mMutex;
-	std::thread		   mThread;
+	std::mutex				 mMutex;
+	std::thread				 mThread;
 
-	std::atomic<bool>  mStarted;
+	std::atomic<bool>		 mStarted;
 
-	uint32_t		   mTimeOfFrame;
+	uint32_t				 mTimeOfFrame;
 	
 	std::vector<IFrameSyncCallback*>
-				       mFrameSyncCallbacks;
-
+							 mFrameSyncCallbacks;
 };
 
 

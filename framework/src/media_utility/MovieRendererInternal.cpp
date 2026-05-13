@@ -59,6 +59,7 @@ bool MovieRendererInternal::stopPlaying()
 
 MovieRendererInternal::~MovieRendererInternal()
 {
+	mGraphicsManager.removeShader(mShaderId);
 }
 
 void MovieRendererInternal::preprocess()

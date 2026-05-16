@@ -128,7 +128,7 @@ namespace TitleObjects {
 
 			mSoundSnapshotRenderer = new SoundSnapshotRenderer(mRa, "test.wav");
 
-			gm.setFont("NotoSerifJP-Regular.ttf", mFontId);
+			mFontId = gm.setFont("NotoSerifJP-Regular.ttf");
 			gm.setRenderer(this);
 
 			ih.registerCallback(this);

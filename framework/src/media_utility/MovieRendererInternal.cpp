@@ -28,9 +28,8 @@ MovieRendererInternal::MovieRendererInternal(RoseAura& ra, const char* movieFile
 	, mCallback(cb)
 {
 
-	mGraphicsManager.setShader(RESOURCES->Res_ConvertPictureV
-							 , RESOURCES->Res_ConvertPictureF
-							 , mShaderId);
+	mShaderId = mGraphicsManager.setShader(RESOURCES->Res_ConvertPictureV
+		, RESOURCES->Res_ConvertPictureF);
 }
 
 bool MovieRendererInternal::playMovie()

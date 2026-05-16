@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mutex>
+
 #include "raylib.h"
 #include "rlgl.h"
 
@@ -82,15 +84,10 @@ namespace GameObjects {
 
 		void preprocess()
 		{
-			if (!mLoaded) {
-				mModel     = static_cast<Model*>(mGraphicsManager.getModel(mModelId));
-				mAnimation = LoadModelAnimations("main.glb", &mAnimationCount);
-
-				for (int i = 0; i < mAnimationCount; i++) {
-					Utility::printLog("Animation Name:%s", mAnimation[i].name);
-				}
-
-				mLoaded    = true;
+			if (!mInitialized) {
+				IGraphicsManager::IModelWrapper* modelWrapper = mGraphicsManager.getModelWrapper(mModelId);
+				modelWrapper->setAdjustment(3,3,0.37);
+				mInitialized = true;
 			}
 		}
 
@@ -98,17 +95,14 @@ namespace GameObjects {
 		{
 			BeginMode3D(mCamera);
 
-			if (mLoaded) {
-				mAnimationFrame += 2;
+			IGraphicsManager::IModelWrapper* modelWrapper = mGraphicsManager.getModelWrapper(mModelId);
 
-				mAnimationFrame %= mAnimation[1].keyframeCount;
+			modelWrapper->selectAnimation(0);
+			Model* model = static_cast<Model*>(modelWrapper->getAnimetionModel());
+			rlDisableBackfaceCulling();
+			DrawModel(*model, { 0,0,0 }, 1.0f, WHITE);
+			rlEnableBackfaceCulling();
 
-				UpdateModelAnimation(*mModel, mAnimation[1], mAnimationFrame);
-
-				rlDisableBackfaceCulling();
-				DrawModel(*mModel, { 0,0,0 }, 1.0f, WHITE);
-				rlEnableBackfaceCulling();
-			}
 			/*
 			rlPushMatrix();
 
@@ -127,7 +121,7 @@ namespace GameObjects {
 
 		void init()
 		{
-			mGraphicsManager.setModel("main.glb", mModelId);
+			mModelId = mGraphicsManager.setModel("main.glb", true);
 			mGraphicsManager.setRenderer(this);
 			mCentralLooper.registerFrameSyncCallback(this);
 			mCentralLooper.enqueueTask(this);
@@ -136,8 +130,8 @@ namespace GameObjects {
 		void fin()
 		{
 			mGraphicsManager.removeRenderer(this);
-			mGraphicsManager.removeModel(mModelId);
 			mCentralLooper.unregisterFrameSyncCallback(this);
+			mGraphicsManager.releaseModelWrapper(mModelId);
 		}
 
 		BackGround3D(RoseAura& ra) :
@@ -145,12 +139,10 @@ namespace GameObjects {
 			, mGraphicsManager(ra.getGraphicsManager())
 			, mAngle(0.0f)
 			, mModelId(0)
-			, mLoaded(false)
-			, mModel(nullptr)
 			, mAnimation(nullptr)
 			, mAnimationCount(0)
 			, mAnimationFrame(0)
-
+			, mInitialized(false)
 		{
 			mCamera.position = { 3.0f, 3.0f, 3.0f };
 			mCamera.target   = { 0.0f, 0.0f, 0.0f };
@@ -166,15 +158,15 @@ namespace GameObjects {
 		IGraphicsManager&  mGraphicsManager;
 		Camera			   mCamera;
 		std::atomic<float> mAngle;
-		bool			   mLoaded;
 
 		IGraphicsManager::MODEL_ID
 						   mModelId;
-		Model*			   mModel;
 
 		ModelAnimation*	   mAnimation;
 		int				   mAnimationCount;
 		int				   mAnimationFrame;
+
+		bool			   mInitialized;
 
 	};
 
@@ -568,8 +560,6 @@ namespace GameObjects {
   			                        , IWorldNavigator::Vec3 from
 			                        , IWorldNavigator::Vec3& to)
 		{
-			Utility::printLog("Approaching... %d/%d/%d",to.mX,to.mY,to.mZ);
-
 			CollisionResult ret = CollisionResult::NO_COLLISION;
 
 			IWorldNavigator::Vec3 intersection;

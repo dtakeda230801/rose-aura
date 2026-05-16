@@ -7,6 +7,156 @@
 ////////////////////////////////////
 // APIs
 ////////////////////////////////////
+struct GraphicsManager::ModelWrapper::ModelHolder {
+	Model			mModel;
+	ModelAnimation* mModelAnimation;
+};
+
+IGraphicsManager::MODEL_ID  GraphicsManager::ModelWrapper::getModelId()
+{
+	return mId;
+}
+
+
+void* GraphicsManager::ModelWrapper::getModel()
+{
+	return static_cast<void*>(&mModelHolder->mModel);
+}
+
+void* GraphicsManager::ModelWrapper::getAnimetionModel()
+{
+	if (!mModelHolder->mModelAnimation) {
+		return nullptr;
+	}
+
+	int frameLen = mModelHolder->mModelAnimation[mCurrentAnimation].keyframeCount;
+
+	mFrame += 1.0f/mRate;
+
+	if (mFrame >= static_cast<float>(frameLen - mEndOffset)) {
+		mFrame = 1.0f;
+	}
+
+	if (mFrame < static_cast<float>(mStartOffset)) {
+		mFrame = static_cast<float>(mStartOffset);
+	}
+
+
+	UpdateModelAnimation(mModelHolder->mModel, mModelHolder->mModelAnimation[mCurrentAnimation], mFrame);
+
+	return static_cast<void*>(&mModelHolder->mModel);
+}
+
+uint32_t  GraphicsManager::ModelWrapper::getAnimationNum()
+{
+	return mAnimationNum;
+}
+
+RARetCode GraphicsManager::ModelWrapper::selectAnimation(uint32_t index)
+{
+	if (!mModelHolder->mModelAnimation) {
+		return RARetCode::RET_ERR_INVALID_STATE;
+	}
+
+	if (index >= static_cast<uint32_t>(mAnimationNum)) {
+		return RARetCode::RET_ERR_INVALID_ARG;
+	}
+
+	if (mCurrentAnimation != index) {
+
+		mCurrentAnimation = index;
+		mFrame			  = 0.0f;
+	}
+
+	return RARetCode::RET_OK;
+}
+
+void GraphicsManager::ModelWrapper::setAdjustment(uint32_t startOffset, uint32_t endOffset, float rate)
+{
+	mStartOffset = startOffset;
+	mEndOffset   = endOffset;
+	mRate        = rate;
+}
+
+
+void GraphicsManager::ModelWrapper::load()
+{
+	if (!mIsLoaded) {
+		mModelHolder->mModel = LoadModel(mModelFile.c_str());
+
+		if (mLoadAnimation) {
+			mModelHolder->mModelAnimation = LoadModelAnimations(mModelFile.c_str(), &mAnimationNum);
+
+			for (int i = 0; i < mAnimationNum; ++i) {
+				Utility::printLog("Animation : %s / %d", mModelHolder->mModelAnimation[i].name
+					                                   , mModelHolder->mModelAnimation[i].keyframeCount);
+			}
+		}
+		mIsLoaded = true;
+	}
+}
+
+bool GraphicsManager::ModelWrapper::isLoaded() {
+	return mIsLoaded;
+}
+
+void GraphicsManager::ModelWrapper::setUnloadResevation()
+{
+	mReleaseResevation = true;
+}
+
+bool GraphicsManager::ModelWrapper::hasUnloadResevation()
+{
+	return mReleaseResevation;
+}
+
+void GraphicsManager::ModelWrapper::unload()
+{
+	if (mIsLoaded) {
+		if (mModelHolder->mModelAnimation) {
+			UnloadModelAnimations(mModelHolder->mModelAnimation, mAnimationNum);
+			mModelHolder->mModelAnimation = nullptr;
+			mAnimationNum = 0;
+		}
+
+		UnloadModel(mModelHolder->mModel);
+		if (mModelHolder->mModel.currentPose) {
+			free(mModelHolder->mModel.currentPose);
+			mModelHolder->mModel.currentPose = nullptr;
+		}
+		if (mModelHolder->mModel.boneMatrices) {
+			free(mModelHolder->mModel.boneMatrices);
+			mModelHolder->mModel.boneMatrices = nullptr;
+		}
+
+
+		mIsLoaded = false;
+	}
+}
+
+GraphicsManager::ModelWrapper::ModelWrapper(MODEL_ID id, std::string model, bool loadAnimation)
+	: mId(id)
+	, mModelFile(model)
+	, mLoadAnimation(loadAnimation)
+	, mModelHolder(std::make_unique<ModelHolder>())
+	, mIsLoaded(false)
+	, mAnimationNum(0)
+	, mStartOffset(0)
+	, mEndOffset(0)
+	, mRate(1.0f)
+	, mFrame(0.0f)
+	, mCurrentAnimation(0)
+	, mReleaseResevation(false)
+{
+}
+
+GraphicsManager::ModelWrapper::~ModelWrapper()
+{
+}
+
+
+////////////////////////////////////
+////////////////////////////////////
 void GraphicsManager::runUntilClosed(Conf conf)
 {
 	mRunning.store(true);
@@ -37,11 +187,9 @@ void GraphicsManager::runUntilClosed(Conf conf)
 			}
 		}
 
-		for (auto& holder : mModelHolders) {
-			if (!holder.mModel) {
-				Model* model = new Model();
-				*(model) = LoadModel(holder.mModelFile.c_str());
-				holder.mModel = static_cast<void*>(model);
+		for (auto& wrapper : mModelWrappers) {
+			if (wrapper && !wrapper->isLoaded()) {
+				wrapper->load();
 			}
 		}
 
@@ -62,18 +210,10 @@ void GraphicsManager::runUntilClosed(Conf conf)
 
 		EndDrawing();
 
-		for (auto ite = mModelHolders.begin(); ite != mModelHolders.end(); ) {
-			ModelHolder holder = *ite;
-
-			if (holder.mRemove) {
-				Model* model = static_cast<Model*>(holder.mModel);
-				if (model) {
-					UnloadModel(*model);
-					delete model;
-				}
-				ite = mModelHolders.erase(ite);
-			} else {
-				++ite;
+		for (auto& wrapper : mModelWrappers) {
+			if (wrapper && wrapper->hasUnloadResevation()) {
+				wrapper->unload();
+				wrapper.reset();
 			}
 		}
 
@@ -109,14 +249,11 @@ void GraphicsManager::runUntilClosed(Conf conf)
 			}
 		}
 	}
-	CloseWindow();
 
-
-	for (auto& holder : mModelHolders) {
-		Model* model = static_cast<Model*>(holder.mModel);
-		if (model){
-			UnloadModel(*model);
-			delete model;
+	for (auto& wrapper : mModelWrappers) {
+		if (wrapper) {
+			wrapper->unload();
+			wrapper.reset();
 		}
 	}
 
@@ -135,6 +272,7 @@ void GraphicsManager::runUntilClosed(Conf conf)
 			delete shader;
 		}
 	}
+	CloseWindow();
 }
 
 void GraphicsManager::exit()
@@ -172,24 +310,18 @@ RARetCode GraphicsManager::removeRenderer(IGraphicsRenderer* renderer)
 	return ret;
 }
 
-RARetCode GraphicsManager::setShaderFile(std::string vsfile
-									   , std::string fsfile
-									   , SHADER_ID& id)
+IGraphicsManager::SHADER_ID GraphicsManager::setShaderFile(std::string vsFile, std::string fsFile)
 {	
 	SHADER_ID newId = static_cast<SHADER_ID>(mShaderHolders.size() + 1);
-	mShaderHolders.emplace_back(ShaderHolder{ nullptr, newId, vsfile, fsfile , true });
-	id = newId;
-	return RARetCode::RET_OK;
+	mShaderHolders.emplace_back(ShaderHolder{ nullptr, newId, vsFile, fsFile , true });
+	return newId;
 }
 
-RARetCode GraphicsManager::setShader(std::string vsString
-	                               , std::string fsString
-	                               , SHADER_ID& id)
+IGraphicsManager::SHADER_ID GraphicsManager::setShader(std::string vsStr, std::string fsStr)
 {
 	SHADER_ID newId = static_cast<SHADER_ID>(mShaderHolders.size() + 1);
-	mShaderHolders.emplace_back(ShaderHolder{ nullptr, newId, vsString, fsString , false, false });
-	id = newId;
-	return RARetCode::RET_OK;
+	mShaderHolders.emplace_back(ShaderHolder{ nullptr, newId, vsStr, fsStr , false, false });
+	return newId;
 }
 
 
@@ -220,12 +352,11 @@ RARetCode GraphicsManager::removeShader(SHADER_ID id)
 }
 
 
-RARetCode GraphicsManager::setFont(std::string file, FONT_ID& id)
+IGraphicsManager::FONT_ID GraphicsManager::setFont(std::string file)
 {
 	FONT_ID newId = static_cast<FONT_ID>(mFontHolders.size() + 1);
 	mFontHolders.emplace_back(FontHolder{ nullptr, newId, file, false });
-	id = newId;
-	return RARetCode::RET_OK;
+	return newId;
 }
 
 void* GraphicsManager::getFont(FONT_ID id)
@@ -256,42 +387,33 @@ RARetCode GraphicsManager::removeFont(FONT_ID id)
 	return RARetCode::RET_ERR_INVALID_ARG;
 }
 
-
-RARetCode GraphicsManager::setModel(std::string file, MODEL_ID& id)
+IGraphicsManager::MODEL_ID GraphicsManager::setModel(std::string file, bool loadAnimation)
 {
-	MODEL_ID newId = static_cast<MODEL_ID>(mModelHolders.size() + 1);
-	mModelHolders.emplace_back(ModelHolder{ nullptr, newId, file, false });
-	id = newId;
-	return RARetCode::RET_OK;
+	MODEL_ID newId = static_cast<uint32_t>(mModelWrappers.size() + 1);
+	mModelWrappers.push_back(std::make_unique<ModelWrapper>(newId, file, loadAnimation));
+	return newId;
 }
 
-void* GraphicsManager::getModel(MODEL_ID id)
+
+IGraphicsManager::IModelWrapper* GraphicsManager::getModelWrapper(IGraphicsManager::MODEL_ID id)
 {
-	for (auto& modelHolder : mModelHolders) {
-		if (modelHolder.mId == id) {
-			if (modelHolder.mModel) {
-				return modelHolder.mModel;
-			}
-			else {
-				Utility::printLog("Model not readly");
-				return nullptr;
-			}
+	for (auto& wrapper : mModelWrappers) {
+		if (wrapper && wrapper->getModelId() == id) {
+			return wrapper.get();
 		}
 	}
 	return nullptr;
 }
 
-RARetCode GraphicsManager::removeModel(MODEL_ID id)
+
+void GraphicsManager::releaseModelWrapper(MODEL_ID id)
 {
-	for (auto& modelHolder : mModelHolders) {
-		if (modelHolder.mId == id) {
-			modelHolder.mRemove = true;
-			return RARetCode::RET_OK;
+	for (auto& wrapper : mModelWrappers) {
+		if (wrapper && wrapper->getModelId() == id) {
+			wrapper->setUnloadResevation();
 		}
 	}
-	return RARetCode::RET_ERR_INVALID_ARG;
 }
-
 
 ////////////////////////////////////
 // Private

@@ -157,7 +157,7 @@ RARetCode WorldNavigator::movePrimaryEntityPosition(Vec3& pos)
 		doActiveAreaCallback = true;
 	}
 
-	if (doActiveAreaCallback) {
+	if (doActiveAreaCallback && currentWorld.mActiveSpaceCb) {
 		currentWorld.mActiveSpaceCb->onUpdate(currentWorld.mId, currentWorld.mActiveSpace);
 	}
 

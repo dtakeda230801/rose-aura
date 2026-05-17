@@ -3,6 +3,8 @@
 #include "GeometricalUtility.h"
 
 //////////////////////////////////////
+constexpr float PI = 3.14159265358979323846f;
+
 struct IntVec3 {
 	float mX;
 	float mY;
@@ -42,6 +44,19 @@ float dot(IntVec3& a, IntVec3& b)
 {
 	return a.mX * b.mX + a.mY * b.mY + a.mZ * b.mZ;
 }
+
+//////////////////////////////////////
+bool GeometricalUtility::equalVec3(IWorldNavigator::Vec3& a, IWorldNavigator::Vec3& b)
+{
+	return a.mX == b.mX && a.mY == b.mY && a.mZ == b.mZ;
+}
+
+//////////////////////////////////////
+float GeometricalUtility::calcAngle(float x, float y)
+{
+	return atan2(x, y) * 180.0f / PI;
+}
+
 
 //////////////////////////////////////
 float GeometricalUtility::calcDistance(IWorldNavigator::Vec3& a, IWorldNavigator::Vec3& b)

@@ -94,7 +94,7 @@ namespace GameObjects {
 				int lightColorLoc = GetShaderLocation(*lightingShader, "lightColor");
 				int ambientLoc    = GetShaderLocation(*lightingShader, "ambient");
 
-				Vector3 lightDir = Vector3Normalize({ 0.8f, -2.0f, 4.0f });
+				Vector3 lightDir = Vector3Normalize({ 0.8f, 2.0f, 4.0f });
 				Vector4 lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 				Vector4 ambient = { 0.7f, 0.7f, 1.0f, 1.0f };
 
@@ -180,7 +180,7 @@ namespace GameObjects {
 			, mInitialized(false)
 		{
 			mCamera.position = { 0.0f, 4.0f,-4.0f };
-			mCamera.target   = { 0.0f, 0.0f, 0.0f };
+			mCamera.target   = { 0.0f, 1.0f, 0.0f };
 			mCamera.up       = { 0.0f, 1.0f, 0.0f };
 			mCamera.fovy     = 45.0f;
 			mCamera.projection = CAMERA_PERSPECTIVE; 

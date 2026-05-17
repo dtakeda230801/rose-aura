@@ -1,0 +1,42 @@
+{
+  "UP": {
+    "xinput": "0x0001",
+    "keyboard": "W"
+  },
+
+  "DOWN": {
+    "xinput": "0x0002",
+    "keyboard": "S"
+  },
+
+  "LEFT": {
+    "xinput": "0x0004",
+    "keyboard": "A"
+  },
+
+  "RIGHT": {
+    "xinput": "0x0008",
+    "keyboard": "D"
+  },
+
+  "ACTION1": {
+    "xinput": "0x1000",
+    "keyboard": "E"
+  },
+
+  "ACTION2": {
+    "xinput": "0x2000",
+    "keyboard": "F"
+  },
+
+  "ACTION3": {
+    "xinput": "0x4000",
+    "keyboard": "R"
+  },
+
+  "ACTION4": {
+    "xinput": "0x8000",
+    "keyboard": "G"
+  }
+
+}

@@ -23,6 +23,8 @@
     <None Include="input_map.json" />
     <None Include="Seeker.opus" />
     <None Include="story.json" />
+    <None Include="lighting.fs" />
+    <None Include="lighting.vs" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="test.wav" />

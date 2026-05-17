@@ -4,6 +4,7 @@
 
 #include "raylib.h"
 #include "rlgl.h"
+#include "raymath.h"
 
 #include "RoseAura.h"
 #include "RoseAuraReturnCode.h"
@@ -85,8 +86,32 @@ namespace GameObjects {
 		void preprocess()
 		{
 			if (!mInitialized) {
+				Vector3 dir = { -1, -1, -1 };
+
+				Shader* lightingShader = static_cast<Shader*>(mGraphicsManager.getShader(mLitingShaderId));
+
+				int lightDirLoc   = GetShaderLocation(*lightingShader, "lightDir");
+				int lightColorLoc = GetShaderLocation(*lightingShader, "lightColor");
+				int ambientLoc    = GetShaderLocation(*lightingShader, "ambient");
+
+				Vector3 lightDir = Vector3Normalize({ 0.8f, -2.0f, 4.0f });
+				Vector4 lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+				Vector4 ambient = { 0.7f, 0.7f, 1.0f, 1.0f };
+
+				SetShaderValue(*lightingShader, lightDirLoc, &lightDir, SHADER_UNIFORM_VEC3);
+				SetShaderValue(*lightingShader, lightColorLoc, &lightColor, SHADER_UNIFORM_VEC4);
+				SetShaderValue(*lightingShader, ambientLoc, &ambient, SHADER_UNIFORM_VEC4);
+
 				IGraphicsManager::IModelWrapper* modelWrapper = mGraphicsManager.getModelWrapper(mModelId);
 				modelWrapper->setAdjustment(3,3,0.37);
+
+				Model* model = static_cast<Model*>(modelWrapper->getModel());
+
+				for (int i = 0; i < model->materialCount; ++i)
+				{
+					model->materials[i].shader = *lightingShader;
+				}
+
 				mInitialized = true;
 			}
 		}
@@ -94,6 +119,12 @@ namespace GameObjects {
 		void render()
 		{
 			BeginMode3D(mCamera);
+
+			/*
+			Shader* lightingShader = static_cast<Shader*>(mGraphicsManager.getShader(mLitingShaderId));
+			mViewPosLoc = GetShaderLocation(*lightingShader, "viewPos");
+			SetShaderValue(*lightingShader, mViewPosLoc, &mCamera.position,	SHADER_UNIFORM_VEC3);
+			*/
 
 			IGraphicsManager::IModelWrapper* modelWrapper = mGraphicsManager.getModelWrapper(mModelId);
 
@@ -121,7 +152,8 @@ namespace GameObjects {
 
 		void init()
 		{
-			mModelId = mGraphicsManager.setModel("main.glb", true);
+			mLitingShaderId = mGraphicsManager.setShaderFile("lighting.vs", "lighting.fs");
+			mModelId        = mGraphicsManager.setModel("main.glb", true);
 			mGraphicsManager.setRenderer(this);
 			mCentralLooper.registerFrameSyncCallback(this);
 			mCentralLooper.enqueueTask(this);
@@ -132,19 +164,22 @@ namespace GameObjects {
 			mGraphicsManager.removeRenderer(this);
 			mCentralLooper.unregisterFrameSyncCallback(this);
 			mGraphicsManager.releaseModelWrapper(mModelId);
+			mGraphicsManager.removeShader(mLitingShaderId);
 		}
 
 		BackGround3D(RoseAura& ra) :
-			  mCentralLooper(ra.getCentralLooper())
+			mCentralLooper(ra.getCentralLooper())
 			, mGraphicsManager(ra.getGraphicsManager())
 			, mAngle(0.0f)
 			, mModelId(0)
+			, mLitingShaderId(0)
+			, mViewPosLoc(0)
 			, mAnimation(nullptr)
 			, mAnimationCount(0)
 			, mAnimationFrame(0)
 			, mInitialized(false)
 		{
-			mCamera.position = { 3.0f, 3.0f, 3.0f };
+			mCamera.position = { 0.0f, 4.0f,-4.0f };
 			mCamera.target   = { 0.0f, 0.0f, 0.0f };
 			mCamera.up       = { 0.0f, 1.0f, 0.0f };
 			mCamera.fovy     = 45.0f;
@@ -161,6 +196,10 @@ namespace GameObjects {
 
 		IGraphicsManager::MODEL_ID
 						   mModelId;
+
+		IGraphicsManager::SHADER_ID
+						   mLitingShaderId;
+		int32_t			   mViewPosLoc;
 
 		ModelAnimation*	   mAnimation;
 		int				   mAnimationCount;

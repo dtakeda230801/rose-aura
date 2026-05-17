@@ -164,6 +164,8 @@ kernel32.lib;opus.lib;opusfile.lib;ogg.lib;dav1d.lib;%(AdditionalDependencies)</
   </ItemGroup>
   <ItemGroup>
     <None Include="input_map.json" />
+    <None Include="lighting.fs" />
+    <None Include="lighting.vs" />
     <None Include="Seeker.opus" />
     <None Include="story.json" />
   </ItemGroup>

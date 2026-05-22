@@ -16,7 +16,7 @@
 #include "TitleObjects.h"
 #include "GameObjects.h"
 
-#include "DummyGame.h"
+#include "Game.h"
 
 using namespace RoseAuraMediaUtility;
 

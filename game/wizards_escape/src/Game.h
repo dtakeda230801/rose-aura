@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RoseAura.h"
+
 #define WIN_SIZE_W			1400
 #define WIN_SIZE_H			800
 #define WIN_TITLE			"Rose Aura"

@@ -2,7 +2,7 @@
 
 #include "RoseAura.h"
 #include "MediaUtility.h"
-#include "DummyGame.h"
+#include "Game.h"
 #include "Utility.h"
 
 using namespace RoseAuraMediaUtility;

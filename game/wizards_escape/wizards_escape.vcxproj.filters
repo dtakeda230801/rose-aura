@@ -18,7 +18,7 @@
     <ClInclude Include="src\CommonObjects.h">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="src\DummyGame.h">
+    <ClInclude Include="src\Game.h">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
     <ClInclude Include="src\GameObjects.h">

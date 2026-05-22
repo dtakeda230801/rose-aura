@@ -24,6 +24,7 @@
     <ProjectGuid>{8c93a67e-c2ad-42a0-ab5e-c1f4afb27e30}</ProjectGuid>
     <RootNamespace>DummyGame</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>rose_aura_tool</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

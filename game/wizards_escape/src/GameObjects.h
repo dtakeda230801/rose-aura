@@ -12,7 +12,7 @@
 #include "MediaUtility.h"
 #include "Utility.h"
 
-#include "DummyGame.h"
+#include "Game.h"
 
 using namespace RoseAuraMediaUtility;
 
@@ -86,7 +86,7 @@ namespace GameObjects {
 				int32_t deltaX = pos.mX - previous.mX;
 				int32_t deltaZ = pos.mZ - previous.mZ;
 
-				mTargetAngle = GeometricalUtility::calcAngle(deltaX, deltaZ);
+				mTargetAngle = GeometricalUtility::calcAngle(static_cast<float>(deltaX), static_cast<float>(deltaZ));
 
 				if (mTargetAngle < 0.0f) {
 					mTargetAngle += 360.0f;
@@ -118,7 +118,7 @@ namespace GameObjects {
 				SetShaderValue(*lightingShader, ambientLoc, &ambient, SHADER_UNIFORM_VEC4);
 
 				IGraphicsManager::IModelWrapper* modelWrapper = mGraphicsManager.getModelWrapper(mModelId);
-				modelWrapper->setAdjustment(3,3,0.37);
+				modelWrapper->setAdjustment(3,3,0.37f);
 
 				Model* model = static_cast<Model*>(modelWrapper->getModel());
 
@@ -168,7 +168,7 @@ namespace GameObjects {
 
 					mDeltaAngle = mTargetAngle - mAngle;
 					if (std::abs(mDeltaAngle) > 180.0f) {
-						mDeltaAngle = (360.0f - std::abs(mDeltaAngle)) * (mDeltaAngle / std::abs(mDeltaAngle)) * -1.0;
+						mDeltaAngle = (360.0f - std::abs(mDeltaAngle)) * (mDeltaAngle / std::abs(mDeltaAngle)) * -1.0f;
 					}
 				}
 				mAngle = std::round(mAngle + mDeltaAngle / 3.0f);
@@ -179,7 +179,7 @@ namespace GameObjects {
 			}
 
 			rlDisableBackfaceCulling();
-			DrawModelEx( *model, rVec3, { 0,1,0 }, mAngle, { 1,1,1 }, WHITE );
+			DrawModelEx( *model, rVec3, { 0,1,0 }, mAngle-90, { 1,1,1 }, WHITE );
 			rlEnableBackfaceCulling();
 
 			DrawGrid(10, 1.0f);
@@ -190,7 +190,7 @@ namespace GameObjects {
 		void init()
 		{
 			mLitingShaderId = mGraphicsManager.setShaderFile("resources\\lighting.vs", "resources\\lighting.fs");
-			mModelId        = mGraphicsManager.setModel("resources\\main.glb", true);
+			mModelId        = mGraphicsManager.setModel("resources\\main2.glb", true);
 			mGraphicsManager.setRenderer(this);
 			mInputHndler.registerCallback(this);
 		}

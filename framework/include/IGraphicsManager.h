@@ -59,6 +59,8 @@ public:
 
 	virtual FONT_ID   setFont(std::string file)                     = 0;
 	virtual void*     getFont(FONT_ID id)                           = 0;
+	virtual RARetCode setDefaultFont(FONT_ID id)                    = 0;
+	virtual void*     getDefaultFont()                              = 0;
 	virtual RARetCode removeFont(FONT_ID id)                        = 0;
 
 	virtual MODEL_ID  setModel(std::string file

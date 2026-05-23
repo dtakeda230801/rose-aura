@@ -2,7 +2,7 @@
 
 #include "raylib.h"
 #include "RoseAura.h"
-#include "DummyGame.h"
+#include "Tool.h"
 
 namespace CommonObjects {
 
@@ -90,74 +90,40 @@ namespace CommonObjects {
 	};
 
 	//////////////////////////////////////////////////////////////
-	class Story : public IStoryAnchor::IStoryPointCallback
+	class Sequencer : public ICentralLooper::ITask
+		            , public IStoryAnchor::IStoryPointCallback
 	{
 	public:
-		//////////////////////////////
-		class ObjActivatorTask : public ICentralLooper::ITask {
-		public:
-			void doTask()
-			{
-				if (mActivate) {
-					mObjectActivator.activateByTag(mTag);
-				} else {
-					mObjectActivator.deactivateByTag(mTag);
-				}
-			}
 
-			void onTaskFinish()
-			{
-			}
+		void doTask()
+		{
+			mObjectActivator.deactivateByTag(TAG_CHILD_OBJECT);
+		}
 
-			std::string getTaskName()
-			{
-				return mTaskName;
-			}
+		void onTaskFinish()
+		{
+		}
 
-			ObjActivatorTask(RoseAura& ra, std::string name, IObjectActivator::TAG_ID tag, bool activate) :
-				  mObjectActivator(ra.getObjectActivator())
-				, mTaskName(name)
-				, mTag(tag)
-				, mActivate(activate)
-			{
-			}
+		std::string getTaskName()
+		{
+			return "Sequencer";
+		}
+		
 
-			virtual ~ObjActivatorTask() = default;
-		private:
-			IObjectActivator&		 mObjectActivator;
-			std::string				 mTaskName;
-			IObjectActivator::TAG_ID mTag;
-			bool					 mActivate;
-		};
+		void onStateChanged(std::string storyPoint, IStoryAnchor::StoryPointState state)
+		{
+			Utility::printLog("StoryAnchor onStateChanged: %s %d", storyPoint.c_str(), state);
 
-		//////////////////////////////
-		void onStateChanged(std::string storyPoint, IStoryAnchor::StoryPointState state) {
-			Utility::printLog("Change State: %s / %d", storyPoint.c_str(), state);
-			if (storyPoint == "Opening" && state == IStoryAnchor::StoryPointState::AVAILABLE) {
-				mCentralLooper.enqueueTask(mActivateOpening.get());
-			}
-
-			if (storyPoint == "Opening" && state == IStoryAnchor::StoryPointState::COMPLETED) {
-				mCentralLooper.enqueueTask(mDeactivateOpening.get());
-			}
-
-			if (storyPoint == "Title" && state == IStoryAnchor::StoryPointState::AVAILABLE) {
-				mCentralLooper.enqueueTask(mActivateTitle.get());
-			}
-
-			if (storyPoint == "Title" && state == IStoryAnchor::StoryPointState::COMPLETED) {
-				mCentralLooper.enqueueTask(mDeactivateTitle.get());
-			}
-
-			if (storyPoint == "Game" && state == IStoryAnchor::StoryPointState::AVAILABLE) {
-				mCentralLooper.enqueueTask(mActivateGame.get());
+			if (storyPoint == "Child" && state == IStoryAnchor::StoryPointState::COMPLETED) {
+				mCentralLooper.enqueueTask(this);
 			}
 		}
 
 		void init()
 		{
+			mStoryAnchor.loadStoryGraph("resources\\story.json");
 			mStoryAnchor.registerStoryPointCallback(this);
-			mStoryAnchor.changeState("Opening", IStoryAnchor::StoryPointState::AVAILABLE);
+			mStoryAnchor.changeState("Child", IStoryAnchor::StoryPointState::COMPLETED);
 		}
 
 		void fin()
@@ -165,31 +131,20 @@ namespace CommonObjects {
 			mStoryAnchor.unregisterStoryPointCallback(this);
 		}
 
-		Story(RoseAura& ra) :
-			  mCentralLooper(ra.getCentralLooper())
+		Sequencer(RoseAura& ra) 
+			: mCentralLooper(ra.getCentralLooper())
+			, mObjectActivator(ra.getObjectActivator())
 			, mStoryAnchor(ra.getStoryAnchor())
-			, mActivateOpening(std::make_unique<ObjActivatorTask>(ra,"Activate Opening Task", TAG_OPENING_OBJECT,true))
-			, mDeactivateOpening(std::make_unique<ObjActivatorTask>(ra, "Deactivate Opening Task", TAG_OPENING_OBJECT, false))
-			, mActivateTitle(std::make_unique<ObjActivatorTask>(ra, "Activate Title Task", TAG_TITLE_OBJECT, true))
-			, mDeactivateTitle(std::make_unique<ObjActivatorTask>(ra, "Activate Title Task", TAG_TITLE_OBJECT, false))
-			, mActivateGame(std::make_unique<ObjActivatorTask>(ra, "Activate Game Task", TAG_GAME_OBJECT, true))
 		{
-			mStoryAnchor.loadStoryGraph("story.json");
 		}
 
-		virtual ~Story() = default;
+		virtual ~Sequencer() = default;
 
 	private:
-		ICentralLooper& mCentralLooper;
-		IStoryAnchor&   mStoryAnchor;
-
-		std::unique_ptr<ObjActivatorTask>	mActivateOpening;
-		std::unique_ptr<ObjActivatorTask>	mDeactivateOpening;
-		std::unique_ptr<ObjActivatorTask>	mActivateTitle;
-		std::unique_ptr<ObjActivatorTask>	mDeactivateTitle;
-		std::unique_ptr<ObjActivatorTask>	mActivateGame;
+		ICentralLooper&   mCentralLooper;
+		IObjectActivator& mObjectActivator;
+		IStoryAnchor&     mStoryAnchor;
 	};
-
 
 	//////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////
@@ -203,6 +158,13 @@ namespace CommonObjects {
 		//////////////////////////////////
 		ids.push_back(
 			objectRepository.registerObject(
+				objectRepository.makeObjectBinder<Sequencer, RoseAura&>(
+					&Sequencer::init, &Sequencer::fin, ra)
+				, tags
+			));
+
+		ids.push_back(
+			objectRepository.registerObject(
 				objectRepository.makeObjectBinder<ContinuousInputTask, RoseAura&>(
 					&ContinuousInputTask::init, &ContinuousInputTask::fin, ra)
 				, tags
@@ -212,13 +174,6 @@ namespace CommonObjects {
 			objectRepository.registerObject(
 				objectRepository.makeObjectBinder<Background, RoseAura&>(
 					&Background::init, &Background::fin, ra)
-				, tags
-			));
-
-		ids.push_back(
-			objectRepository.registerObject(
-				objectRepository.makeObjectBinder<Story, RoseAura&>(
-					&Story::init, &Story::fin, ra)
 				, tags
 			));
 

@@ -1,16 +1,18 @@
 #pragma once
 
+#include "raylib.h"
 #include "RoseAura.h"
-#include "MediaUtility.h"
-#include "DummyGame.h"
+#include "Tool.h"
 #include "Utility.h"
+
+#include "MediaUtility.h"
 
 using namespace RoseAuraMediaUtility;
 
-namespace OpeningObjects {
+namespace MovieViewerObjects {
 
 	//////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////
 	class Movie : public MovieRenderer::IMovieRendererCallback
 		        , public ICentralLooper::ITask
 	{
@@ -20,9 +22,8 @@ namespace OpeningObjects {
 		{
 			if (mPlaying) {
 				mMovieRenderer->stopPlaying();
+				mStoryAnchor.changeState("Child", IStoryAnchor::StoryPointState::COMPLETED);
 				mPlaying = false;
-
-				mStoryAnchor.changeState("Opening", IStoryAnchor::StoryPointState::COMPLETED);
 			}
 		};
 
@@ -59,9 +60,7 @@ namespace OpeningObjects {
 		Movie(RoseAura& ra) :
 			  mCentralLooper(ra.getCentralLooper())
 			, mStoryAnchor(ra.getStoryAnchor())
-			, mMovieRenderer(std::make_unique<MovieRenderer>(ra, "bluestone2.webm", (WIN_SIZE_W - 1280)/2, (WIN_SIZE_H - 720)/2, this))
-			  //mMovieRenderer(std::make_unique<MovieRenderer>(ra, "test.webm"      , (WIN_SIZE_W - 1280)/2, (WIN_SIZE_H - 720)/2, this))
-			//, mMovieRenderer(std::make_unique<MovieRenderer>(ra, "testColor.webm" , (WIN_SIZE_W - 1280)/2, (WIN_SIZE_H - 720)/2, this))
+			, mMovieRenderer(std::make_unique<MovieRenderer>(ra, "resources\\bluestone2.webm", (WIN_SIZE_W - 1280) / 2, (WIN_SIZE_H - 720) / 2, this))
 			, mPlaying(false)
 		{
 		}
@@ -75,12 +74,14 @@ namespace OpeningObjects {
 		bool							mPlaying;
 	};
 
+
+
 	//////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////
 	std::vector<IObjectActivator::OBJECT_ID> registerObjects(RoseAura& ra)
 	{
 		std::vector<IObjectActivator::OBJECT_ID>  ids;
-		std::vector<IObjectActivator::TAG_ID>	  tags = { TAG_OPENING_OBJECT };
+		std::vector<IObjectActivator::TAG_ID>	  tags = { TAG_MOVIE_VIEWER_OBJECT , TAG_CHILD_OBJECT };
 
 		IObjectActivator& objectRepository = ra.getObjectActivator();
 
@@ -94,5 +95,5 @@ namespace OpeningObjects {
 
 		return ids;
 	}
-}
 
+}

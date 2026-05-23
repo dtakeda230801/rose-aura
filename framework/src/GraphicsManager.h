@@ -79,6 +79,8 @@ public:
 
 	FONT_ID   setFont(std::string file);
 	void*     getFont(FONT_ID id);
+	RARetCode setDefaultFont(FONT_ID id);
+	void*     getDefaultFont();
 	RARetCode removeFont(FONT_ID id);
 
 	MODEL_ID       setModel(std::string file, bool loadAnimation);
@@ -95,5 +97,7 @@ private:
 	std::vector<FontHolder>						mFontHolders;
 	std::vector<std::unique_ptr<ModelWrapper>> 	mModelWrappers;
 	std::atomic<bool>							mRunning;
+
+	FONT_ID		mDefaultFont;
 };
 

@@ -1,10 +1,10 @@
 #include <memory>
-#include <mutex>
 #include <iostream>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
+
 
 #include "RoseAura.h"
 #include "RoseAuraReturnCode.h"
@@ -12,11 +12,11 @@
 #include "Utility.h"
 
 #include "CommonObjects.h"
-#include "OpeningObjects.h"
-#include "TitleObjects.h"
-#include "GameObjects.h"
+#include "TopPageObjects.h"
+#include "MovieViewerObjects.h"
+#include "ModelCheckerObjects.h"
 
-#include "DummyGame.h"
+#include "Tool.h"
 
 using namespace RoseAuraMediaUtility;
 
@@ -24,7 +24,7 @@ using namespace RoseAuraMediaUtility;
 ////////////////////////////////////////////
 std::string readInputConf()
 {
-	std::ifstream file("input_map.json");
+	std::ifstream file("resources\\input_map.json");
 
 	if (!file) {
 		Utility::printLog("can not read input_map.json");
@@ -42,6 +42,10 @@ std::string readInputConf()
 int main()
 {
 	{ //for _CrtDumpMemoryLeaks()
+
+		Utility::printLog("Current Dir : %ls", std::filesystem::current_path().c_str());
+
+
 		////////////////////////////////////////////
 		std::unique_ptr<RoseAura> rose_aura = RoseAura::create();
 
@@ -53,12 +57,19 @@ int main()
 		ISoundCoordinator& soundCoordinator = rose_aura->getSoundCoordinator();
 		
 		////////////////////////////////////////////
-		GameObjects::buildWorldConf();
-		IWorldNavigator::WORLD_ID wId = worldNavigator.createWorld(GameObjects::gWorldConf);
-		
 		std::vector<IObjectActivator::OBJECT_ID> commonObjIDs 
 			= CommonObjects::registerObjects(*rose_aura);
 
+		std::vector<IObjectActivator::OBJECT_ID> topPageObjIDs
+			= TopPageObjects::registerObjects(*rose_aura);
+
+		std::vector<IObjectActivator::OBJECT_ID> movieViewerObjIDs
+			= MovieViewerObjects::registerObjects(*rose_aura);
+
+		std::vector<IObjectActivator::OBJECT_ID> modelCheckerObjIDs
+			= ModelCheckerObjects::registerObjects(*rose_aura);
+
+/*
 		std::vector<IObjectActivator::OBJECT_ID> OpeningObjIDs
 			= OpeningObjects::registerObjects(*rose_aura);
 
@@ -67,7 +78,7 @@ int main()
 
 		std::vector<IObjectActivator::OBJECT_ID> gameObjIDs
 			= GameObjects::registerObjects(*rose_aura);
-
+*/
 
 		inputHandler.setConf(readInputConf());
 
@@ -80,6 +91,7 @@ int main()
 		////////////////////////////////////////////
 
 		objectRepository.activateByTag(TAG_COMMON_OBJECT);
+		objectRepository.activateByTag(TAG_TOP_PAGE_OBJECT);
 		//objectRepository.activateByTag(TAG_GAME_OBJECT);
 		//objectRepository.activateByTag(TAG_OPENING_OBJECT);
 
@@ -91,8 +103,9 @@ int main()
 		////////////////////////////////////////////
 		centralLooper.stop();
 		soundCoordinator.stop();
-		objectRepository.deactivateByTag(TAG_GAME_OBJECT);
-		objectRepository.deactivateByTag(TAG_OPENING_OBJECT);
+//		objectRepository.deactivateByTag(TAG_GAME_OBJECT);
+//		objectRepository.deactivateByTag(TAG_OPENING_OBJECT);
+		objectRepository.deactivateByTag(TAG_TOP_PAGE_OBJECT);
 		objectRepository.deactivateByTag(TAG_COMMON_OBJECT);
 	}
 	_CrtDumpMemoryLeaks();

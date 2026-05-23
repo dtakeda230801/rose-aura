@@ -356,6 +356,11 @@ IGraphicsManager::FONT_ID GraphicsManager::setFont(std::string file)
 {
 	FONT_ID newId = static_cast<FONT_ID>(mFontHolders.size() + 1);
 	mFontHolders.emplace_back(FontHolder{ nullptr, newId, file, false });
+
+	if (mFontHolders.size() == 1) {
+		mDefaultFont = newId;
+	}
+
 	return newId;
 }
 
@@ -375,6 +380,32 @@ void* GraphicsManager::getFont(FONT_ID id)
 	return nullptr;
 
 }
+
+RARetCode GraphicsManager::setDefaultFont(FONT_ID id)
+{
+	if (mFontHolders.size() == 0) {
+		return RARetCode::RET_ERR_INVALID_STATE;
+	}
+
+	for (auto& fontHolder : mFontHolders) {
+		if (fontHolder.mId == id) {
+			mDefaultFont = id;
+			return RARetCode::RET_OK;
+		}
+	}
+	return RARetCode::RET_ERR_INVALID_ARG;
+
+}
+
+void* GraphicsManager::getDefaultFont()
+{
+	if (mFontHolders.size() == 0) {
+		return nullptr;
+	}
+
+	return getFont(mDefaultFont);
+}
+
 
 RARetCode GraphicsManager::removeFont(FONT_ID id)
 {

@@ -1,0 +1,28 @@
+{
+  "story_point": [
+    {
+      "name": "TopPage",
+      "available_req": [
+        {
+          "story_point": "Child",
+          "state": "completed"
+        }
+      ],
+      "disabled_req": [ ],
+      "auto_available": true,
+      "auto_disabled": false
+    },
+    {
+      "name": "Child",
+      "available_req": [
+        {
+          "story_point": "TopPage",
+          "state": "completed"
+        }
+      ],
+      "disabled_req": [],
+      "auto_available": true,
+      "auto_disabled": false
+    }
+  ]
+}

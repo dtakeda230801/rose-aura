@@ -1,0 +1,16 @@
+{
+  "tools": [
+    {
+      "name": "Model Checker",
+      "tag_id": 10
+    },
+    {
+      "name": "Movie Viewer",
+      "tag_id": 11
+    },
+    {
+      "name": "Sound Player",
+      "tag_id": 12
+    }
+  ]
+}

@@ -118,7 +118,8 @@ namespace GameObjects {
 				SetShaderValue(*lightingShader, ambientLoc, &ambient, SHADER_UNIFORM_VEC4);
 
 				IGraphicsManager::IModelWrapper* modelWrapper = mGraphicsManager.getModelWrapper(mModelId);
-				modelWrapper->setAdjustment(3,3,0.37f);
+				std::vector<uint32_t> stable = {3,31};
+				modelWrapper->setAdjustment(3, 3, 0.37f, stable);
 
 				Model* model = static_cast<Model*>(modelWrapper->getModel());
 
@@ -133,58 +134,56 @@ namespace GameObjects {
 
 		void render()
 		{
-			BeginMode3D(mCamera);
+			if (mInitialized) {
+				BeginMode3D(mCamera);
 
-			/*
-			Shader* lightingShader = static_cast<Shader*>(mGraphicsManager.getShader(mLitingShaderId));
-			mViewPosLoc = GetShaderLocation(*lightingShader, "viewPos");
-			SetShaderValue(*lightingShader, mViewPosLoc, &mCamera.position,	SHADER_UNIFORM_VEC3);
-			*/
+				/*
+				Shader* lightingShader = static_cast<Shader*>(mGraphicsManager.getShader(mLitingShaderId));
+				mViewPosLoc = GetShaderLocation(*lightingShader, "viewPos");
+				SetShaderValue(*lightingShader, mViewPosLoc, &mCamera.position,	SHADER_UNIFORM_VEC3);
+				*/
 
-			IGraphicsManager::IModelWrapper* modelWrapper = mGraphicsManager.getModelWrapper(mModelId);
-			Model* model = nullptr;
+				IGraphicsManager::IModelWrapper* modelWrapper = mGraphicsManager.getModelWrapper(mModelId);
+				Model* model = nullptr;
 
-			if (mWalking) {
-				modelWrapper->selectAnimation(0);
-				model = static_cast<Model*>(modelWrapper->getAnimetionModel());
-			} else {
-				model = static_cast<Model*>(modelWrapper->getModel());
-			}
+				modelWrapper->selectAnimation(1);
+				model = static_cast<Model*>(modelWrapper->getAnimetionModel(mWalking));
 
-			IWorldNavigator::Vec3 pos = mWorldNavigator.getPrimaryEntityPosition();
+				IWorldNavigator::Vec3 pos = mWorldNavigator.getPrimaryEntityPosition();
 
-			Vector3 rVec3 = { static_cast<float>(pos.mX)/MOVE_RATE, static_cast<float>(pos.mY)/MOVE_RATE, static_cast<float>(pos.mZ)/MOVE_RATE };
+				Vector3 rVec3 = { static_cast<float>(pos.mX) / MOVE_RATE, static_cast<float>(pos.mY) / MOVE_RATE, static_cast<float>(pos.mZ) / MOVE_RATE };
 
 
-			if (mTurnFrame > 0 || mTargetAngle != mAngle) {
+				if (mTurnFrame > 0 || mTargetAngle != mAngle) {
 
-				if (mTurnFrame > 0 && mTargetAngle != mPreviousTargetAngle) {
-					mTurnFrame = 0;
-				}
-
-				if (mTurnFrame == 0) {
-					mTurnFrame = 3;
-					mPreviousTargetAngle = mTargetAngle;
-
-					mDeltaAngle = mTargetAngle - mAngle;
-					if (std::abs(mDeltaAngle) > 180.0f) {
-						mDeltaAngle = (360.0f - std::abs(mDeltaAngle)) * (mDeltaAngle / std::abs(mDeltaAngle)) * -1.0f;
+					if (mTurnFrame > 0 && mTargetAngle != mPreviousTargetAngle) {
+						mTurnFrame = 0;
 					}
+
+					if (mTurnFrame == 0) {
+						mTurnFrame = 3;
+						mPreviousTargetAngle = mTargetAngle;
+
+						mDeltaAngle = mTargetAngle - mAngle;
+						if (std::abs(mDeltaAngle) > 180.0f) {
+							mDeltaAngle = (360.0f - std::abs(mDeltaAngle)) * (mDeltaAngle / std::abs(mDeltaAngle)) * -1.0f;
+						}
+					}
+					mAngle = std::round(mAngle + mDeltaAngle / 3.0f);
+					if (mAngle < 0.0f) {
+						mAngle += 360.0f;
+					}
+					--mTurnFrame;
 				}
-				mAngle = std::round(mAngle + mDeltaAngle / 3.0f);
-				if (mAngle < 0.0f) {
-					mAngle += 360.0f;
-				}
-				--mTurnFrame;
+
+				rlDisableBackfaceCulling();
+				DrawModelEx(*model, rVec3, { 0,1,0 }, mAngle - 90, { 1,1,1 }, WHITE);
+				rlEnableBackfaceCulling();
+
+				DrawGrid(10, 1.0f);
+
+				EndMode3D();
 			}
-
-			rlDisableBackfaceCulling();
-			DrawModelEx( *model, rVec3, { 0,1,0 }, mAngle-90, { 1,1,1 }, WHITE );
-			rlEnableBackfaceCulling();
-
-			DrawGrid(10, 1.0f);
-
-			EndMode3D();
 		};
 
 		void init()

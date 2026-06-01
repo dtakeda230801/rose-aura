@@ -229,7 +229,7 @@ namespace ModelCheckerObjects {
 		virtual ~ModelViewer() = default;
 
 	private:
-		static constexpr const char* MODEL_FILE = "resources\\main.glb";
+		static constexpr const char* MODEL_FILE = "resources\\main2.glb";
 
 		ICentralLooper&		mCentralLooper;
 		IGraphicsManager&	mGraphicsManager;

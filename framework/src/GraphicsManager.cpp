@@ -23,26 +23,42 @@ void* GraphicsManager::ModelWrapper::getModel()
 	return static_cast<void*>(&mModelHolder->mModel);
 }
 
-void* GraphicsManager::ModelWrapper::getAnimetionModel()
+void* GraphicsManager::ModelWrapper::getAnimetionModel(bool forward)
 {
-	if (!mModelHolder->mModelAnimation) {
-		return nullptr;
+	if (mModelHolder->mModelAnimation) {
+
+		float delta = 1.0f / mRate;
+
+		bool doAnimation = forward;
+
+		if (!forward) {
+			bool check = true;
+			for (auto stable : mSstableFrames) {
+				float floatStable = static_cast<float>(stable);
+				if (floatStable <= mFrame && mFrame <= floatStable + delta ) {
+					check = false;
+					break;
+				}
+			}
+			doAnimation = check;
+		}
+
+		if (doAnimation) {
+			int32_t frameLen = mModelHolder->mModelAnimation[mCurrentAnimation].keyframeCount;
+
+			mFrame += delta;
+
+			if (mFrame >= static_cast<float>(frameLen - mEndOffset)) {
+				mFrame = 0.0f;
+			}
+
+			if (mFrame < static_cast<float>(mStartOffset)) {
+				mFrame = static_cast<float>(mStartOffset);
+			}
+
+			UpdateModelAnimation(mModelHolder->mModel, mModelHolder->mModelAnimation[mCurrentAnimation], mFrame);
+		}
 	}
-
-	int frameLen = mModelHolder->mModelAnimation[mCurrentAnimation].keyframeCount;
-
-	mFrame += 1.0f/mRate;
-
-	if (mFrame >= static_cast<float>(frameLen - mEndOffset)) {
-		mFrame = 1.0f;
-	}
-
-	if (mFrame < static_cast<float>(mStartOffset)) {
-		mFrame = static_cast<float>(mStartOffset);
-	}
-
-
-	UpdateModelAnimation(mModelHolder->mModel, mModelHolder->mModelAnimation[mCurrentAnimation], mFrame);
 
 	return static_cast<void*>(&mModelHolder->mModel);
 }
@@ -71,11 +87,12 @@ RARetCode GraphicsManager::ModelWrapper::selectAnimation(uint32_t index)
 	return RARetCode::RET_OK;
 }
 
-void GraphicsManager::ModelWrapper::setAdjustment(uint32_t startOffset, uint32_t endOffset, float rate)
+void GraphicsManager::ModelWrapper::setAdjustment(uint32_t startOffset, uint32_t endOffset, float rate, std::vector<uint32_t> stableFrames)
 {
-	mStartOffset = startOffset;
-	mEndOffset   = endOffset;
-	mRate        = rate;
+	mStartOffset   = startOffset;
+	mEndOffset     = endOffset;
+	mRate          = rate;
+	mSstableFrames = stableFrames;
 }
 
 
@@ -153,7 +170,6 @@ GraphicsManager::ModelWrapper::ModelWrapper(MODEL_ID id, std::string model, bool
 GraphicsManager::ModelWrapper::~ModelWrapper()
 {
 }
-
 
 ////////////////////////////////////
 ////////////////////////////////////

@@ -30,12 +30,13 @@ public:
 	public:
 		MODEL_ID  getModelId();
 		void*     getModel();
-		void*     getAnimetionModel();
+		void*     getAnimetionModel(bool forward);
 		uint32_t  getAnimationNum();
 		RARetCode selectAnimation(uint32_t index);
 		void      setAdjustment(uint32_t start
 			                  , uint32_t end
-			                  , float    rate);
+			                  , float    rate
+			                  , std::vector<uint32_t> stableFrames);
 
 		void      load();
 		bool      isLoaded();
@@ -59,6 +60,8 @@ public:
 		uint32_t		mStartOffset;
 		uint32_t		mEndOffset;
 		float    		mRate;
+		std::vector<uint32_t> 
+			            mSstableFrames;
 
 		struct			ModelHolder;
 		std::unique_ptr<ModelHolder>    mModelHolder;

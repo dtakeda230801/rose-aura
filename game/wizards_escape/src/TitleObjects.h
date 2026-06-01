@@ -11,59 +11,41 @@ using namespace RoseAuraMediaUtility;
 
 namespace TitleObjects {
 
-	class Title : public ICentralLooper::IFrameSyncCallback
-		        , public IGraphicsManager::IGraphicsRenderer
+	class Title : public IGraphicsManager::IGraphicsRenderer
 		        , public IInputHandler::IInputHandlerCallback
 
 	{
 	public:
-		void onFrameSync()
-		{
-			if (mCurrentPhase < mPhase.size() - 1) {
-				++mFrameCounter;
-			}
-
-			mRotation2 += 1.2f;
-			if (mRotation2 == 360.0f) {
-				mRotation2 = 0.0f;
-			}
-
-			mRotation3 -= 0.5f;
-			if (mRotation3 == -360.0f) {
-				mRotation3 = 0.0f;
-			}
-
-		}
-
 		void preprocess()
 		{
 			if (!mInitialized) {
-				IGraphicsManager& gm = mRa.getGraphicsManager();
-				mFont = static_cast<Font*>(gm.getFont(mFontId));
-				Vector2 size = MeasureTextEx(*mFont, GAME_TITLE, 30, 5);
-
-				mGameTitlePos.x = (WIN_SIZE_W - size.x) / 2;
-				mGameTitlePos.y = (WIN_SIZE_H - size.y) / 2;
-
-				mTex1 = LoadTexture("resources\\Title001.png");
-				mTex2 = LoadTexture("resources\\Title002.png");
-				mTex3 = LoadTexture("resources\\Title003.png");
-				mRotationCenter = { mTex1.width / 2.0f, mTex1.height / 2.0f };
-				mSrcRectangle = { 0, 0, (float)mTex1.width, (float)mTex1.height };
-				mDstRectangle = { mTex1.width / 2.0f, mTex1.height / 2.0f, (float)mTex1.width, (float)mTex1.height };
-
+				mAnimationCoordinator->prepare();
 				mInitialized = true;
 			}
 		}
 
 		void render()
 		{
-			bool (Title:: * func)() = mPhase[mCurrentPhase];
+			if (mInitialized) {
+				mAnimationCoordinator->countUp();
 
-			if ((this->*func)()) {
-				++mCurrentPhase;
-				if (mCurrentPhase == mPhase.size() - 1) {
-					mInputEnable = true;
+				mAnimationCoordinator->doAnimation();
+
+				if (mAnimationCoordinator->checkStable()) {
+					IGraphicsManager& gm = mRa.getGraphicsManager();
+
+					Font* font = static_cast<Font*>(gm.getDefaultFont());
+
+					DrawTextEx(*font, TITLE_MENU_START,    { 100, 540 }, 30, 5, WHITE);
+					DrawTextEx(*font, TITLE_MENU_CONTINUE, { 100, 580 }, 30, 5, WHITE);
+					DrawTextEx(*font, TITLE_MENU_SETTING,  { 100, 620 }, 30, 5, WHITE);
+					DrawTextEx(*font, TITLE_MENU_EXIT,     { 100, 660 }, 30, 5, WHITE);
+
+					DrawLine(100, 570 + mCursor * 40, 300, 570 + mCursor * 40, { 123, 200, 50, 255 });
+
+					if (!mInputEnable) {
+						mInputEnable = true;
+					}
 				}
 			}
 		}
@@ -117,10 +99,9 @@ namespace TitleObjects {
 
 		void init()
 		{
-			mPhase.push_back(&Title::doPhase1);
-			mPhase.push_back(&Title::doPhase2);
-			mPhase.push_back(&Title::doPhase3);
-			mPhase.push_back(&Title::doPhase4);
+			mAnimationCoordinator->registerElement(new TitleEllement());
+			mAnimationCoordinator->registerElement(new CenterEllement());
+			mAnimationCoordinator->registerElement(new RingEllement());
 
 			ICentralLooper&   cl = mRa.getCentralLooper();
 			IGraphicsManager& gm = mRa.getGraphicsManager();
@@ -132,7 +113,6 @@ namespace TitleObjects {
 			gm.setRenderer(this);
 
 			ih.registerCallback(this);
-			cl.registerFrameSyncCallback(this);
 		}
 
 		void fin()
@@ -144,31 +124,21 @@ namespace TitleObjects {
 			gm.removeRenderer(this);
 			gm.removeFont(mFontId);
 
-			cl.unregisterFrameSyncCallback(this);
 			ih.unregisterCallback(this);
 
 			delete mSoundSnapshotRenderer;
+
+			mAnimationCoordinator->releaseElements();
 		}
 
 		Title(RoseAura& ra) :
 			  mRa(ra)
 			, mCursor(0)
-            , mFrameCounter(0)
 			, mInitialized(false)
-			, mSoundSnapshotRenderer(nullptr)
 			, mFontId(0)
-			, mFont(nullptr)
-			, mGameTitlePos{}
+			, mSoundSnapshotRenderer(nullptr)
 			, mInputEnable(false)
-			, mCurrentPhase(0)
-			, mTex1{}
-			, mTex2{}
-			, mTex3{}
-			, mRotation2(0.0f)
-			, mRotation3(0.0f)
-			, mRotationCenter{}
-			, mSrcRectangle{}
-			, mDstRectangle{}
+			, mAnimationCoordinator(std::make_unique<AnimationCoordinator>(ra.getGraphicsManager()))
 		{
 		}
 
@@ -177,85 +147,284 @@ namespace TitleObjects {
 		}
 
 	private:
-
-		bool doPhase1()
+		//////////////////////////////////////
+		class AnimationCoordinator
 		{
-			bool  ret   = false;
-			Color color = {255,255,255,255};
+		public:
 
-			uint32_t fadeFrame = 72;
-			uint32_t dispFrame = 144;
+			class AnimationElement
+			{
+			public:
+				uint32_t getStartFrame()
+				{
+					return mStartFrame;
+				}
 
+				virtual void prepare(IGraphicsManager& gm)     = 0;
+				virtual void doAnimation(IGraphicsManager& gm) = 0;
+				virtual bool isStable() = 0;
 
-			if (mFrameCounter < fadeFrame) {
-				color.a = static_cast<uint32_t>(255.0 * (float)mFrameCounter / (float)fadeFrame);
-			} else if (fadeFrame + dispFrame <= mFrameCounter && mFrameCounter < dispFrame + fadeFrame*2) {
-				uint32_t frame = mFrameCounter - (fadeFrame + dispFrame);
-				color.a = static_cast<uint32_t>(255.0 * (float)(fadeFrame - frame) / (float)fadeFrame);
-			} else if (dispFrame + fadeFrame * 2 <= mFrameCounter){
-				color.a = 0;
-				mFrameCounter = 0;
-				ret = true;
+				AnimationElement()
+					: mRelativeFrame(0)
+					, mStartFrame(0)
+				{
+				}
+
+				virtual ~AnimationElement() = default;
+			protected:
+				uint32_t	mRelativeFrame;
+				uint32_t    mStartFrame;
+			};
+
+			void countUp()
+			{
+				for (auto& elm : mAnimationElms) {
+					if (mFrame < elm->getStartFrame()) {
+						++mFrame;
+						break;
+					}
+				}
 			}
 
-			DrawTextEx(*mFont, GAME_TITLE, mGameTitlePos, 30, 5, color);
-			return ret;
-		}
-
-		bool doPhase2() {
-			bool ret = false;
-			Color color = { 255,255,255,255 };
-
-			uint32_t fadeFrame = 48;
-
-			if (mFrameCounter < fadeFrame) {
-				color.a = static_cast<uint32_t>(255.0 * (float)mFrameCounter / (float)fadeFrame);
-			} else {
-				color.a = 255;
-				mFrameCounter = 0;
-				ret = true;
+			void prepare() {
+				for (auto& elm : mAnimationElms) {
+					elm->prepare(mGraphicsManager);
+				}
 			}
 
-			DrawTexture(mTex1, 0, 0, color);
-			return ret;
-		}
-
-		bool doPhase3() {
-
-			bool ret = false;
-			Color color = { 255,255,255,255 };
-
-			uint32_t fadeFrame = 72;
-
-			if (mFrameCounter < fadeFrame) {
-				color.a = static_cast<uint32_t>(255.0 * (float)mFrameCounter / (float)fadeFrame);
-			}
-			else {
-				color.a = 255;
-				ret = true;
+			void doAnimation()
+			{
+				for (auto& elm : mAnimationElms) {
+					if (elm->getStartFrame() <= mFrame) {
+						elm->doAnimation(mGraphicsManager);
+					}
+				}
 			}
 
-			DrawTexture(mTex1, 0, 0, WHITE);
-			DrawTexturePro(mTex2, mSrcRectangle, mDstRectangle, mRotationCenter, mRotation2, color);
-			DrawTexturePro(mTex3, mSrcRectangle, mDstRectangle, mRotationCenter, mRotation3, color);
-			return ret;
-		}
+			bool checkStable()
+			{
+				bool check = true;
+				for (auto& elm : mAnimationElms) {
+					if (!elm->isStable()) {
+						check = false;
+						break;
+					}
+				}
+				return check;
+			}
 
-		bool doPhase4() {
+			void registerElement(AnimationElement* elm)
+			{
+				mAnimationElms.push_back(elm);
+			}
 
-			DrawTexture(mTex1, 0, 0, WHITE);
-			DrawTexturePro(mTex2, mSrcRectangle, mDstRectangle, mRotationCenter, mRotation2, WHITE);
-			DrawTexturePro(mTex3, mSrcRectangle, mDstRectangle, mRotationCenter, mRotation3, WHITE);
+			void releaseElements()
+			{
+				for (auto& elm : mAnimationElms) {
+					delete elm;
+				}
+				mAnimationElms.clear();
+			}
 
-			DrawTextEx(*mFont, TITLE_MENU_START,    { 100, 540 }, 30, 5, WHITE);
-			DrawTextEx(*mFont, TITLE_MENU_CONTINUE, { 100, 580 }, 30, 5, WHITE);
-			DrawTextEx(*mFont, TITLE_MENU_SETTING,  { 100, 620 }, 30, 5, WHITE);
-			DrawTextEx(*mFont, TITLE_MENU_EXIT,     { 100, 660 }, 30, 5, WHITE);
 
-			DrawLine(100, 570 + mCursor * 40, 300, 570 + mCursor * 40, { 123, 200, 50, 255 });
+			AnimationCoordinator(IGraphicsManager& gm)
+				: mFrame(0)
+				, mGraphicsManager(gm)
+			{
+			}
+			virtual ~AnimationCoordinator() = default;
 
-			return false;
-		}
+		private:
+			uint32_t			mFrame;
+			IGraphicsManager&	mGraphicsManager;
+			std::vector<AnimationElement*>
+								mAnimationElms;
+		};
+
+		//////////////////////////////////////
+		class TitleEllement : public AnimationCoordinator::AnimationElement
+		{
+		public:
+
+			void prepare(IGraphicsManager& gm)
+			{				
+				Font* font   = static_cast<Font*>(gm.getDefaultFont());
+				Vector2 size = MeasureTextEx(*font, GAME_TITLE, 30, 5);
+				mTitlePos.x  = (WIN_SIZE_W - size.x) / 2;
+				mTitlePos.y  = (WIN_SIZE_H - size.y) / 2;
+			}
+
+			void doAnimation(IGraphicsManager& gm)
+			{
+				if (!mFinish) {
+					Color color = { 255,255,255,255 };
+
+					uint32_t fadeFrame = 72;
+					uint32_t dispFrame = 144;
+
+					if (mRelativeFrame < fadeFrame) {
+						color.a = static_cast<uint32_t>(255.0 * (float)mRelativeFrame / (float)fadeFrame);
+						++mRelativeFrame;
+					} else if (mRelativeFrame < fadeFrame + dispFrame  ) {
+						++mRelativeFrame;
+					} else if (fadeFrame + dispFrame <= mRelativeFrame && mRelativeFrame < dispFrame + fadeFrame * 2) {
+						uint32_t frame = mRelativeFrame - (fadeFrame + dispFrame);
+						color.a = static_cast<uint32_t>(255.0 * (float)(fadeFrame - frame) / (float)fadeFrame);
+						++mRelativeFrame;
+					} else if (dispFrame + fadeFrame * 2 <= mRelativeFrame) {
+						color.a        = 0;
+						mRelativeFrame = 0;
+						mFinish        = true;
+					}
+
+					Font* font = static_cast<Font*>(gm.getDefaultFont());
+					DrawTextEx(*font, GAME_TITLE, mTitlePos, 30, 5, color);
+
+				}
+			}
+
+			bool isStable()
+			{
+				return mFinish;
+			}
+
+			TitleEllement()
+				: mTitlePos{}
+				, mFinish(false)
+			{
+				mStartFrame = 0;
+			}
+
+			virtual ~TitleEllement() = default;
+		private:
+			Vector2 mTitlePos;
+			bool    mFinish;
+		};
+
+		//////////////////////////////////////
+		class CenterEllement : public AnimationCoordinator::AnimationElement
+		{
+		public:
+			void prepare(IGraphicsManager& gm)
+			{
+				mTex = LoadTexture("resources\\Title001.png");
+				mPos.x = (static_cast<float>(WIN_SIZE_W) - mTex.width) / 2.0f;
+				mPos.y = (static_cast<float>(WIN_SIZE_H)- mTex.height) / 2.0f;
+			}
+
+			void doAnimation(IGraphicsManager& gm)
+			{
+				bool ret = false;
+				Color color = { 255,255,255,255 };
+
+				uint32_t fadeFrame = 48;
+
+				if (!mFinish && mRelativeFrame < fadeFrame) {
+					color.a = static_cast<uint32_t>(255.0 * (float)mRelativeFrame / (float)fadeFrame);
+					mRelativeFrame++;
+				} else {
+					color.a        = 255;
+					mRelativeFrame = 0;
+					mFinish        = true;
+				}
+
+				DrawTexture(mTex, static_cast<int>(mPos.x), static_cast<int>(mPos.y), color);
+
+			}
+
+			bool isStable()
+			{
+				return mFinish;
+			}
+
+			CenterEllement()
+				: mTex{}
+				, mFinish(false)
+				, mPos{}
+
+			{
+				mStartFrame = 270;
+			}
+
+			virtual ~CenterEllement() = default;
+
+		private:
+			Texture2D	mTex;
+			bool		mFinish;
+			Vector2     mPos;
+		};
+
+		class RingEllement : public AnimationCoordinator::AnimationElement
+		{
+		public:
+			void prepare(IGraphicsManager& gm)
+			{
+				mTex1 = LoadTexture("resources\\Title002.png");
+				mTex2 = LoadTexture("resources\\Title003.png");
+
+				mRotationCenter = { mTex1.width / 2.0f, mTex1.height / 2.0f };
+				mSrcRectangle   = { 0, 0, (float)mTex1.width, (float)mTex1.height };
+				mDstRectangle   = { WIN_SIZE_W / 2.0f , WIN_SIZE_H / 2.0f , (float)mTex1.width, (float)mTex1.height };
+			}
+
+			void doAnimation(IGraphicsManager& gm)
+			{
+				Color color = { 255,255,255,255 };
+
+				uint32_t fadeFrame = 72;
+
+				if (mRelativeFrame < fadeFrame) {
+					color.a = static_cast<uint32_t>(255.0 * (float)mRelativeFrame / (float)fadeFrame);
+					++mRelativeFrame;
+				} else {
+					color.a = 255;
+					mFinish = true;
+				}
+
+				mRotation1 += 1.2f;
+				if (mRotation1 == 360.0f) {
+					mRotation1 = 0.0f;
+				}
+
+				mRotation2 -= 0.5f;
+				if (mRotation2 == -360.0f) {
+					mRotation2 = 0.0f;
+				}
+
+				DrawTexturePro(mTex1, mSrcRectangle, mDstRectangle, mRotationCenter, mRotation1, color);
+				DrawTexturePro(mTex2, mSrcRectangle, mDstRectangle, mRotationCenter, mRotation2, color);
+			}
+
+			bool isStable()
+			{
+				return mFinish;
+			}
+
+			RingEllement()
+				: mTex1{}
+				, mTex2{}
+				, mRotationCenter{}
+				, mSrcRectangle{}
+				, mDstRectangle{}
+			    , mRotation1(0.0f)
+			    , mRotation2(0.0f)
+				, mFinish(false)
+			{
+				mStartFrame = 290;
+			}
+
+			virtual ~RingEllement() = default;
+
+		private:
+			Texture2D	mTex1;
+			Texture2D	mTex2;
+			Vector2		mRotationCenter;
+			Rectangle	mSrcRectangle;
+			Rectangle	mDstRectangle;
+			float       mRotation1;
+			float       mRotation2;
+			bool		mFinish;
+		};
 
 		/////////////////////////////////////////////
 		void startGame()
@@ -281,19 +450,14 @@ namespace TitleObjects {
 		/////////////////////////////////////////////
 		RoseAura&				  mRa;
 		int32_t					  mCursor;
-		uint32_t                  mFrameCounter;
 		bool                      mInitialized;
-
-		SoundSnapshotRenderer*	  mSoundSnapshotRenderer;
-
-		IGraphicsManager::FONT_ID mFontId;
-		Font*					  mFont;
-
-		Vector2					  mGameTitlePos;
-
 		bool					  mInputEnable;
+		IGraphicsManager::FONT_ID mFontId;
+		SoundSnapshotRenderer*	  mSoundSnapshotRenderer;
+		std::unique_ptr<AnimationCoordinator> 
+								  mAnimationCoordinator;
 
-		static constexpr const char* GAME_TITLE          = "Wizard's Escape";
+		static constexpr const char* GAME_TITLE = "Wizard's Escape";
 
 		static constexpr uint32_t	 MENU_NUM			 = 4;
 		static constexpr const char* TITLE_MENU_START	 = "Game Start";
@@ -301,18 +465,6 @@ namespace TitleObjects {
 		static constexpr const char* TITLE_MENU_SETTING  = "Setting";
 		static constexpr const char* TITLE_MENU_EXIT	 = "Exit";
 
-		std::vector<bool (Title::*)()> mPhase;
-		uint32_t					   mCurrentPhase;
-
-		Texture2D	mTex1;
-		Texture2D	mTex2;
-		Texture2D	mTex3;
-
-		float     mRotation2;
-		float     mRotation3;
-		Vector2   mRotationCenter;
-		Rectangle mSrcRectangle;
-		Rectangle mDstRectangle;
 	};
 
 	//////////////////////////////////////////////////////////////

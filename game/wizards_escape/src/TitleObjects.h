@@ -260,7 +260,7 @@ namespace TitleObjects {
 					Color color = { 255,255,255,255 };
 
 					uint32_t fadeFrame = 72;
-					uint32_t dispFrame = 144;
+					uint32_t dispFrame = 96;
 
 					if (mRelativeFrame < fadeFrame) {
 						color.a = static_cast<uint32_t>(255.0 * (float)mRelativeFrame / (float)fadeFrame);
@@ -343,7 +343,7 @@ namespace TitleObjects {
 				, mPos{}
 
 			{
-				mStartFrame = 270;
+				mStartFrame = 222;
 			}
 
 			virtual ~CenterEllement() = default;
@@ -410,7 +410,7 @@ namespace TitleObjects {
 			    , mRotation2(0.0f)
 				, mFinish(false)
 			{
-				mStartFrame = 290;
+				mStartFrame = 242;
 			}
 
 			virtual ~RingEllement() = default;

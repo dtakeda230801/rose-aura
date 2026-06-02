@@ -57,6 +57,9 @@ void* GraphicsManager::ModelWrapper::getAnimetionModel(bool forward)
 			}
 
 			UpdateModelAnimation(mModelHolder->mModel, mModelHolder->mModelAnimation[mCurrentAnimation], mFrame);
+			mIsMoving = true;
+		} else {
+			mIsMoving = false;
 		}
 	}
 
@@ -68,7 +71,7 @@ uint32_t  GraphicsManager::ModelWrapper::getAnimationNum()
 	return mAnimationNum;
 }
 
-RARetCode GraphicsManager::ModelWrapper::selectAnimation(uint32_t index)
+RARetCode GraphicsManager::ModelWrapper::selectAndResetAnimation(uint32_t index)
 {
 	if (!mModelHolder->mModelAnimation) {
 		return RARetCode::RET_ERR_INVALID_STATE;
@@ -78,13 +81,16 @@ RARetCode GraphicsManager::ModelWrapper::selectAnimation(uint32_t index)
 		return RARetCode::RET_ERR_INVALID_ARG;
 	}
 
-	if (mCurrentAnimation != index) {
-
-		mCurrentAnimation = index;
-		mFrame			  = 0.0f;
-	}
+	mCurrentAnimation = index;
+	mFrame			  = 0.0f;
+	mIsMoving		  = false;
 
 	return RARetCode::RET_OK;
+}
+
+bool  GraphicsManager::ModelWrapper::isMoving()
+{
+	return mIsMoving;
 }
 
 void GraphicsManager::ModelWrapper::setAdjustment(uint32_t startOffset, uint32_t endOffset, float rate, std::vector<uint32_t> stableFrames)
@@ -161,6 +167,7 @@ GraphicsManager::ModelWrapper::ModelWrapper(MODEL_ID id, std::string model, bool
 	, mStartOffset(0)
 	, mEndOffset(0)
 	, mRate(1.0f)
+	, mIsMoving(false)
 	, mFrame(0.0f)
 	, mCurrentAnimation(0)
 	, mReleaseResevation(false)

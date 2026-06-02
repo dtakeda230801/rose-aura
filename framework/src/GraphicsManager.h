@@ -32,7 +32,8 @@ public:
 		void*     getModel();
 		void*     getAnimetionModel(bool forward);
 		uint32_t  getAnimationNum();
-		RARetCode selectAnimation(uint32_t index);
+		RARetCode selectAndResetAnimation(uint32_t index);
+		bool      isMoving();
 		void      setAdjustment(uint32_t start
 			                  , uint32_t end
 			                  , float    rate
@@ -60,6 +61,7 @@ public:
 		uint32_t		mStartOffset;
 		uint32_t		mEndOffset;
 		float    		mRate;
+		bool            mIsMoving;
 		std::vector<uint32_t> 
 			            mSstableFrames;
 

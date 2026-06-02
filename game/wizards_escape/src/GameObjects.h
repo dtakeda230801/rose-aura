@@ -52,7 +52,7 @@ namespace GameObjects {
 	}
 
 	//////////////////////////////////////////////////////////////
-	class BackGround3D 
+	class MyCharacter
 		: public IGraphicsManager::IGraphicsRenderer
 		, public IInputHandler::IInputHandlerCallback
 
@@ -61,24 +61,39 @@ namespace GameObjects {
 
 		void onInputEvent(std::vector<std::pair<InputState, InputType>>& events)
 		{
-			IWorldNavigator::Vec3 pos      = mWorldNavigator.getPrimaryEntityPosition();
+			if (!mInitialized) {
+				return;
+			}
+
+			IWorldNavigator::Vec3 pos = mWorldNavigator.getPrimaryEntityPosition();
 			IWorldNavigator::Vec3 previous = pos;
 
 			for (auto event : events) {
 				InputState state = event.first;
-				InputType  type  = event.second;
+				InputType  type = event.second;
 
 				if (state == InputState::PUSHED || state == InputState::PRESSED) {
 					if (type == InputType::UP) {
 						pos.mZ += MOVE_DELTA;
-					} else if (type == InputType::DOWN) {
-						pos.mZ -= MOVE_DELTA;
-					} else if (type == InputType::LEFT) {
-						pos.mX += MOVE_DELTA;
-					} else if (type == InputType::RIGHT) {
-						pos.mX -= MOVE_DELTA;
+						changeAnimationIfNeeded(1);
 					}
-				} 
+					else if (type == InputType::DOWN) {
+						pos.mZ -= MOVE_DELTA;
+						changeAnimationIfNeeded(1);
+					}
+					else if (type == InputType::LEFT) {
+						pos.mX += MOVE_DELTA;
+						changeAnimationIfNeeded(1);
+					}
+					else if (type == InputType::RIGHT) {
+						pos.mX -= MOVE_DELTA;
+						changeAnimationIfNeeded(1);
+					}
+					else if (type == InputType::ACTION1) {
+						mRestart = true;
+						changeAnimationIfNeeded(0);
+					}
+				}
 			}
 			mWorldNavigator.movePrimaryEntityPosition(pos);
 
@@ -92,7 +107,12 @@ namespace GameObjects {
 					mTargetAngle += 360.0f;
 				}
 				mWalking = true;
-			} else {
+
+				mCamera.position = { static_cast<float>(pos.mX) / MOVE_RATE , 4.0f,static_cast<float>(pos.mZ) / MOVE_RATE - 4.0f };
+				mCamera.target = { static_cast<float>(pos.mX) / MOVE_RATE , 1.0f, static_cast<float>(pos.mZ) / MOVE_RATE };
+
+			}
+			else {
 				mWalking = false;
 			}
 		}
@@ -109,22 +129,18 @@ namespace GameObjects {
 				int lightColorLoc = GetShaderLocation(*lightingShader, "lightColor");
 				int ambientLoc    = GetShaderLocation(*lightingShader, "ambient");
 
-				Vector3 lightDir = Vector3Normalize({ 0.8f, 2.0f, 4.0f });
+				Vector3 lightDir   = Vector3Normalize({ 0.8f, 2.0f, 4.0f });
 				Vector4 lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-				Vector4 ambient = { 0.7f, 0.7f, 1.0f, 1.0f };
+				Vector4 ambient    = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-				SetShaderValue(*lightingShader, lightDirLoc, &lightDir, SHADER_UNIFORM_VEC3);
+				SetShaderValue(*lightingShader, lightDirLoc,   &lightDir,   SHADER_UNIFORM_VEC3);
 				SetShaderValue(*lightingShader, lightColorLoc, &lightColor, SHADER_UNIFORM_VEC4);
-				SetShaderValue(*lightingShader, ambientLoc, &ambient, SHADER_UNIFORM_VEC4);
+				SetShaderValue(*lightingShader, ambientLoc,    &ambient,    SHADER_UNIFORM_VEC4);
 
-				IGraphicsManager::IModelWrapper* modelWrapper = mGraphicsManager.getModelWrapper(mModelId);
-				std::vector<uint32_t> stable = {3,31};
-				modelWrapper->setAdjustment(3, 3, 0.37f, stable);
+				changeAnimationIfNeeded(1);
+				Model* model = static_cast<Model*>(mModelWrapper->getModel());
 
-				Model* model = static_cast<Model*>(modelWrapper->getModel());
-
-				for (int i = 0; i < model->materialCount; ++i)
-				{
+				for (int i = 0; i < model->materialCount; ++i) {
 					model->materials[i].shader = *lightingShader;
 				}
 
@@ -137,17 +153,13 @@ namespace GameObjects {
 			if (mInitialized) {
 				BeginMode3D(mCamera);
 
-				/*
-				Shader* lightingShader = static_cast<Shader*>(mGraphicsManager.getShader(mLitingShaderId));
-				mViewPosLoc = GetShaderLocation(*lightingShader, "viewPos");
-				SetShaderValue(*lightingShader, mViewPosLoc, &mCamera.position,	SHADER_UNIFORM_VEC3);
-				*/
+				bool forward = mWalking || mRestart;
 
-				IGraphicsManager::IModelWrapper* modelWrapper = mGraphicsManager.getModelWrapper(mModelId);
-				Model* model = nullptr;
+				if (mRestart) {
+					mRestart = false;
+				}
 
-				modelWrapper->selectAnimation(1);
-				model = static_cast<Model*>(modelWrapper->getAnimetionModel(mWalking));
+				Model* model = static_cast<Model*>(mModelWrapper->getAnimetionModel(forward));
 
 				IWorldNavigator::Vec3 pos = mWorldNavigator.getPrimaryEntityPosition();
 
@@ -177,7 +189,7 @@ namespace GameObjects {
 				}
 
 				rlDisableBackfaceCulling();
-				DrawModelEx(*model, rVec3, { 0,1,0 }, mAngle - 90, { 1,1,1 }, WHITE);
+				DrawModelEx(*model, rVec3, { 0,1,0 }, mAngle, { 1,1,1 }, WHITE);
 				rlEnableBackfaceCulling();
 
 				DrawGrid(10, 1.0f);
@@ -190,6 +202,7 @@ namespace GameObjects {
 		{
 			mLitingShaderId = mGraphicsManager.setShaderFile("resources\\lighting.vs", "resources\\lighting.fs");
 			mModelId        = mGraphicsManager.setModel("resources\\main2.glb", true);
+			mModelWrapper   = mGraphicsManager.getModelWrapper(mModelId);
 			mGraphicsManager.setRenderer(this);
 			mInputHndler.registerCallback(this);
 		}
@@ -202,7 +215,7 @@ namespace GameObjects {
 			mGraphicsManager.removeShader(mLitingShaderId);
 		}
 
-		BackGround3D(RoseAura& ra)
+		MyCharacter(RoseAura& ra)
 			: mCentralLooper(ra.getCentralLooper())
 			, mGraphicsManager(ra.getGraphicsManager())
 			, mInputHndler(ra.getInputHandler())
@@ -210,9 +223,9 @@ namespace GameObjects {
 			, mModelId(0)
 			, mLitingShaderId(0)
 			, mViewPosLoc(0)
-			, mAnimation(nullptr)
-			, mAnimationCount(0)
-			, mAnimationFrame(0)
+			, mCurrentAnimation(0)
+			, mRestart(false)
+			, mModelWrapper(nullptr)
 			, mInitialized(false)
 			, mWalking(false)
 			, mAngle(0.0f)
@@ -222,15 +235,42 @@ namespace GameObjects {
 			, mTurnFrame(false)
 		{
 			mCamera.position = { 0.0f, 4.0f,-4.0f };
-			mCamera.target   = { 0.0f, 1.0f, 0.0f };
-			mCamera.up       = { 0.0f, 1.0f, 0.0f };
-			mCamera.fovy     = 45.0f;
-			mCamera.projection = CAMERA_PERSPECTIVE; 
+			mCamera.target = { 0.0f, 1.0f, 0.0f };
+			mCamera.up = { 0.0f, 1.0f, 0.0f };
+			mCamera.fovy = 45.0f;
+			mCamera.projection = CAMERA_PERSPECTIVE;
 		}
 
-		virtual ~BackGround3D() = default;
+		virtual ~MyCharacter() = default;
 
 	private:
+		void changeAnimationIfNeeded(uint32_t next)
+		{
+			if (mCurrentAnimation != next) {
+				mCurrentAnimation = next;
+
+				mModelWrapper->selectAndResetAnimation(mCurrentAnimation);
+
+				switch (next) {
+				case 0:
+				{
+					std::vector<uint32_t> stable = { 73 };
+					mModelWrapper->setAdjustment(0, 0, 0.3f, stable);
+					break;
+				}
+				case 1:
+				{
+					std::vector<uint32_t> stable = { 3,31 };
+					mModelWrapper->setAdjustment(3, 3, 0.3f, stable);
+					break;
+				}
+
+				default:
+					break;
+				}
+			}
+		}
+
 		ICentralLooper&    mCentralLooper;
 		IGraphicsManager&  mGraphicsManager;
 		IInputHandler&     mInputHndler;
@@ -238,19 +278,20 @@ namespace GameObjects {
 		Camera			   mCamera;
 
 		IGraphicsManager::MODEL_ID
-						   mModelId;
+			               mModelId;
 
 		IGraphicsManager::SHADER_ID
-						   mLitingShaderId;
+			               mLitingShaderId;
 		int32_t			   mViewPosLoc;
 
-		ModelAnimation*	   mAnimation;
-		int				   mAnimationCount;
-		int				   mAnimationFrame;
+		IGraphicsManager::IModelWrapper*
+						   mModelWrapper;
+		uint32_t           mCurrentAnimation;
 
+		bool               mRestart;
 		bool			   mInitialized;
-
 		bool			   mWalking;
+
 		float			   mAngle;
 		float              mTargetAngle;
 		float              mPreviousTargetAngle;
@@ -370,8 +411,8 @@ namespace GameObjects {
 		//////////////////////////////////
 		ids.push_back(
 			objectRepository.registerObject(
-				objectRepository.makeObjectBinder<BackGround3D, RoseAura&>(
-					&BackGround3D::init, &BackGround3D::fin, ra)
+				objectRepository.makeObjectBinder<MyCharacter, RoseAura&>(
+					&MyCharacter::init, &MyCharacter::fin, ra)
 				, tags
 			));
 

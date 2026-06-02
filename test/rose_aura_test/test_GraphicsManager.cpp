@@ -62,12 +62,12 @@ public:
 
 			if (gLoadAnimation) {
 
-				if (RARetCode::RET_ERR_INVALID_ARG != modelWrapper->selectAnimation(10)) {
+				if (RARetCode::RET_ERR_INVALID_ARG != modelWrapper->selectAndResetAnimation(10)) {
 					Utility::printLog("selectAnimation return code is invalid");
 					gRetOK = false;
 				}
 
-				if (RARetCode::RET_OK != modelWrapper->selectAnimation(0)) {
+				if (RARetCode::RET_OK != modelWrapper->selectAndResetAnimation(0)) {
 					Utility::printLog("selectAnimation return code is invalid");
 					gRetOK = false;
 				}

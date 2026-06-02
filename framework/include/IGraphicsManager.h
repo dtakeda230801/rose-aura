@@ -32,15 +32,16 @@ public:
 
 	class IModelWrapper {
 	public:
-		virtual void*     getModel()                      = 0;
-		virtual void*     getAnimetionModel(bool forward) = 0;
-		virtual uint32_t  getAnimationNum()               = 0;
-		virtual RARetCode selectAnimation(uint32_t index) = 0;
+		virtual void*     getModel()                              = 0;
+		virtual void*     getAnimetionModel(bool forward)         = 0;
+		virtual uint32_t  getAnimationNum()                       = 0;
+		virtual RARetCode selectAndResetAnimation(uint32_t index) = 0;
+		virtual bool      isMoving()                              = 0;
 		virtual void      setAdjustment(uint32_t startOffset
 			                          , uint32_t endOffset
 			                          , float    rate
 									  , std::vector<uint32_t> stableFrames)
-			                                              = 0;
+			                                                      = 0;
 	};
 
 

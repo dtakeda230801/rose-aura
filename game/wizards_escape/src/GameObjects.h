@@ -89,7 +89,7 @@ namespace GameObjects {
 						pos.mX -= MOVE_DELTA;
 						changeAnimationIfNeeded(1);
 					}
-					else if (type == InputType::ACTION1) {
+					else if (type == InputType::ACTION1 && state != InputState::PRESSED) {
 						mRestart = true;
 						changeAnimationIfNeeded(0);
 					}
@@ -121,6 +121,7 @@ namespace GameObjects {
 		void preprocess()
 		{
 			if (!mInitialized) {
+
 				Vector3 dir = { -1, -1, -1 };
 
 				Shader* lightingShader = static_cast<Shader*>(mGraphicsManager.getShader(mLitingShaderId));

@@ -74,10 +74,12 @@ uint32_t  GraphicsManager::ModelWrapper::getAnimationNum()
 RARetCode GraphicsManager::ModelWrapper::selectAndResetAnimation(uint32_t index)
 {
 	if (!mModelHolder->mModelAnimation) {
+		Utility::printLog("Current selectAndResetAnimation RET_ERR_INVALID_STATE");
 		return RARetCode::RET_ERR_INVALID_STATE;
 	}
 
 	if (index >= static_cast<uint32_t>(mAnimationNum)) {
+		Utility::printLog("Current selectAndResetAnimation RET_ERR_INVALID_ARG");
 		return RARetCode::RET_ERR_INVALID_ARG;
 	}
 
@@ -115,6 +117,7 @@ void GraphicsManager::ModelWrapper::load()
 					                                   , mModelHolder->mModelAnimation[i].keyframeCount);
 			}
 		}
+		Utility::printLog("Current Animation : %d", mCurrentAnimation);
 		mIsLoaded = true;
 	}
 }

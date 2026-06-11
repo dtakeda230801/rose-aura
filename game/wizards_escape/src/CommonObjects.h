@@ -52,7 +52,7 @@ namespace CommonObjects {
 		virtual ~ContinuousInputTask() = default;
 	private:
 		ICentralLooper& mCentralLooper;
-		IInputHandler& mInputHandler;
+		IInputHandler&  mInputHandler;
 	};
 
 	//////////////////////////////////////////////////////////////

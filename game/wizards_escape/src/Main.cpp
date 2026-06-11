@@ -1,5 +1,4 @@
 #include <memory>
-#include <mutex>
 #include <iostream>
 #include <filesystem>
 #include <fstream>
@@ -7,7 +6,6 @@
 #include <string>
 
 #include "RoseAura.h"
-#include "RoseAuraReturnCode.h"
 
 #include "Utility.h"
 

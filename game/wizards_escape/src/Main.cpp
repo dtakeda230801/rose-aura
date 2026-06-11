@@ -35,39 +35,36 @@ std::string readInputConf()
 	return buffer.str();
 }
 
+
+////////////////////////////////////////////
+FwHolder* FwHolder::mInstance = nullptr;
+
 ////////////////////////////////////////////
 ////////////////////////////////////////////
 int main()
 {
 	{ //for _CrtDumpMemoryLeaks()
 		////////////////////////////////////////////
-		std::unique_ptr<RoseAura> rose_aura = RoseAura::create();
-
-		ICentralLooper&	   centralLooper	= rose_aura->getCentralLooper();
-		IInputHandler&	   inputHandler	    = rose_aura->getInputHandler();
-		IGraphicsManager&  graphicsManager  = rose_aura->getGraphicsManager();
-		IWorldNavigator&   worldNavigator   = rose_aura->getWorldNavigator();
-		IObjectActivator&  objectRepository = rose_aura->getObjectActivator();
-		ISoundCoordinator& soundCoordinator = rose_aura->getSoundCoordinator();
+		FwHolder::create();
 		
 		////////////////////////////////////////////
 		GameObjects::buildWorldConf();
-		IWorldNavigator::WORLD_ID wId = worldNavigator.createWorld(GameObjects::gWorldConf);
+		IWorldNavigator::WORLD_ID wId = RA_WORLD_NAVIGATOR.createWorld(GameObjects::gWorldConf);
 		
 		std::vector<IObjectActivator::OBJECT_ID> commonObjIDs 
-			= CommonObjects::registerObjects(*rose_aura);
+			= CommonObjects::registerObjects();
 
 		std::vector<IObjectActivator::OBJECT_ID> OpeningObjIDs
-			= OpeningObjects::registerObjects(*rose_aura);
+			= OpeningObjects::registerObjects();
 
 		std::vector<IObjectActivator::OBJECT_ID> TitleObjIDs
-			= TitleObjects::registerObjects(*rose_aura);
+			= TitleObjects::registerObjects();
 
 		std::vector<IObjectActivator::OBJECT_ID> gameObjIDs
-			= GameObjects::registerObjects(*rose_aura);
+			= GameObjects::registerObjects();
 
 
-		inputHandler.setConf(readInputConf());
+		RA_INPUT_HANDLER.setConf(readInputConf());
 
 		IGraphicsManager::Conf conf;
 		conf.mWindowWidth  = WIN_SIZE_W; 
@@ -77,21 +74,23 @@ int main()
 
 		////////////////////////////////////////////
 
-		objectRepository.activateByTag(TAG_COMMON_OBJECT);
-		//objectRepository.activateByTag(TAG_GAME_OBJECT);
-		//objectRepository.activateByTag(TAG_OPENING_OBJECT);
+		RA_OBJECT_ACTIVATOR.activateByTag(TAG_COMMON_OBJECT);
+		//RA_OBJECT_ACTIVATOR.activateByTag(TAG_GAME_OBJECT);
+		//RA_OBJECT_ACTIVATOR.activateByTag(TAG_OPENING_OBJECT);
 
 		////////////////////////////////////////////
-		soundCoordinator.start();
-		centralLooper.start(LOOPER_FRAME_RATE);
-		graphicsManager.runUntilClosed(conf);
+		RA_SOUND_COORDINATOR.start();
+		RA_CENTRAL_LOOPER.start(LOOPER_FRAME_RATE);
+		RA_GRAPHICS_MANAGER.runUntilClosed(conf);
 
 		////////////////////////////////////////////
-		centralLooper.stop();
-		soundCoordinator.stop();
-		objectRepository.deactivateByTag(TAG_GAME_OBJECT);
-		objectRepository.deactivateByTag(TAG_OPENING_OBJECT);
-		objectRepository.deactivateByTag(TAG_COMMON_OBJECT);
+		RA_CENTRAL_LOOPER.stop();
+		RA_SOUND_COORDINATOR.stop();
+		RA_OBJECT_ACTIVATOR.deactivateByTag(TAG_GAME_OBJECT);
+		RA_OBJECT_ACTIVATOR.deactivateByTag(TAG_OPENING_OBJECT);
+		RA_OBJECT_ACTIVATOR.deactivateByTag(TAG_COMMON_OBJECT);
+
+		FwHolder::destroy();
 	}
 	_CrtDumpMemoryLeaks();
 

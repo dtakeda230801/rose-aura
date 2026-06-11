@@ -22,7 +22,7 @@ namespace OpeningObjects {
 				mMovieRenderer->stopPlaying();
 				mPlaying = false;
 
-				mStoryAnchor.changeState("Opening", IStoryAnchor::StoryPointState::COMPLETED);
+				RA_STORY_ANCHOR.changeState("Opening", IStoryAnchor::StoryPointState::COMPLETED);
 			}
 		};
 
@@ -39,7 +39,7 @@ namespace OpeningObjects {
 		void onVideoFinish()
 		{
 			Utility::printLog("onVideoFinish");
-			mCentralLooper.enqueueTask(this);
+			RA_CENTRAL_LOOPER.enqueueTask(this);
 		}
 
 		void init()
@@ -56,10 +56,8 @@ namespace OpeningObjects {
 			}
 		}
 
-		Movie(RoseAura& ra) :
-			  mCentralLooper(ra.getCentralLooper())
-			, mStoryAnchor(ra.getStoryAnchor())
-			, mMovieRenderer(std::make_unique<MovieRenderer>(ra, "resources\\bluestone.webm", (WIN_SIZE_W - 1280)/2, (WIN_SIZE_H - 720)/2, this))
+		Movie() 
+			: mMovieRenderer(std::make_unique<MovieRenderer>(RA_INSTANCE, "resources\\bluestone.webm", (WIN_SIZE_W - 1280)/2, (WIN_SIZE_H - 720)/2, this))
 			, mPlaying(false)
 		{
 		}
@@ -67,26 +65,22 @@ namespace OpeningObjects {
 		virtual ~Movie() = default;
 
 	private:
-		ICentralLooper&					mCentralLooper;
-		IStoryAnchor&					mStoryAnchor;
 		std::unique_ptr<MovieRenderer>	mMovieRenderer;
 		bool							mPlaying;
 	};
 
 	//////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////
-	std::vector<IObjectActivator::OBJECT_ID> registerObjects(RoseAura& ra)
+	std::vector<IObjectActivator::OBJECT_ID> registerObjects()
 	{
 		std::vector<IObjectActivator::OBJECT_ID>  ids;
 		std::vector<IObjectActivator::TAG_ID>	  tags = { TAG_OPENING_OBJECT };
 
-		IObjectActivator& objectRepository = ra.getObjectActivator();
-
 		//////////////////////////////////
 		ids.push_back(
-			objectRepository.registerObject(
-				objectRepository.makeObjectBinder<Movie, RoseAura&>(
-					&Movie::init, &Movie::fin, ra)
+			RA_OBJECT_ACTIVATOR.registerObject(
+				RA_OBJECT_ACTIVATOR.makeObjectBinder<Movie>(
+					&Movie::init, &Movie::fin)
 				, tags
 			));
 

@@ -32,9 +32,7 @@ namespace TitleObjects {
 				mAnimationCoordinator->doAnimation();
 
 				if (mAnimationCoordinator->checkStable()) {
-					IGraphicsManager& gm = mRa.getGraphicsManager();
-
-					Font* font = static_cast<Font*>(gm.getDefaultFont());
+					Font* font = static_cast<Font*>(RA_GRAPHICS_MANAGER.getDefaultFont());
 
 					DrawTextEx(*font, TITLE_MENU_START,    { 100, 540 }, 30, 5, WHITE);
 					DrawTextEx(*font, TITLE_MENU_CONTINUE, { 100, 580 }, 30, 5, WHITE);
@@ -103,48 +101,38 @@ namespace TitleObjects {
 			mAnimationCoordinator->registerElement(new CenterEllement());
 			mAnimationCoordinator->registerElement(new RingEllement());
 
-			ICentralLooper&   cl = mRa.getCentralLooper();
-			IGraphicsManager& gm = mRa.getGraphicsManager();
-			IInputHandler&    ih = mRa.getInputHandler();
+			mSoundSnapshotRenderer = new SoundSnapshotRenderer(RA_INSTANCE, "resources\\effect001.wav");
 
-			mSoundSnapshotRenderer = new SoundSnapshotRenderer(mRa, "resources\\effect001.wav");
+			mFontId = RA_GRAPHICS_MANAGER.setFont("resources\\NotoSerifJP-Regular.ttf");
+			RA_GRAPHICS_MANAGER.setRenderer(this);
 
-			mFontId = gm.setFont("resources\\NotoSerifJP-Regular.ttf");
-			gm.setRenderer(this);
-
-			ih.registerCallback(this);
+			RA_INPUT_HANDLER.registerCallback(this);
 		}
 
 		void fin()
 		{
-			ICentralLooper& cl   = mRa.getCentralLooper();
-			IGraphicsManager& gm = mRa.getGraphicsManager();
-			IInputHandler& ih    = mRa.getInputHandler();
 
-			gm.removeRenderer(this);
-			gm.removeFont(mFontId);
+			RA_GRAPHICS_MANAGER.removeRenderer(this);
+			RA_GRAPHICS_MANAGER.removeFont(mFontId);
 
-			ih.unregisterCallback(this);
+			RA_INPUT_HANDLER.unregisterCallback(this);
 
 			delete mSoundSnapshotRenderer;
 
 			mAnimationCoordinator->releaseElements();
 		}
 
-		Title(RoseAura& ra) :
-			  mRa(ra)
-			, mCursor(0)
+		Title()
+			: mCursor(0)
 			, mInitialized(false)
 			, mFontId(0)
 			, mSoundSnapshotRenderer(nullptr)
 			, mInputEnable(false)
-			, mAnimationCoordinator(std::make_unique<AnimationCoordinator>(ra.getGraphicsManager()))
+			, mAnimationCoordinator(std::make_unique<AnimationCoordinator>(RA_GRAPHICS_MANAGER))
 		{
 		}
 
-		virtual ~Title()
-		{
-		}
+		virtual ~Title() = default;
 
 	private:
 		//////////////////////////////////////
@@ -429,8 +417,7 @@ namespace TitleObjects {
 		/////////////////////////////////////////////
 		void startGame()
 		{
-			IStoryAnchor& sa = mRa.getStoryAnchor();
-			sa.changeState("Title", IStoryAnchor::StoryPointState::COMPLETED);
+			RA_STORY_ANCHOR.changeState("Title", IStoryAnchor::StoryPointState::COMPLETED);
 		}
 
 		void selectContinue()
@@ -443,12 +430,10 @@ namespace TitleObjects {
 
 		void exit()
 		{
-			IGraphicsManager& gm = mRa.getGraphicsManager();
-			gm.exit();
+			RA_GRAPHICS_MANAGER.exit();
 		}
 
 		/////////////////////////////////////////////
-		RoseAura&				  mRa;
 		int32_t					  mCursor;
 		bool                      mInitialized;
 		bool					  mInputEnable;
@@ -469,18 +454,16 @@ namespace TitleObjects {
 
 	//////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////
-	std::vector<IObjectActivator::OBJECT_ID> registerObjects(RoseAura& ra)
+	std::vector<IObjectActivator::OBJECT_ID> registerObjects()
 	{
 		std::vector<IObjectActivator::OBJECT_ID>  ids;
 		std::vector<IObjectActivator::TAG_ID>	  tags = { TAG_TITLE_OBJECT };
 
-		IObjectActivator& objectRepository = ra.getObjectActivator();
-
 		//////////////////////////////////
 		ids.push_back(
-			objectRepository.registerObject(
-				objectRepository.makeObjectBinder<Title, RoseAura&>(
-					&Title::init, &Title::fin, ra)
+			RA_OBJECT_ACTIVATOR.registerObject(
+				RA_OBJECT_ACTIVATOR.makeObjectBinder<Title>(
+					&Title::init, &Title::fin)
 				, tags
 			));
 

@@ -65,7 +65,7 @@ namespace GameObjects {
 				return;
 			}
 
-			IWorldNavigator::Vec3 pos = mWorldNavigator.getPrimaryEntityPosition();
+			IWorldNavigator::Vec3 pos = RA_WORLD_NAVIGATOR.getPrimaryEntityPosition();
 			IWorldNavigator::Vec3 previous = pos;
 
 			for (auto event : events) {
@@ -95,7 +95,7 @@ namespace GameObjects {
 					}
 				}
 			}
-			mWorldNavigator.movePrimaryEntityPosition(pos);
+			RA_WORLD_NAVIGATOR.movePrimaryEntityPosition(pos);
 
 			if (!GeometricalUtility::equalVec3(pos, previous)) {
 				int32_t deltaX = pos.mX - previous.mX;
@@ -124,7 +124,7 @@ namespace GameObjects {
 
 				Vector3 dir = { -1, -1, -1 };
 
-				Shader* lightingShader = static_cast<Shader*>(mGraphicsManager.getShader(mLitingShaderId));
+				Shader* lightingShader = static_cast<Shader*>(RA_GRAPHICS_MANAGER.getShader(mLitingShaderId));
 
 				int lightDirLoc   = GetShaderLocation(*lightingShader, "lightDir");
 				int lightColorLoc = GetShaderLocation(*lightingShader, "lightColor");
@@ -162,7 +162,7 @@ namespace GameObjects {
 
 				Model* model = static_cast<Model*>(mModelWrapper->getAnimetionModel(forward));
 
-				IWorldNavigator::Vec3 pos = mWorldNavigator.getPrimaryEntityPosition();
+				IWorldNavigator::Vec3 pos = RA_WORLD_NAVIGATOR.getPrimaryEntityPosition();
 
 				Vector3 rVec3 = { static_cast<float>(pos.mX) / MOVE_RATE, static_cast<float>(pos.mY) / MOVE_RATE, static_cast<float>(pos.mZ) / MOVE_RATE };
 
@@ -201,27 +201,23 @@ namespace GameObjects {
 
 		void init()
 		{
-			mLitingShaderId = mGraphicsManager.setShaderFile("resources\\lighting.vs", "resources\\lighting.fs");
-			mModelId        = mGraphicsManager.setModel("resources\\main2.glb", true);
-			mModelWrapper   = mGraphicsManager.getModelWrapper(mModelId);
-			mGraphicsManager.setRenderer(this);
-			mInputHndler.registerCallback(this);
+			mLitingShaderId = RA_GRAPHICS_MANAGER.setShaderFile("resources\\lighting.vs", "resources\\lighting.fs");
+			mModelId        = RA_GRAPHICS_MANAGER.setModel("resources\\main2.glb", true);
+			mModelWrapper   = RA_GRAPHICS_MANAGER.getModelWrapper(mModelId);
+			RA_GRAPHICS_MANAGER.setRenderer(this);
+			RA_INPUT_HANDLER.registerCallback(this);
 		}
 
 		void fin()
 		{
-			mInputHndler.unregisterCallback(this);
-			mGraphicsManager.removeRenderer(this);
-			mGraphicsManager.releaseModelWrapper(mModelId);
-			mGraphicsManager.removeShader(mLitingShaderId);
+			RA_INPUT_HANDLER.unregisterCallback(this);
+			RA_GRAPHICS_MANAGER.removeRenderer(this);
+			RA_GRAPHICS_MANAGER.releaseModelWrapper(mModelId);
+			RA_GRAPHICS_MANAGER.removeShader(mLitingShaderId);
 		}
 
-		MyCharacter(RoseAura& ra)
-			: mCentralLooper(ra.getCentralLooper())
-			, mGraphicsManager(ra.getGraphicsManager())
-			, mInputHndler(ra.getInputHandler())
-			, mWorldNavigator(ra.getWorldNavigator())
-			, mModelId(0)
+		MyCharacter()
+			: mModelId(0)
 			, mLitingShaderId(0)
 			, mViewPosLoc(0)
 			, mCurrentAnimation(0)
@@ -272,10 +268,6 @@ namespace GameObjects {
 			}
 		}
 
-		ICentralLooper&    mCentralLooper;
-		IGraphicsManager&  mGraphicsManager;
-		IInputHandler&     mInputHndler;
-		IWorldNavigator&   mWorldNavigator;
 		Camera			   mCamera;
 
 		IGraphicsManager::MODEL_ID
@@ -319,27 +311,23 @@ namespace GameObjects {
 
 		void init()
 		{
-			IInputHandler& ih = mRa.getInputHandler();
-			ih.registerCallback(this);
-			mSoundSnapshotRenderer = new SoundSnapshotRenderer(mRa,"resources\\effect001.wav");
+			mSoundSnapshotRenderer = new SoundSnapshotRenderer(RA_INSTANCE,"resources\\effect001.wav");
+			RA_INPUT_HANDLER.registerCallback(this);
 		}
 
 		void fin()
 		{
+			RA_INPUT_HANDLER.unregisterCallback(this);
 			delete mSoundSnapshotRenderer;
-			IInputHandler& ih = mRa.getInputHandler();
-			ih.unregisterCallback(this);
 		}
 
-		SoundEffect01(RoseAura& ra) :
-			  mRa(ra)
-			, mSoundSnapshotRenderer(nullptr)
+		SoundEffect01()
+			: mSoundSnapshotRenderer(nullptr)
 		{
 		}
 		virtual ~SoundEffect01() = default;
 
 	private:
-		RoseAura&				mRa;
 		SoundSnapshotRenderer*  mSoundSnapshotRenderer;
 							
 	};
@@ -371,63 +359,56 @@ namespace GameObjects {
 
 		void init()
 		{
-			mMusicRenderer = new MusicRenderer(mRa, "resources\\Seeker.opus");
+			mMusicRenderer = new MusicRenderer(RA_INSTANCE, "resources\\Seeker.opus");
 			mMusicRenderer->setJumpPoint(6101808, 2602800);
-
-			IInputHandler& ih = mRa.getInputHandler();
-			ih.registerCallback(this);
+			RA_INPUT_HANDLER.registerCallback(this);
 		}
 
 		void fin()
 		{
+			RA_INPUT_HANDLER.unregisterCallback(this);
 			mMusicRenderer->stopPlaying();
 			delete mMusicRenderer;
-			IInputHandler& ih = mRa.getInputHandler();
-			ih.unregisterCallback(this);
 		}
 
-		Music(RoseAura& ra) :
-			mRa(ra)
-			, mMusicRenderer(nullptr)
+		Music()
+			: mMusicRenderer(nullptr)
 			, mPlay(false)
 		{
 		}
 		virtual ~Music() = default;
 
 	private:
-		RoseAura&		   mRa;
 		MusicRenderer*	   mMusicRenderer;
 		bool			   mPlay;
 	};
 
 	//////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////
-	std::vector<IObjectActivator::OBJECT_ID> registerObjects(RoseAura& ra)
+	std::vector<IObjectActivator::OBJECT_ID> registerObjects()
 	{
 		std::vector<IObjectActivator::OBJECT_ID> ids;
-		std::vector<IObjectActivator::TAG_ID>	  tags = { TAG_GAME_OBJECT };
-
-		IObjectActivator& objectRepository = ra.getObjectActivator();
+		std::vector<IObjectActivator::TAG_ID>	 tags = { TAG_GAME_OBJECT };
 
 		//////////////////////////////////
 		ids.push_back(
-			objectRepository.registerObject(
-				objectRepository.makeObjectBinder<MyCharacter, RoseAura&>(
-					&MyCharacter::init, &MyCharacter::fin, ra)
+			RA_OBJECT_ACTIVATOR.registerObject(
+				RA_OBJECT_ACTIVATOR.makeObjectBinder<MyCharacter>(
+					&MyCharacter::init, &MyCharacter::fin)
 				, tags
 			));
 
 		ids.push_back(
-			objectRepository.registerObject(
-				objectRepository.makeObjectBinder<SoundEffect01, RoseAura&>(
-					&SoundEffect01::init, &SoundEffect01::fin, ra)
+			RA_OBJECT_ACTIVATOR.registerObject(
+				RA_OBJECT_ACTIVATOR.makeObjectBinder<SoundEffect01>(
+					&SoundEffect01::init, &SoundEffect01::fin)
 				, tags
 			));
 
 		ids.push_back(
-			objectRepository.registerObject(
-				objectRepository.makeObjectBinder<Music, RoseAura&>(
-					&Music::init, &Music::fin, ra)
+			RA_OBJECT_ACTIVATOR.registerObject(
+				RA_OBJECT_ACTIVATOR.makeObjectBinder<Music>(
+					&Music::init, &Music::fin)
 				, tags
 			));
 

@@ -115,7 +115,7 @@ namespace TopPageObjects {
 
 			mFontId = gm.setFont("resources\\NotoSerifJP-Regular.ttf");
 
-			gm.setRenderer(this);
+			gm.setRenderer(this, IGraphicsManager::Layer::L_FRONT);
 			ih.registerCallback(this);
 		}
 

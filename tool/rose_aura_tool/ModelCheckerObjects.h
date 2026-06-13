@@ -190,7 +190,7 @@ namespace ModelCheckerObjects {
 			mLitingShaderId = mGraphicsManager.setShaderFile("resources\\lighting.vs", "resources\\lighting.fs");
 
 			mInputHandler.registerCallback(this);
-			mGraphicsManager.setRenderer(this);
+			mGraphicsManager.setRenderer(this, IGraphicsManager::Layer::L_FRONT);
 		}
 
 		void fin()

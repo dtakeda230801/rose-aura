@@ -316,8 +316,7 @@ uint32_t SoundCoordinator::requestDataInternal(float** buff, uint32_t frameNum)
                 uint32_t retFrameMax = 0;
 
                 mMutex.lock();
-                for (auto ite = mRenderers.begin(); ite != mRenderers.end(); )
-                {
+                for (auto ite = mRenderers.begin(); ite != mRenderers.end(); ){
                     ISoundRenderer* sound = *ite;
 
                     RARetCode       ret;

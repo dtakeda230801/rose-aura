@@ -55,7 +55,6 @@ namespace GameObjects {
 	class MyCharacter
 		: public IGraphicsManager::IGraphicsRenderer
 		, public IInputHandler::IInputHandlerCallback
-
 	{
 	public:
 
@@ -111,6 +110,8 @@ namespace GameObjects {
 				mCamera.position = { static_cast<float>(pos.mX) / MOVE_RATE , 4.0f,static_cast<float>(pos.mZ) / MOVE_RATE - 4.0f };
 				mCamera.target = { static_cast<float>(pos.mX) / MOVE_RATE , 1.0f, static_cast<float>(pos.mZ) / MOVE_RATE };
 
+				RA_GRAPHICS_MANAGER.updateCamera(&mCamera);
+
 			}
 			else {
 				mWalking = false;
@@ -152,8 +153,6 @@ namespace GameObjects {
 		void render()
 		{
 			if (mInitialized) {
-				BeginMode3D(mCamera);
-
 				bool forward = mWalking || mRestart;
 
 				if (mRestart) {
@@ -194,8 +193,6 @@ namespace GameObjects {
 				rlEnableBackfaceCulling();
 
 				DrawGrid(10, 1.0f);
-
-				EndMode3D();
 			}
 		};
 
@@ -204,7 +201,8 @@ namespace GameObjects {
 			mLitingShaderId = RA_GRAPHICS_MANAGER.setShaderFile("resources\\lighting.vs", "resources\\lighting.fs");
 			mModelId        = RA_GRAPHICS_MANAGER.setModel("resources\\main2.glb", true);
 			mModelWrapper   = RA_GRAPHICS_MANAGER.getModelWrapper(mModelId);
-			RA_GRAPHICS_MANAGER.setRenderer(this);
+			RA_GRAPHICS_MANAGER.updateCamera(&mCamera);
+			RA_GRAPHICS_MANAGER.setRenderer(this, IGraphicsManager::Layer::L_3D);
 			RA_INPUT_HANDLER.registerCallback(this);
 		}
 
@@ -383,6 +381,146 @@ namespace GameObjects {
 		bool			   mPlay;
 	};
 
+	class Cards 
+		: public IGraphicsManager::IGraphicsRenderer
+		, public IInputHandler::IInputHandlerCallback
+	{
+	public:
+		void onInputEvent(std::vector<std::pair<InputState, InputType>>& events)
+		{
+			for (auto event : events) {
+				InputState state = event.first;
+				InputType  type = event.second;
+
+				if (state == InputState::PUSHED && type == InputType::ACTION4) {
+					if (mStatus == Status::S_APPEAR) {
+						mStatus = Status::S_TO_DISAPPEAR;
+						prepareAnimation();
+
+					} else if (mStatus == Status::S_DISAPPEAR){
+						mStatus = Status::S_TO_APPEAR;
+						prepareAnimation();
+					}
+				}
+			}
+		}
+
+		void preprocess()
+		{
+			if (!mInitialized) {
+				for (uint32_t i = 0; i < CARD_NUM; ++i) {
+					mTextures.push_back(LoadTexture("resources\\card.png"));
+				}
+
+				mSrcRectangle.x = 0.0f;
+				mSrcRectangle.y = 0.0f;
+				mSrcRectangle.width = static_cast<float>(mTextures[0].width);
+				mSrcRectangle.height = static_cast<float>(mTextures[0].height);
+
+				mDstRectangle.x = static_cast<float>(WIN_SIZE_W) - 20.0f - 120.0f;
+				mDstRectangle.y = 20.0f;
+				mDstRectangle.width = 120.0f;
+				mDstRectangle.height = 160.0f;
+
+				mInitialized = true;
+			}
+		}
+
+		void render()
+		{
+			if (mInitialized && mStatus != Status::S_DISAPPEAR) {
+
+				for (uint32_t i = 0; i < CARD_NUM; i++) {
+					Vector2   origin;
+					Rectangle dst;
+
+					origin.x = 0.0f;
+					origin.y = 0.0f;
+
+					dst   = mDstRectangle;
+					dst.x = mDstRectangle.x - static_cast<float>(i) * (mDstRectangle.width + 10.0f);
+
+					if (mStatus == Status::S_TO_APPEAR) {
+						++mFrame;
+						float startX = static_cast<float>(WIN_SIZE_W);
+						float delta = static_cast<float>(mFrame) / static_cast<float>(ANIMATION_LEN);
+
+						dst.x = startX - (startX - dst.x) * delta;
+
+						if (mFrame == ANIMATION_LEN) {
+							mStatus = Status::S_APPEAR;
+						}
+
+					} else if (mStatus == Status::S_TO_DISAPPEAR) {
+						++mFrame;
+						float targetX = static_cast<float>(WIN_SIZE_W);
+						float delta   = static_cast<float>(mFrame) / static_cast<float>(ANIMATION_LEN);
+
+						dst.x = dst.x + (targetX - dst.x) * delta;
+
+						if (mFrame == ANIMATION_LEN) {
+							mStatus = Status::S_DISAPPEAR;
+						}
+					}
+
+					DrawTexturePro(mTextures[i], mSrcRectangle, dst, origin, 0.0f, mColor);
+				}
+			}
+		}
+
+		void prepareAnimation()
+		{
+			mFrame = 0;
+		}
+
+		void init()
+		{
+			RA_GRAPHICS_MANAGER.setRenderer(this, IGraphicsManager::Layer::L_FRONT);
+			RA_INPUT_HANDLER.registerCallback(this);
+		}
+
+		void fin()
+		{
+			RA_INPUT_HANDLER.unregisterCallback(this);
+			RA_GRAPHICS_MANAGER.removeRenderer(this);
+		}
+
+		Cards()
+			: mInitialized(false)
+			, mSrcRectangle{}
+			, mDstRectangle{}
+			, mColor{ 255,255,255,255 }
+			, mStatus(Status::S_DISAPPEAR)
+			, mFrame(0)
+		{
+		}
+
+		virtual ~Cards() = default;
+
+	private:
+		static constexpr uint32_t CARD_NUM      = 6;
+		static constexpr uint32_t ANIMATION_LEN = 12;
+
+		enum class Status {
+			  S_APPEAR
+			, S_TO_APPEAR
+			, S_DISAPPEAR
+			, S_TO_DISAPPEAR
+		};
+
+
+		std::vector<Texture2D> mTextures;
+
+		Rectangle	mSrcRectangle;
+		Rectangle	mDstRectangle;
+		Color		mColor;
+
+		bool		mInitialized;
+		Status      mStatus;
+		uint32_t    mFrame;
+	};
+
+
 	//////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////
 	std::vector<IObjectActivator::OBJECT_ID> registerObjects()
@@ -409,6 +547,13 @@ namespace GameObjects {
 			RA_OBJECT_ACTIVATOR.registerObject(
 				RA_OBJECT_ACTIVATOR.makeObjectBinder<Music>(
 					&Music::init, &Music::fin)
+				, tags
+			));
+
+		ids.push_back(
+			RA_OBJECT_ACTIVATOR.registerObject(
+				RA_OBJECT_ACTIVATOR.makeObjectBinder<Cards>(
+					&Cards::init, &Cards::fin)
 				, tags
 			));
 

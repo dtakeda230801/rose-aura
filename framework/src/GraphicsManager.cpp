@@ -221,17 +221,41 @@ void GraphicsManager::runUntilClosed(Conf conf)
 
 
 		mMutex.lock();
-		std::vector<IGraphicsRenderer*> renderers = mRenderers;
+		std::vector<RendererHolder> renderers   = mRenderers;
 		mMutex.unlock();
 
-		for (IGraphicsRenderer* renderer : renderers) {
-			renderer->preprocess();
+		for (auto& renderer : renderers) {
+			renderer.mRenderer->preprocess();
 		}
 
 		BeginDrawing();
 
-		for (IGraphicsRenderer* renderer : renderers) {
-			renderer->render();
+		for (auto& renderer : renderers) {
+			if (renderer.mLayer == Layer::L_BACK) {
+				renderer.mRenderer->render();
+			}
+		}
+
+		bool render3D = false;
+		for (auto& renderer : renderers) {
+			if (renderer.mLayer == Layer::L_3D) {
+				if (!render3D) {
+					Camera camera = *(static_cast<Camera*>(mCamera));
+					BeginMode3D(camera);
+					render3D = true;
+				}
+				renderer.mRenderer->render();
+			}
+		}
+
+		if (render3D) {
+			EndMode3D();
+		}
+
+		for (auto& renderer : renderers) {
+			if (renderer.mLayer == Layer::L_FRONT) {
+				renderer.mRenderer->render();
+			}
 		}
 
 		EndDrawing();
@@ -306,14 +330,14 @@ void GraphicsManager::exit()
 	mRunning.store(false);
 }
 
-RARetCode GraphicsManager::setRenderer(IGraphicsRenderer* renderer)
+RARetCode GraphicsManager::setRenderer(IGraphicsRenderer* renderer, Layer layer)
 {	
 	if (!renderer) {
 		return RARetCode::RET_ERR_INVALID_ARG;
 	}
 
 	mMutex.lock();
-	mRenderers.push_back(renderer);
+	mRenderers.emplace_back(renderer, layer);
 	mMutex.unlock();
 
 	return RARetCode::RET_OK;
@@ -324,17 +348,38 @@ RARetCode GraphicsManager::removeRenderer(IGraphicsRenderer* renderer)
 	if (!renderer) {
 		return RARetCode::RET_ERR_INVALID_ARG;
 	}
-			
-	RARetCode ret = RARetCode::RET_OK;
+
+	RARetCode ret = RARetCode::RET_ERR_INVALID_ARG;		;
 
 	mMutex.lock();
-	if (0 != Utility::eraseVectorElm(mRenderers, renderer)) {
-		ret = RARetCode::RET_ERR_INVALID_ARG;
+	for (auto ite = mRenderers.begin(); ite != mRenderers.end(); ) {
+		RendererHolder& holder = *ite;
+
+		if (holder.mRenderer == renderer) {
+			ite = mRenderers.erase(ite);
+			ret = RARetCode::RET_OK;
+		} else {
+			++ite;
+		}
 	}
 	mMutex.unlock();
 
 	return ret;
 }
+
+RARetCode GraphicsManager::updateCamera(void* camera)
+{
+	if (!camera) {
+		return RARetCode::RET_ERR_INVALID_ARG;
+	}
+
+	Camera* in = static_cast<Camera*>(camera);
+
+	*(static_cast<Camera*>(mCamera)) = *in;
+
+	return RARetCode::RET_OK;
+}
+
 
 IGraphicsManager::SHADER_ID GraphicsManager::setShaderFile(std::string vsFile, std::string fsFile)
 {	
@@ -471,6 +516,28 @@ void GraphicsManager::releaseModelWrapper(MODEL_ID id)
 		}
 	}
 }
+
+GraphicsManager::GraphicsManager()
+	: mCamera(nullptr)
+	, mDefaultFont(0)
+{
+	Camera* camera = new Camera;
+
+	camera->position   = { 1.0f, 1.0f, 1.0f };
+	camera->target     = { 0.0f, 0.0f, 0.0f };
+	camera->up         = { 0.0f, 1.0f, 0.0f };
+	camera->fovy       = 45.0f;
+	camera->projection = CAMERA_PERSPECTIVE;
+
+	mCamera = static_cast<void*>(camera);
+}
+
+GraphicsManager::~GraphicsManager()
+{
+	Camera* camera = static_cast<Camera*>(mCamera);
+	delete camera;
+}
+
 
 ////////////////////////////////////
 // Private

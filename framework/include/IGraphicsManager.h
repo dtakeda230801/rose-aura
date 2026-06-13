@@ -20,6 +20,12 @@ public:
 		const char*		mWindowTitle;
 	};
 
+	enum class Layer {
+		  L_FRONT
+		, L_3D
+		, L_BACK
+	};
+
 	class IGraphicsRenderer {
 	public:
 		virtual void preprocess() = 0;
@@ -50,8 +56,11 @@ public:
 	//////////////////////////////////////////////////////////
 	virtual void      runUntilClosed(Conf conf)					    = 0;
 	virtual void      exit()                                        = 0;
-	virtual RARetCode setRenderer(IGraphicsRenderer* renderer)	    = 0;
+	virtual RARetCode setRenderer(IGraphicsRenderer* renderer
+		                        , Layer              layer)	        = 0;
 	virtual RARetCode removeRenderer(IGraphicsRenderer* renderer)	= 0;
+
+	virtual RARetCode updateCamera(void* camera)                    = 0;
 
 	virtual SHADER_ID setShaderFile(std::string vsFile
 		                          , std::string fsFile)             = 0;

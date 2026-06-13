@@ -39,7 +39,7 @@ bool MovieRendererInternal::playMovie()
 	start();
 	waitPreDecode();
 
-	mGraphicsManager.setRenderer(this);
+	mGraphicsManager.setRenderer(this, IGraphicsManager::Layer::L_FRONT);
 	mSoundCoordinator.registerRenderer(this);
 
     return true;

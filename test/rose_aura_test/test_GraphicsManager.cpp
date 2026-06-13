@@ -75,7 +75,7 @@ public:
 				Utility::printLog("getAnimationNum : %d", modelWrapper->getAnimationNum());
 
 
-				if (!modelWrapper->getAnimetionModel()) {
+				if (!modelWrapper->getAnimetionModel(true)) {
 					Utility::printLog("Can not get animation model");
 					gRetOK = false;
 				}
@@ -129,13 +129,13 @@ TEST(testGraphicsManager, APITest)
 		TestRenderer* testRenderer  = new TestRenderer(gm);
 		TestRenderer* testRenderer2 = new TestRenderer(gm);
 
-		EXPECT_EQ(gm.setRenderer(nullptr)			, RARetCode::RET_ERR_INVALID_ARG);
-		EXPECT_EQ(gm.setRenderer(testRenderer)		, RARetCode::RET_OK);
-		EXPECT_EQ(gm.removeRenderer(nullptr)		, RARetCode::RET_ERR_INVALID_ARG);
-		EXPECT_EQ(gm.removeRenderer(testRenderer2)	, RARetCode::RET_ERR_INVALID_ARG);
-		EXPECT_EQ(gm.removeRenderer(testRenderer)	, RARetCode::RET_OK);
+		EXPECT_EQ(gm.setRenderer(nullptr, IGraphicsManager::Layer::L_FRONT)	     , RARetCode::RET_ERR_INVALID_ARG);
+		EXPECT_EQ(gm.setRenderer(testRenderer, IGraphicsManager::Layer::L_FRONT) , RARetCode::RET_OK);
+		EXPECT_EQ(gm.removeRenderer(nullptr)		                             , RARetCode::RET_ERR_INVALID_ARG);
+		EXPECT_EQ(gm.removeRenderer(testRenderer2)	                             , RARetCode::RET_ERR_INVALID_ARG);
+		EXPECT_EQ(gm.removeRenderer(testRenderer)	                             , RARetCode::RET_OK);
 
-		EXPECT_EQ(gm.setRenderer(testRenderer), RARetCode::RET_OK);
+		EXPECT_EQ(gm.setRenderer(testRenderer,IGraphicsManager::Layer::L_FRONT), RARetCode::RET_OK);
 
 		std::string vsfile = "..\\..\\resources\\shader\\ConvertPictureV.fs";
 		std::string fsfile = "..\\..\\resources\\shader\\ConvertPictureF.fs";

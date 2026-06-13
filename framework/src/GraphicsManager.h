@@ -72,8 +72,10 @@ public:
 	void	  runUntilClosed(Conf conf);
 	void      exit();
 
-	RARetCode setRenderer(IGraphicsRenderer* renderer);
+	RARetCode setRenderer(IGraphicsRenderer* renderer, Layer layer);
 	RARetCode removeRenderer(IGraphicsRenderer* renderer);
+
+	RARetCode updateCamera(void* camera);
 
 	SHADER_ID setShaderFile(std::string vsFile
 		                  , std::string fsFile);
@@ -92,17 +94,24 @@ public:
 	IModelWrapper* getModelWrapper(MODEL_ID id);
 	void           releaseModelWrapper(MODEL_ID id);
 
-	GraphicsManager() = default;
-	virtual ~GraphicsManager() = default;
+	GraphicsManager();
+	virtual ~GraphicsManager();
 
 private:
+	struct RendererHolder {
+		IGraphicsRenderer* mRenderer;
+		Layer              mLayer;
+	};
+
+
 	std::mutex									mMutex;
-	std::vector<IGraphicsRenderer*>				mRenderers;
+	std::vector<RendererHolder>					mRenderers;
 	std::vector<ShaderHolder>					mShaderHolders;
 	std::vector<FontHolder>						mFontHolders;
 	std::vector<std::unique_ptr<ModelWrapper>> 	mModelWrappers;
 	std::atomic<bool>							mRunning;
 
+	void*		mCamera;
 	FONT_ID		mDefaultFont;
 };
 

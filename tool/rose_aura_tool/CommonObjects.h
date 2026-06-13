@@ -70,7 +70,7 @@ namespace CommonObjects {
 
 		void init()
 		{
-			mGraphicsManager.setRenderer(this);
+			mGraphicsManager.setRenderer(this, IGraphicsManager::Layer::L_BACK);
 		}
 
 		void fin()

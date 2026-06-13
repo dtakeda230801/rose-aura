@@ -104,7 +104,7 @@ namespace TitleObjects {
 			mSoundSnapshotRenderer = new SoundSnapshotRenderer(RA_INSTANCE, "resources\\effect001.wav");
 
 			mFontId = RA_GRAPHICS_MANAGER.setFont("resources\\NotoSerifJP-Regular.ttf");
-			RA_GRAPHICS_MANAGER.setRenderer(this);
+			RA_GRAPHICS_MANAGER.setRenderer(this, IGraphicsManager::Layer::L_FRONT);
 
 			RA_INPUT_HANDLER.registerCallback(this);
 		}
@@ -128,7 +128,7 @@ namespace TitleObjects {
 			, mFontId(0)
 			, mSoundSnapshotRenderer(nullptr)
 			, mInputEnable(false)
-			, mAnimationCoordinator(std::make_unique<AnimationCoordinator>(RA_GRAPHICS_MANAGER))
+			, mAnimationCoordinator(std::make_unique<AnimationCoordinator>())
 		{
 		}
 
@@ -176,7 +176,7 @@ namespace TitleObjects {
 
 			void prepare() {
 				for (auto& elm : mAnimationElms) {
-					elm->prepare(mGraphicsManager);
+					elm->prepare(RA_GRAPHICS_MANAGER);
 				}
 			}
 
@@ -184,7 +184,7 @@ namespace TitleObjects {
 			{
 				for (auto& elm : mAnimationElms) {
 					if (elm->getStartFrame() <= mFrame) {
-						elm->doAnimation(mGraphicsManager);
+						elm->doAnimation(RA_GRAPHICS_MANAGER);
 					}
 				}
 			}
@@ -215,16 +215,14 @@ namespace TitleObjects {
 			}
 
 
-			AnimationCoordinator(IGraphicsManager& gm)
+			AnimationCoordinator()
 				: mFrame(0)
-				, mGraphicsManager(gm)
 			{
 			}
 			virtual ~AnimationCoordinator() = default;
 
 		private:
 			uint32_t			mFrame;
-			IGraphicsManager&	mGraphicsManager;
 			std::vector<AnimationElement*>
 								mAnimationElms;
 		};

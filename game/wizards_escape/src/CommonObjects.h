@@ -62,7 +62,7 @@ namespace CommonObjects {
 
 		void init()
 		{
-			RA_GRAPHICS_MANAGER.setRenderer(this);
+			RA_GRAPHICS_MANAGER.setRenderer(this,IGraphicsManager::Layer::L_BACK);
 		}
 
 		void fin()
